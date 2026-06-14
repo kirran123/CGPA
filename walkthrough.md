@@ -201,3 +201,14 @@ All requested features for CGPA calculations, the Super Admin dashboard, dynamic
 
 ### 12. Single-Page Application (SPA) Routing & Reload Fix
 * **Direct Page Access & Reload 404s**: Created a new [vercel.json](file:///c:/Users/kishore%20ST/Desktop/CGPA/frontend/vercel.json) configuration file under the `frontend` folder containing rewrite patterns. This ensures Vercel routes all client-side paths (e.g. `/dashboard`, `/login`) to the main `index.html` entrypoint, enabling seamless page refreshes and direct URL access without encountering 404 errors.
+
+### 13. Multi-Batch Coexistence & History Preservation
+* **Database Index Migration**: Dropped old unique constraints (`registerNo_1_semester_1` and `registerNo_1_semester_1_department_1`) from the `gparecords` collection automatically on database startup.
+* **Compound Batch Scoping**: Updated the `GpaRecord` model schema with a unique compound index scoped by `{ registerNo: 1, semester: 1, department: 1, batchId: 1 }`.
+* **Independent Batch Calculations**: Scoped the backend `findOneAndUpdate` query to search by `batchId` (rather than just student and semester). This prevents student records in different batches from overwriting each other, allowing old and new batches to coexist and display side-by-side in the Batch Results list without losing their student memberships.
+* **Isolated Single-Student Calculations**: Configured single-student manual calculations to only search and update records where `batchId: ''`. This prevents manual calculator edits from overwriting student records inside uploaded batches.
+
+### 14. Desktop & Mobile Center Scroll-Blocking Fix
+* **Issue**: The dashboard layout mobile drawer container (`fixed inset-0`) was overlaying the entire viewport. Even with `pointer-events-none` on the parent, its child backdrop styled with `backdrop-filter: blur` created a compositor layer that captured and discarded mouse wheel and touch-scrolling gestures, preventing users from scrolling when the cursor was near the center of any page.
+* **Fix**: Added dynamic `visible` / `invisible` (i.e. `visibility: visible` / `visibility: hidden`) utility toggles to the outer drawer container in [layout.tsx](file:///c:/Users/kishore%20ST/Desktop/CGPA/frontend/app/dashboard/layout.tsx). When `sidebarOpen === false`, the entire drawer is marked as `invisible`, forcing the browser to completely ignore it during hit-testing and allowing all scroll gestures to pass through instantly. The transition classes ensure it fades smoothly when opened/closed.
+
