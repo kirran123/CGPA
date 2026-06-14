@@ -372,11 +372,15 @@ export default function SubjectManagement() {
 
       {/* ─── Single Add/Edit Modal ─────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-3 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
-          <div className="bg-[#071830] border border-sky-500/20 max-w-md w-full rounded-2xl relative z-10 shadow-2xl animate-scale-in my-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-sky-500/10 shrink-0">
+          {/* Modal card: max-h + flex-col so header/footer stay visible, body scrolls */}
+          <div
+            className="bg-[#071830] border border-sky-500/20 max-w-sm w-full rounded-2xl relative z-10 shadow-2xl animate-scale-in flex flex-col"
+            style={{ maxHeight: 'calc(100dvh - 2rem)' }}
+          >
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-sky-500/10 shrink-0">
               <h2 className="text-sm font-bold text-white flex items-center gap-2 font-['Outfit']">
                 <BookOpen className="h-4 w-4 text-sky-400" />
                 {editingSubject ? 'Edit Subject' : 'Add Subject'}
@@ -386,62 +390,72 @@ export default function SubjectManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="px-5 py-4 space-y-3">
+            <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-4 py-3 space-y-2.5">
                 {/* Subject Code */}
                 <div>
-                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Subject Code *</label>
-                  <input type="text" required value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="e.g. CS3401" disabled={!canEditSubjects} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white placeholder-sky-300/20 focus:outline-none transition-all disabled:opacity-40" />
+                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Subject Code *</label>
+                  <input type="text" required value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="e.g. CS3401" disabled={!canEditSubjects}
+                    className="w-full bg-white/[0.03] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-3 py-1.5 text-xs text-white placeholder-sky-300/20 focus:outline-none transition-all disabled:opacity-40" />
                 </div>
                 {/* Subject Name */}
                 <div>
-                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Subject Name *</label>
-                  <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Database Management Systems" disabled={!canEditSubjects} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white placeholder-sky-300/20 focus:outline-none transition-all disabled:opacity-60" />
+                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Subject Name *</label>
+                  <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Database Management Systems" disabled={!canEditSubjects}
+                    className="w-full bg-white/[0.03] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-3 py-1.5 text-xs text-white placeholder-sky-300/20 focus:outline-none transition-all disabled:opacity-60" />
                 </div>
-                {/* Credits + Semester */}
-                <div className="grid grid-cols-2 gap-3">
+                {/* Credits + Semester + Regulation — single compact row */}
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Credits *</label>
-                    <input type="number" required min="1" max="10" value={credits} onChange={e => setCredits(Number(e.target.value))} disabled={!canEditSubjects} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all disabled:opacity-60" />
+                    <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Credits *</label>
+                    <input type="number" required min="1" max="10" value={credits} onChange={e => setCredits(Number(e.target.value))} disabled={!canEditSubjects}
+                      className="w-full bg-white/[0.03] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none transition-all disabled:opacity-60" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Semester</label>
-                    <select value={semester} onChange={e => setSemester(Number(e.target.value))} disabled={!canEditSubjects} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none disabled:opacity-60">
-                      {[...Array(8)].map((_, i) => <option key={i+1} value={i+1}>Semester {i+1}</option>)}
+                    <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Semester</label>
+                    <select value={semester} onChange={e => setSemester(Number(e.target.value))} disabled={!canEditSubjects}
+                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-1.5 py-1.5 text-xs text-white focus:outline-none disabled:opacity-60">
+                      {[...Array(8)].map((_, i) => <option key={i+1} value={i+1}>Sem {i+1}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Regulation</label>
+                    <select value={regulation} onChange={e => setRegulation(e.target.value)} disabled={!canEditSubjects}
+                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-1.5 py-1.5 text-xs text-white focus:outline-none disabled:opacity-60">
+                      {(() => {
+                        const opts = [...regulations];
+                        if (regulation && !opts.includes(regulation)) opts.push(regulation);
+                        return opts.map(r => <option key={r} value={r}>{r}</option>);
+                      })()}
                     </select>
                   </div>
                 </div>
-                {/* Regulation */}
+                {/* Department */}
                 <div>
-                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Regulation</label>
-                  <select value={regulation} onChange={e => setRegulation(e.target.value)} disabled={!canEditSubjects} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none disabled:opacity-60">
-                    {(() => {
-                      const opts = [...regulations];
-                      if (regulation && !opts.includes(regulation)) opts.push(regulation);
-                      return opts.map(r => <option key={r} value={r}>{r}</option>);
-                    })()}
-                  </select>
-                </div>
-                {/* Department — editable only for super_admin */}
-                <div>
-                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Department</label>
+                  <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Department</label>
                   {currentUser?.role === 'super_admin' ? (
-                    <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none">
+                    <select value={department} onChange={e => setDepartment(e.target.value)}
+                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
                       {departments.map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
                     </select>
                   ) : (
-                    <div className="w-full bg-[#071830]/60 border border-sky-500/10 rounded-xl px-3 py-2 text-xs text-sky-300/60 flex items-center gap-2">
-                      <Building className="h-3.5 w-3.5 text-sky-400/50 shrink-0" />
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-sky-500/10 rounded-lg text-xs text-sky-300/60">
+                      <Building className="h-3 w-3 text-sky-400/50 shrink-0" />
                       <span>{departments.find(d => d.code === department)?.name || department}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex justify-end gap-3 px-5 py-3 border-t border-sky-500/10">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-sky-500/20 hover:bg-white/5 text-xs text-sky-300 rounded-xl transition-all cursor-pointer">Cancel</button>
-                <button type="submit" disabled={submitting || !canEditSubjects} className="px-5 py-2 bg-sky-500 hover:bg-sky-400 text-xs text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer">
+              {/* Sticky Footer */}
+              <div className="flex justify-end gap-2.5 px-4 py-3 border-t border-sky-500/10 shrink-0">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="px-4 py-1.5 border border-sky-500/20 hover:bg-white/5 text-xs text-sky-300 rounded-lg transition-all cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting || !canEditSubjects}
+                  className="px-5 py-1.5 bg-sky-500 hover:bg-sky-400 text-xs text-white font-bold rounded-lg transition-all shadow-md disabled:opacity-50 cursor-pointer">
                   {submitting ? 'Saving...' : 'Save Subject'}
                 </button>
               </div>
