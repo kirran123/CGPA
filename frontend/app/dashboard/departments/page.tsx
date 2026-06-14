@@ -241,8 +241,7 @@ export default function DepartmentManagement() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="bg-[#071830] border border-sky-500/20 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl relative z-10 shadow-2xl shadow-black/50 flex flex-col"
-               style={{ maxHeight: 'calc(100dvh - 0px)' }}>
+          <div className="bg-[#071830] border border-sky-500/20 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl relative z-10 shadow-2xl shadow-black/50 flex flex-col max-h-[100dvh] sm:max-h-[calc(100dvh-3rem)]">
 
             {/* Sticky Header */}
             <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-sky-500/10">
