@@ -274,37 +274,51 @@ export default function StaffManagement() {
 
       {/* Modal Dialog */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-          <div className="bg-[#071830] border border-sky-500/15 max-w-md w-full rounded-2xl p-4 relative z-10 flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden">
-            <h2 className="text-base font-black text-white border-b border-sky-500/10 pb-2.5 shrink-0">
-              {editingStaff ? 'Edit Staff Details' : 'Register Staff Member'}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+          <div className="bg-[#071830] border border-sky-500/20 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl relative z-10 flex flex-col"
+               style={{ maxHeight: 'calc(100dvh - 0px)', height: 'auto' }}>
 
-            <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 mt-3">
-              <div className="flex-1 overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-sky-500/20 scrollbar-track-transparent">
+            {/* Sticky Header */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-sky-500/10">
+              <h2 className="text-sm font-black text-white">
+                {editingStaff ? 'Edit Staff Details' : 'Register Staff Member'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="p-1.5 rounded-lg bg-sky-500/5 hover:bg-sky-500/15 border border-sky-500/10 text-sky-400 hover:text-white transition-all"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Staff Full Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
                     placeholder="Full Name"
-                    className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none placeholder:text-sky-300/25 transition-colors"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Academic Email</label>
-                  <input 
-                    type="email" 
-                    required 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                     disabled={!!editingStaff && currentUser?.role !== 'super_admin'}
                     placeholder="Academic Email"
-                    className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none placeholder:text-sky-300/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -313,17 +327,17 @@ export default function StaffManagement() {
                     {editingStaff ? 'Reset Password (blank = keep current)' : 'Account Password'}
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-sky-400">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-sky-400 pointer-events-none">
                       <KeyRound className="h-3.5 w-3.5" />
                     </span>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       required={!editingStaff}
-                      value={password} 
-                      onChange={e => setPassword(e.target.value)} 
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
                       disabled={!!editingStaff && currentUser?.role !== 'super_admin'}
-                      placeholder={editingStaff ? (currentUser?.role === 'super_admin' ? 'New password' : 'Reset disabled') : 'Password'}
-                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder={editingStaff ? (currentUser?.role === 'super_admin' ? 'New password (optional)' : 'Reset disabled') : 'Password'}
+                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none placeholder:text-sky-300/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -335,7 +349,7 @@ export default function StaffManagement() {
                       value={role}
                       disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                       onChange={e => setRole(e.target.value as any)}
-                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2 text-xs text-white focus:outline-none disabled:opacity-50"
+                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors"
                     >
                       <option value="staff">Lecturer / Staff</option>
                       <option value="dept_admin">Department HOD</option>
@@ -347,7 +361,7 @@ export default function StaffManagement() {
                       value={department}
                       disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                       onChange={e => setDepartment(e.target.value)}
-                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2 text-xs text-white focus:outline-none disabled:opacity-50"
+                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors"
                     >
                       <option value="">None (Super Admin)</option>
                       {departments.map(d => (
@@ -359,8 +373,8 @@ export default function StaffManagement() {
 
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Assign Permission Role</label>
-                  <div className="space-y-1 bg-[#090526] p-2.5 rounded-xl border border-sky-500/10">
-                    <p className="text-[9px] text-sky-300/30 mb-1.5">Select one or more permission levels for this staff member:</p>
+                  <div className="bg-white/[0.02] border border-sky-500/10 rounded-xl p-3 space-y-1">
+                    <p className="text-[9px] text-sky-300/40 mb-2">Select one or more permission levels for this staff member:</p>
                     {[
                       { key: 'FULL_ACCESS', label: 'Full Access (System Wide)', desc: 'All powers across all departments', color: 'text-blue-300' },
                       { key: 'DEPT_ACCESS', label: 'Department Access', desc: 'Can do everything in their department only', color: 'text-sky-300' },
@@ -374,7 +388,7 @@ export default function StaffManagement() {
                     }).map(p => {
                       const checked = permissions.includes(p.key);
                       return (
-                        <label key={p.key} className="flex items-start gap-3 text-sky-200 cursor-pointer hover:text-white select-none p-2 rounded-lg hover:bg-sky-500/[0.05] transition-colors">
+                        <label key={p.key} className="flex items-start gap-3 cursor-pointer hover:bg-sky-500/[0.05] p-2 rounded-lg transition-colors select-none">
                           <input
                             type="checkbox"
                             checked={checked}
@@ -385,33 +399,40 @@ export default function StaffManagement() {
                                 setPermissions(permissions.filter(x => x !== p.key));
                               }
                             }}
-                            className="mt-0.5 accent-sky-500"
+                            className="mt-0.5 w-4 h-4 accent-sky-500 shrink-0"
                           />
                           <div>
                             <span className={`text-xs font-bold ${p.color}`}>{p.label}</span>
-                            <p className="text-[10px] text-sky-300/40 mt-0.5">{p.desc}</p>
+                            <p className="text-[10px] text-sky-300/40 mt-0.5 leading-relaxed">{p.desc}</p>
                           </div>
                         </label>
                       );
                     })}
                   </div>
                 </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs">
+                    {error}
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-sky-500/10 shrink-0 mt-3">
-                <button 
-                  type="button" 
+              {/* Sticky Footer Buttons */}
+              <div className="shrink-0 flex justify-end gap-3 px-5 py-4 border-t border-sky-500/10 bg-[#071830]">
+                <button
+                  type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-sky-500/20 hover:bg-white/5 text-xs text-sky-300 rounded-xl transition-all"
+                  className="px-5 py-2.5 border border-sky-500/20 hover:bg-white/5 text-sm text-sky-300 rounded-xl transition-all font-medium"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-sky-500 hover:bg-sky-500 text-xs text-white font-bold rounded-xl transition-all shadow-md disabled:opacity-50"
+                  className="px-6 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-sm text-white font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {submitting ? 'Registering...' : 'Save Member'}
+                  {submitting ? 'Saving...' : 'Save Member'}
                 </button>
               </div>
             </form>
