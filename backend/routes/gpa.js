@@ -84,7 +84,7 @@ router.post('/calculate', protect, hasPermission('DEPT_FULL_ACCESS'), async (req
 
     // Update or create GPA record
     const record = await GpaRecord.findOneAndUpdate(
-      { registerNo, semester },
+      { registerNo, semester, batchId: '' },
       {
         studentName,
         registerNo,
@@ -93,6 +93,7 @@ router.post('/calculate', protect, hasPermission('DEPT_FULL_ACCESS'), async (req
         cgpa,
         subjects: subjectsDetails,
         department: activeDept,
+        batchId: '',
         calculatedBy: req.user._id
       },
       { upsert: true, new: true }
@@ -259,7 +260,7 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
         );
 
         const record = await GpaRecord.findOneAndUpdate(
-          { registerNo, semester: rowSem },
+          { registerNo, semester: rowSem, batchId },
           {
             studentName,
             registerNo,

@@ -28,5 +28,5 @@ const gpaRecordSchema = new mongoose.Schema({
   createdAt:     { type: Date, default: Date.now }
 });
 
-gpaRecordSchema.index({ registerNo: 1, semester: 1, department: 1 }, { unique: true });
+gpaRecordSchema.index({ registerNo: 1, semester: 1, department: 1, batchId: 1 }, { unique: true });
 module.exports = mongoose.model('GpaRecord', gpaRecordSchema);

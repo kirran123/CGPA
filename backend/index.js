@@ -66,6 +66,24 @@ const seedDatabase = async () => {
           console.log('Successfully dropped old subjects index code_1_department_1.');
         }
       }
+      
+      // Drop older gparecords unique indexes to allow batch-scoped records
+      const collectionsGpa = await db.listCollections({ name: 'gparecords' }).toArray();
+      if (collectionsGpa.length > 0) {
+        const indexesGpa = await db.collection('gparecords').indexes();
+        
+        const hasOldGpaIndex1 = indexesGpa.some(idx => idx.name === 'registerNo_1_semester_1');
+        if (hasOldGpaIndex1) {
+          await db.collection('gparecords').dropIndex('registerNo_1_semester_1');
+          console.log('Successfully dropped old gparecords index registerNo_1_semester_1.');
+        }
+        
+        const hasOldGpaIndex2 = indexesGpa.some(idx => idx.name === 'registerNo_1_semester_1_department_1');
+        if (hasOldGpaIndex2) {
+          await db.collection('gparecords').dropIndex('registerNo_1_semester_1_department_1');
+          console.log('Successfully dropped old gparecords index registerNo_1_semester_1_department_1.');
+        }
+      }
     } catch (e) {
       console.log('Index drop check skipped or not needed:', e.message);
     }
