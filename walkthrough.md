@@ -198,3 +198,6 @@ All requested features for CGPA calculations, the Super Admin dashboard, dynamic
   - Renamed the history tab from "Activity Audit Logs" to "Activity Logs", and modernized state parameters, inputs, and placeholders (`Search activities...`, `All System Activity Logs`, `No activity records found`).
   - Swapped footer notes to describe performance tracking rather than auditing.
 * **Code Refactoring**: Renamed internal React tab values, state variables (`activeTab === 'activity'`), variables (`activityLogs`), and backend API analytics route comments to refer to activity/logs rather than audits.
+
+### 12. Single-Page Application (SPA) Routing & Reload Fix
+* **Direct Page Access & Reload 404s**: Created a new [vercel.json](file:///c:/Users/kishore%20ST/Desktop/CGPA/frontend/vercel.json) configuration file under the `frontend` folder containing rewrite patterns. This ensures Vercel routes all client-side paths (e.g. `/dashboard`, `/login`) to the main `index.html` entrypoint, enabling seamless page refreshes and direct URL access without encountering 404 errors.
