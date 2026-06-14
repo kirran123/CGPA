@@ -294,6 +294,8 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
     res.json({
       message: `Successfully calculated ${results.length} records.`,
       recordsCount: results.length,
+      batchId,
+      batchName: resolvedBatchName,
       errors
     });
   } catch (error) {

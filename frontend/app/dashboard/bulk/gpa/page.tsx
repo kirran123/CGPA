@@ -76,7 +76,7 @@ export default function BulkGpaUpload() {
   const [loading, setLoading] = useState(false);
   const [deptsLoading, setDeptsLoading] = useState(true);
   
-  const [result, setResult] = useState<{ message: string } | null>(null);
+  const [result, setResult] = useState<{ message: string; batchId?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,6 +172,10 @@ export default function BulkGpaUpload() {
       const saveRes = await api.bulkUploadGpa(formData);
       const batchId = saveRes.batchId;
 
+      if (!batchId) {
+        throw new Error('Batch upload succeeded but batchId was not returned. Please check the Batch Results page.');
+      }
+
       // 2. Fetch and download the compiled PDF for this saved batch
       const blob = await api.downloadBatchPdf(batchId);
       const url = window.URL.createObjectURL(blob);
@@ -183,7 +187,7 @@ export default function BulkGpaUpload() {
       link.click();
       link.parentNode?.removeChild(link);
 
-      setResult({ message: 'Success' });
+      setResult({ message: 'Success', batchId });
       setFile(null);
       setBatchName('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -443,22 +447,29 @@ export default function BulkGpaUpload() {
 
       {/* Result feedback */}
       {result && (
-        <div className="bg-white/[0.02] border border-sky-500/10 rounded-3xl p-6 backdrop-blur-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-500/10 pb-3">
+        <div className="bg-white/[0.02] border border-emerald-500/15 rounded-3xl p-6 backdrop-blur-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-500/10 pb-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
               Batch Processing &amp; PDF Download Complete
             </h3>
+            <Link
+              to="/dashboard/bulk/gpa/batches"
+              className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 hover:border-emerald-500/40 px-3 py-2 rounded-xl transition-all duration-200 whitespace-nowrap"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              View Batch Results
+            </Link>
           </div>
           <div className="space-y-2 text-xs leading-relaxed text-sky-200/80">
             <p>
-              Your student report batch has been successfully calculated and compiled in memory.
+              Your student records have been successfully calculated and saved to the database under the batch.
             </p>
             <p>
-              The multi-page PDF document has been generated and triggered for download directly in your browser.
+              The multi-page PDF report has been compiled and triggered for automatic download in your browser.
             </p>
-            <p className="text-sky-400/50 mt-1 font-semibold">
-              * Note: No student records were saved to the database (stateless operation).
+            <p className="text-emerald-400/70 mt-1 font-semibold">
+              ✓ Student GPA records stored — view them in the <strong>Batch Results</strong> panel.
             </p>
           </div>
         </div>

@@ -959,3 +959,182 @@ a, button { transition: all 0.18s ease; }
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Prevent any element from breaking out of the viewport horizontally */
+html, body {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Smooth overscroll on iOS */
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Tables — scroll horizontally on small screens instead of overflowing */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+}
+
+/* Ensure all tables inside overflow containers work */
+.overflow-x-auto table {
+  min-width: max-content;
+}
+
+/* Minimum touch-target sizes for interactive elements (WCAG 2.5.5) */
+@media (max-width: 768px) {
+  button, [role="button"], a {
+    min-height: 36px;
+  }
+
+  /* Compact table cells on mobile */
+  td, th {
+    white-space: nowrap;
+  }
+
+  /* Dashboard main content — tighter padding on mobile */
+  main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Full-width modals on mobile */
+  .modal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    max-height: 90dvh !important;
+  }
+
+  /* Hero section adjustments */
+  .hero-title {
+    font-size: clamp(2rem, 8vw, 3.5rem) !important;
+  }
+
+  /* Grid columns — force single column on very small screens */
+  .grid-cols-auto-mobile {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Safe area support for notched phones (iPhone X and later) */
+@supports (padding: max(0px)) {
+  .dashboard-sidebar {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .mobile-bottom-bar {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Remove tap highlight color on iOS for all interactive elements */
+* {
+  -webkit-tap-highlight-color: rgba(56, 189, 248, 0.15);
+}
+
+/* Better mobile font scaling */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+
+  /* Prevent accidental zoom on input focus (iOS requires >= 16px) */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Reduce padding on all card containers on tiny screens */
+  .glass-card,
+  .glass-card-premium {
+    padding: 1rem !important;
+  }
+}
+
+/* Ensure modals never overflow the viewport on any screen size */
+[class*="fixed"][class*="inset-0"] > [class*="overflow-y-auto"],
+[class*="max-h-\\["] {
+  max-height: 100dvh;
+  overflow-y: auto;
+}
+
+/* Dashboard content fills full width on mobile (no leftover lg:ml-64 gap) */
+@media (max-width: 1023px) {
+  .lg\:ml-64 {
+    margin-left: 0 !important;
+  }
+}
+
+/* Batch results table — always scroll on mobile */
+@media (max-width: 640px) {
+  .overflow-x-auto {
+    border-radius: 0.5rem;
+    box-shadow: inset -4px 0 8px -4px rgba(56, 189, 248, 0.08);
+  }
+
+  /* Stat cards stack vertically */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Accordion batch header wraps cleanly */
+  .batch-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* iPad / tablet intermediate adjustments */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .lg\:p-8 {
+    padding: 1.5rem !important;
+  }
+
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Fix sticky header z-index layering on mobile when sidebar drawer is open */
+@media (max-width: 1023px) {
+  header.sticky {
+    z-index: 30 !important;
+  }
+}
+
+/* Improved focus rings for accessibility */
+:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.65);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─ Smooth page transitions ─ */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
