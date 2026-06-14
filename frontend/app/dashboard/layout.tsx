@@ -219,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="min-h-screen bg-[#040f24] text-white flex">
+    <div className="min-h-screen bg-[#040f24] text-white flex" style={{overflowX:'hidden'}}>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 glass-sidebar border-r border-sky-900/35 shrink-0 fixed top-0 bottom-0 left-0 z-40">
@@ -240,7 +240,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col lg:ml-64 min-h-screen">
+      <div className="flex-grow flex flex-col lg:ml-64" style={{minHeight:'100vh', overflowX:'hidden'}}>
 
         {/* Top Header */}
         <header className="h-16 bg-[#040f24]/80 border-b border-sky-900/30 px-4 sm:px-6 flex justify-between items-center shrink-0 sticky top-0 z-30 backdrop-blur-2xl">

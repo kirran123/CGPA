@@ -551,7 +551,12 @@
 * { box-sizing: border-box; }
 
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+  overflow-y: auto;        /* ← ensures mouse-wheel scrolls the page everywhere */
+  overflow-x: hidden;
+}
 
 body {
   background: var(--bg-primary);
@@ -561,6 +566,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100%;
+  overflow-x: hidden;      /* prevent horizontal overflow only */
+  overflow-y: auto;        /* allow vertical scroll everywhere */
 }
 
 /* ── Scrollbar ── */
@@ -966,15 +974,13 @@ a, button { transition: all 0.18s ease; }
    ═══════════════════════════════════════════════════════════════ */
 
 /* Prevent any element from breaking out of the viewport horizontally */
-html, body {
+/* Note: overflow-y is set in the main body block above */
+body {
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch; /* smooth inertia scrolling on iOS */
 }
 
-/* Smooth overscroll on iOS */
-body {
-  overscroll-behavior-y: none;
-}
+
 
 /* Tables — scroll horizontally on small screens instead of overflowing */
 .table-responsive {
