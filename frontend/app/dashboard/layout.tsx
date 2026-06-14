@@ -229,7 +229,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Drawer */}
       <div className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${sidebarOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'}`}>
         <div
-          className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 bg-black/70 transition-all duration-300 ${
+            sidebarOpen ? 'opacity-100 backdrop-blur-sm pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
+          }`}
           onClick={() => setSidebarOpen(false)}
         />
         <aside className={`absolute top-0 bottom-0 left-0 w-64 glass-sidebar border-r border-sky-900/40 flex flex-col transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
