@@ -35,10 +35,11 @@ export default function AnalyticsDashboard() {
       const u = api.getCurrentUser();
       setUser(u);
       
-      const data = await api.getDashboardStats();
+      const [data, regs] = await Promise.all([
+        api.getDashboardStats(),
+        api.getRegulations()
+      ]);
       setStats(data);
-
-      const regs = await api.getRegulations();
       setRegulations(regs.map((r: any) => r.name));
     } catch (err: any) {
       setError(err.message || 'Failed to fetch analytics.');
@@ -67,13 +68,19 @@ export default function AnalyticsDashboard() {
     }
   };
 
-  const handleDownloadPdf = async (recordId: string, studentName: string) => {
+  const handleDownloadPdf = async (record: any) => {
     try {
-      const blob = await api.downloadGpaReportPdf(recordId);
+      const isCgpa = record.semester === undefined || record.semester === null || record.semester === '';
+      const blob = isCgpa 
+        ? await api.downloadCgpaReportPdf(record._id) 
+        : await api.downloadGpaReportPdf(record._id);
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `GPA_Report_${studentName}.pdf`);
+      link.setAttribute('download', isCgpa 
+        ? `CGPA_Report_${record.studentName}.pdf` 
+        : `GPA_Report_Sem${record.semester}_${record.studentName}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
@@ -388,7 +395,7 @@ export default function AnalyticsDashboard() {
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <button
-                          onClick={() => handleDownloadPdf(r.registerNo, r.studentName)}
+                          onClick={() => handleDownloadPdf(r)}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-sky-500/8 hover:bg-sky-500/18 border border-sky-500/12 hover:border-sky-400/30 rounded-lg text-sky-400 hover:text-white transition-all cursor-pointer font-bold text-[10px]"
                         >
                           <Download className="h-3 w-3" />

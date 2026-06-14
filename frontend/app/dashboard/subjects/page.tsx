@@ -374,7 +374,7 @@ export default function SubjectManagement() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
-          <div className="bg-[#071830] border border-sky-500/20 max-w-md w-full rounded-2xl p-6 relative z-10 shadow-2xl animate-scale-in flex flex-col max-h-[90vh]">
+          <div className="bg-[#071830] border border-sky-500/20 max-w-md w-full rounded-2xl p-6 relative z-10 shadow-2xl animate-scale-in flex flex-col max-h-[calc(100dvh-2rem)]">
             <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2 font-['Outfit'] shrink-0 border-b border-sky-500/10 pb-3">
               <BookOpen className="h-5 w-5 text-sky-400" />
               {editingSubject ? 'Edit Subject Catalog Entry' : 'Add Subject Catalog Entry'}
@@ -435,7 +435,7 @@ export default function SubjectManagement() {
       {showBulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => { if (!bulkUploading) setShowBulkModal(false); }} />
-          <div className="bg-[#071830] border border-emerald-500/20 max-w-xl w-full rounded-2xl p-4 relative z-10 shadow-2xl animate-scale-in flex flex-col" style={{maxHeight: '95vh'}}>
+          <div className="bg-[#071830] border border-emerald-500/20 max-w-xl w-full rounded-2xl p-4 relative z-10 shadow-2xl animate-scale-in flex flex-col" style={{maxHeight: 'calc(100dvh - 2rem)'}}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-3 shrink-0">

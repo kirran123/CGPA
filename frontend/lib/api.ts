@@ -1,4 +1,8 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://cgpa-lr2c.onrender.com/api') : 'https://cgpa-lr2c.onrender.com/api');
+let rawBaseUrl = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://cgpa-lr2c.onrender.com/api') : 'https://cgpa-lr2c.onrender.com/api');
+if (rawBaseUrl && !rawBaseUrl.endsWith('/api') && !rawBaseUrl.endsWith('/api/')) {
+  rawBaseUrl = rawBaseUrl.endsWith('/') ? `${rawBaseUrl}api` : `${rawBaseUrl}/api`;
+}
+const API_BASE_URL = rawBaseUrl;
 
 // Helper to get auth header
 const getAuthHeaders = (): Record<string, string> => {

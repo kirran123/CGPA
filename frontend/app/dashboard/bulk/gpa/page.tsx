@@ -88,7 +88,10 @@ export default function BulkGpaUpload() {
         const u = api.getCurrentUser();
         setCurrentUser(u);
 
-        const list = await api.getPublicDepartments();
+        const [list, regs] = await Promise.all([
+          api.getPublicDepartments(),
+          api.getRegulations()
+        ]);
         setDepartments(list);
 
         if (u?.department) {
@@ -96,8 +99,6 @@ export default function BulkGpaUpload() {
         } else if (list.length > 0) {
           setSelectedDept(list[0].code);
         }
-
-        const regs = await api.getRegulations();
         const regNames = regs.map((r: any) => r.name);
         setRegulations(regNames);
         // Default: first reg value (not FROM_FILE)
@@ -167,7 +168,12 @@ export default function BulkGpaUpload() {
     formData.append('batchName', batchName.trim());
 
     try {
-      const blob = await api.downloadBulkGpaPdf(formData);
+      // 1. Upload and save the batch in the database
+      const saveRes = await api.bulkUploadGpa(formData);
+      const batchId = saveRes.batchId;
+
+      // 2. Fetch and download the compiled PDF for this saved batch
+      const blob = await api.downloadBatchPdf(batchId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -179,12 +185,14 @@ export default function BulkGpaUpload() {
 
       setResult({ message: 'Success' });
       setFile(null);
+      setBatchName('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
       setError(err.message || 'Bulk upload calculation and PDF generation failed.');
     } finally {
       setLoading(false);
     }
+
   };
 
   /* ── File icon ── */

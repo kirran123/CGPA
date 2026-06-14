@@ -51,10 +51,11 @@ export default function StaffManagement() {
       }
       setCurrentUser(u);
 
-      const list = await api.getStaff();
+      const [list, depts] = await Promise.all([
+        api.getStaff(),
+        api.getPublicDepartments()
+      ]);
       setStaffList(list);
-
-      const depts = await api.getPublicDepartments();
       setDepartments(depts);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch staff data.');
@@ -275,7 +276,7 @@ export default function StaffManagement() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-          <div className="bg-[#071830] border border-sky-500/15 max-w-md w-full rounded-2xl p-4 relative z-10 flex flex-col max-h-[92vh] overflow-hidden">
+          <div className="bg-[#071830] border border-sky-500/15 max-w-md w-full rounded-2xl p-4 relative z-10 flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden">
             <h2 className="text-base font-black text-white border-b border-sky-500/10 pb-2.5 shrink-0">
               {editingStaff ? 'Edit Staff Details' : 'Register Staff Member'}
             </h2>

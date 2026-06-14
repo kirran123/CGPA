@@ -241,7 +241,7 @@ export default function DepartmentManagement() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="bg-[#071830] border border-sky-500/20 max-w-lg w-full rounded-2xl p-6 relative z-10 shadow-2xl shadow-black/50 flex flex-col max-h-[90vh]">
+          <div className="bg-[#071830] border border-sky-500/20 max-w-lg w-full rounded-2xl p-6 relative z-10 shadow-2xl shadow-black/50 flex flex-col max-h-[calc(100dvh-2rem)]">
             <div className="flex items-center justify-between mb-4 shrink-0 border-b border-sky-500/10 pb-3">
               <div>
                 <h2 className="text-base font-bold text-white">

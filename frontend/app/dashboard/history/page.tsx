@@ -52,14 +52,11 @@ export default function HistoryLogs() {
     const loadDeptsAndLogs = async () => {
       try {
         setLoading(true);
-        const depts = await api.getPublicDepartments();
+        const [depts, activityLogs] = await Promise.all([
+          api.getPublicDepartments(),
+          api.getHistoryLogs()
+        ]);
         setDepartments(depts);
-
-        // Super admin: default to "all" (empty string)
-        // Others: already set their own dept above
-
-        // Activity logs - backend already filters by role
-        const activityLogs = await api.getHistoryLogs();
         setLogs(activityLogs);
       } catch (err: any) {
         setError(err.message || 'Failed to initialize logs.');
