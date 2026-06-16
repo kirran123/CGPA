@@ -27,23 +27,34 @@ router.post('/gpa-pdf', async (req, res) => {
   registerNo = registerNo || `ANON-${Date.now()}`;
 
   try {
-    // Calculate total credits, total points and GPA
+    // Only process subjects that have a real grade — skip blank/absent ones
+    const validGrades = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
     let totalCredits = 0;
     let totalPoints = 0;
-    const compiledSubjects = subjects.map(s => {
+    const compiledSubjects = [];
+
+    for (const s of subjects) {
+      const rawGrade = String(s.grade || '').trim().toUpperCase();
+      // Skip subjects with no grade or a placeholder non-grade value
+      if (!rawGrade || rawGrade === '-' || rawGrade === 'N/A' || rawGrade === 'NA' ||
+          rawGrade === 'AB' || rawGrade === 'ABSENT' || !validGrades.has(rawGrade)) continue;
+
       const credits = parseInt(s.credits || 0);
-      const grade = String(s.grade || 'U').toUpperCase();
-      const gradePoint = gradePointsMap[grade] !== undefined ? gradePointsMap[grade] : 0;
+      const gradePoint = gradePointsMap[rawGrade] !== undefined ? gradePointsMap[rawGrade] : 0;
       totalCredits += credits;
       totalPoints += credits * gradePoint;
-      return {
+      compiledSubjects.push({
         subjectCode: s.subjectCode || 'N/A',
         subjectName: s.subjectName || 'N/A',
         credits,
-        grade,
+        grade: rawGrade,
         gradePoint
-      };
-    });
+      });
+    }
+
+    if (compiledSubjects.length === 0) {
+      return res.status(400).json({ message: 'No subjects with valid grades found. Please enter at least one grade.' });
+    }
 
     const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
 
@@ -263,6 +274,16 @@ router.get('/batch/:batchId/pdf', protect, async (req, res) => {
 });
 
 // Helper for in-memory calculations without saving
+// Skips subjects with no valid grade — they won't appear in the PDF or GPA calculation.
+const VALID_GRADE_SET = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
+const isValidGrade = (raw) => {
+  if (!raw) return false;
+  const g = String(raw).trim().toUpperCase();
+  if (!g || g === '-' || g === 'N/A' || g === 'NA' || g === 'AB' ||
+      g === 'ABSENT' || g === '0' || g === 'NULL') return false;
+  return VALID_GRADE_SET.has(g);
+};
+
 const calculateGPA = async (registerNo, semester, subjectsInput, department, regulation) => {
   let currentGPA = 0;
   let totalCurrentCredits = 0;
@@ -270,6 +291,9 @@ const calculateGPA = async (registerNo, semester, subjectsInput, department, reg
 
   const subjectsDetails = [];
   for (const s of subjectsInput) {
+    // Skip subjects with no valid grade — absent/empty cells are not counted
+    if (!isValidGrade(s.grade)) continue;
+
     const query = { code: s.subjectCode.toUpperCase(), department };
     if (regulation) {
       query.regulation = { $regex: regulation, $options: 'i' };
@@ -278,15 +302,16 @@ const calculateGPA = async (registerNo, semester, subjectsInput, department, reg
     if (!subject) {
       throw new Error(`Subject with code ${s.subjectCode} not found in department ${department}${regulation ? ' (Regulation: ' + regulation + ')' : ''}`);
     }
-    const gradePoint = gradePointsMap[s.grade.toUpperCase()] !== undefined ? gradePointsMap[s.grade.toUpperCase()] : 0;
-    
+    const normalGrade = s.grade.trim().toUpperCase();
+    const gradePoint = gradePointsMap[normalGrade] !== undefined ? gradePointsMap[normalGrade] : 0;
+
     totalCurrentCredits += subject.credits;
     totalCurrentPoints += (subject.credits * gradePoint);
 
     subjectsDetails.push({
       subjectCode: subject.code,
       subjectName: subject.name,
-      grade: s.grade.toUpperCase(),
+      grade: normalGrade,
       gradePoint: gradePoint,
       credits: subject.credits
     });
@@ -394,9 +419,10 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
         const studentSubjects = [];
         Object.keys(row).forEach(key => {
           if (!metaKeys.includes(key.trim().toLowerCase())) {
-            const grade = String(row[key]).trim();
-            if (grade && grade !== '') {
-              studentSubjects.push({ subjectCode: key.trim(), grade });
+            const rawGrade = String(row[key] ?? '').trim();
+            // Only include subjects where a real grade was entered — skip empty/absent cells
+            if (isValidGrade(rawGrade)) {
+              studentSubjects.push({ subjectCode: key.trim(), grade: rawGrade });
             }
           }
         });
