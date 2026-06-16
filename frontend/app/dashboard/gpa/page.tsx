@@ -485,7 +485,7 @@ export default function InternalGpaCalculator() {
                         }`}
                       >
                         <option value="">-- Grade --</option>
-                        {gradeSettingsList.map(g => (
+                        {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
                           <option key={g.grade} value={g.grade} className={getGradeColor(g.grade)}>
                             {g.grade} ({g.points})
                           </option>

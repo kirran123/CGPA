@@ -125,7 +125,7 @@ export default function DashboardGradeSettings() {
     if (isNaN(num)) {
       updated[index].points = 0;
     } else {
-      updated[index].points = Math.min(10, Math.max(0, num));
+      updated[index].points = Math.min(100, Math.max(0, num));
     }
     setGrades(updated);
   };
@@ -316,7 +316,7 @@ export default function DashboardGradeSettings() {
               <div className="grid grid-cols-12 bg-[#071830]/80 p-3 text-xs font-semibold text-sky-300/60 uppercase border-b border-sky-500/10">
                 <div className="col-span-1 text-center">#</div>
                 <div className="col-span-5">Grade Key</div>
-                <div className="col-span-5">Point Value (0-10)</div>
+                <div className="col-span-5">Point Value (0-100)</div>
                 <div className="col-span-1 text-center">Action</div>
               </div>
 
@@ -346,7 +346,7 @@ export default function DashboardGradeSettings() {
                         required
                         step="0.01"
                         min="0"
-                        max="10"
+                        max="100"
                         placeholder="e.g. 9"
                         value={g.points || 0}
                         onChange={e => handlePointsChange(idx, e.target.value)}

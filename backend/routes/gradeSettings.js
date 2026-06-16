@@ -33,7 +33,9 @@ router.get('/:department/:regulation/:semester', async (req, res) => {
     });
 
     if (setting) {
-      return res.json(setting);
+      const obj = setting.toObject();
+      obj.grades.sort((a, b) => b.points - a.points);
+      return res.json(obj);
     }
 
     // Fallback to defaults
@@ -74,8 +76,8 @@ router.post('/', protect, async (req, res) => {
     if (!rawGrade) {
       return res.status(400).json({ message: 'Grade name cannot be empty' });
     }
-    if (isNaN(rawPoints) || rawPoints < 0 || rawPoints > 10) {
-      return res.status(400).json({ message: `Invalid points value for grade ${rawGrade}. Must be between 0 and 10.` });
+    if (isNaN(rawPoints) || rawPoints < 0 || rawPoints > 100) {
+      return res.status(400).json({ message: `Invalid points value for grade ${rawGrade}. Must be between 0 and 100.` });
     }
 
     sanitizedGrades.push({ grade: rawGrade, points: rawPoints });
