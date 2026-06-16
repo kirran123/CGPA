@@ -56,17 +56,23 @@ export default function InternalGpaCalculator() {
     setDownloadingPdf(true);
     try {
       const activeDeptObj = departments.find(d => d.code === selectedDept);
+      // Only include subjects where the student actually entered a grade
+      const gradedRows = rows.filter(r => r.grade && r.grade.trim() !== '');
+      if (gradedRows.length === 0) {
+        alert('Please enter at least one grade before downloading the PDF.');
+        return;
+      }
       const payload = {
         studentName: studentName.trim() || 'Student',
         registerNo: registerNo.trim() || 'Student',
         department: activeDeptObj ? activeDeptObj.name : selectedDept,
         semester: Number(selectedSem),
         regulation,
-        subjects: rows.map(r => ({
+        subjects: gradedRows.map(r => ({
           subjectCode: r.subjectCode,
           subjectName: r.subjectName,
           credits: Number(r.credits) || 0,
-          grade: r.grade || 'U'
+          grade: r.grade
         }))
       };
       const blob = await api.downloadPublicGpaPdf(payload);
@@ -148,15 +154,17 @@ export default function InternalGpaCalculator() {
     fetchSubjects();
   }, [selectedDept, selectedSem, regulation]);
 
-  // Live GPA calculation
+  // Live GPA calculation — only count subjects where a grade has been entered
   let totalCredits = 0, totalPoints = 0;
   rows.forEach(r => {
+    if (!r.grade || r.grade.trim() === '') return; // skip unentered subjects
     const cred = Number(r.credits) || 0;
     const gp = gradePoints[r.grade] !== undefined ? gradePoints[r.grade] : -1;
     if (gp >= 0 && cred > 0) { totalCredits += cred; totalPoints += cred * gp; }
   });
   const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
-  const allGradesSet = rows.length > 0 && rows.every(r => r.grade !== '');
+  // Allow save/download as long as at least one grade is entered
+  const anyGradeSet = rows.some(r => r.grade && r.grade.trim() !== '');
 
   const updateGrade = (id: string, grade: string) => {
     setRows(rows.map(r => r.id === id ? { ...r, grade } : r));
@@ -175,15 +183,23 @@ export default function InternalGpaCalculator() {
     const nameToSave = studentName.trim() || 'Student';
     const regToSave = registerNo.trim() || 'Student';
 
+    // Only send subjects where a grade was actually entered
+    const gradedRows = rows.filter(r => r.grade && r.grade.trim() !== '');
+    if (gradedRows.length === 0) {
+      alert('Please enter at least one grade before saving.');
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       studentName: nameToSave,
       registerNo: regToSave,
       semester: selectedSem,
       department: selectedDept,
       regulation,
-      subjects: rows.map(r => ({
+      subjects: gradedRows.map(r => ({
         subjectCode: r.subjectCode,
-        grade: r.grade || 'U'
+        grade: r.grade
       }))
     };
 
@@ -342,7 +358,7 @@ export default function InternalGpaCalculator() {
           <div className="space-y-2">
             <button
               onClick={downloadReport}
-              disabled={downloadingPdf || rows.length === 0 || !allGradesSet}
+              disabled={downloadingPdf || rows.length === 0 || !anyGradeSet}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/35 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm cursor-pointer"
             >
               {downloadingPdf ? (
@@ -355,7 +371,7 @@ export default function InternalGpaCalculator() {
             {canEditRecords && (
               <button
                 onClick={handleSave}
-                disabled={saving || rows.length === 0 || !allGradesSet}
+                disabled={saving || rows.length === 0 || !anyGradeSet}
                 className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 hover:border-sky-500/40 text-sky-300 hover:text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs cursor-pointer"
               >
                 {saving ? (
