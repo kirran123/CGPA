@@ -30,8 +30,7 @@ const DEFAULT_GRADES = [
   { grade: 'B+', points: 7 },
   { grade: 'B', points: 6 },
   { grade: 'C', points: 5 },
-  { grade: 'U', points: 0 },
-  { grade: 'RA', points: 0 }
+  { grade: 'U', points: 0 }
 ];
 
 const getGradeColor = (grade: string) => {
@@ -166,10 +165,10 @@ export default function InternalGpaCalculator() {
   }, [selectedDept, selectedSem, regulation]);
 
   useEffect(() => {
-    if (!regulation || !selectedSem) return;
+    if (!selectedDept || !regulation || !selectedSem) return;
     const fetchGrades = async () => {
       try {
-        const gs = await api.getGradeSettings(regulation, selectedSem);
+        const gs = await api.getGradeSettings(selectedDept, regulation, selectedSem);
         if (gs && gs.grades && gs.grades.length > 0) {
           setGradeSettingsList(gs.grades);
         } else {
@@ -181,7 +180,7 @@ export default function InternalGpaCalculator() {
       }
     };
     fetchGrades();
-  }, [regulation, selectedSem]);
+  }, [selectedDept, regulation, selectedSem]);
 
   const dynamicGradePoints = React.useMemo(() => {
     const map: Record<string, number> = {};

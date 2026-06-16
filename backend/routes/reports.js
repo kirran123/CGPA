@@ -13,17 +13,18 @@ const GradeSetting = require('../models/GradeSetting');
 
 // Default fallback grade mapping
 const DEFAULT_GRADE_MAP = {
-  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'RA': 0
+  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0
 };
 
 // Helper: fetch configured grade mapping from DB or use default fallback
-const getGradePointsMap = async (regulation, semester) => {
+const getGradePointsMap = async (department, regulation, semester) => {
   const semNum = parseInt(semester);
-  if (!regulation || isNaN(semNum)) {
+  if (!department || !regulation || isNaN(semNum)) {
     return DEFAULT_GRADE_MAP;
   }
   try {
     const setting = await GradeSetting.findOne({
+      department: { $regex: new RegExp(`^${department}$`, 'i') },
       regulation: { $regex: new RegExp(`^${regulation}$`, 'i') },
       semester: semNum
     });
@@ -32,7 +33,6 @@ const getGradePointsMap = async (regulation, semester) => {
       setting.grades.forEach(g => {
         map[g.grade.toUpperCase()] = g.points;
       });
-      if (map['RA'] === undefined) map['RA'] = 0;
       return map;
     }
   } catch (error) {
@@ -55,7 +55,7 @@ router.post('/gpa-pdf', async (req, res) => {
 
   try {
     // Fetch dynamic grade mapping
-    const gradePointsMap = await getGradePointsMap(regulation, semester);
+    const gradePointsMap = await getGradePointsMap(department, regulation, semester);
     const validGrades = new Set(Object.keys(gradePointsMap));
 
     // Only process subjects that have a real grade — skip blank/absent ones
@@ -449,7 +449,7 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
         }
 
         // Fetch custom grade map for this regulation and semester
-        const gradeMap = await getGradePointsMap(rowRegulation, rowSemester);
+        const gradeMap = await getGradePointsMap(activeDept, rowRegulation, rowSemester);
         const validGradesSet = new Set(Object.keys(gradeMap));
 
         const metaKeys = [

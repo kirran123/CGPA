@@ -12,17 +12,18 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Default fallback grade mapping
 const DEFAULT_GRADE_MAP = {
-  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'RA': 0
+  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0
 };
 
 // Helper: fetch configured grade mapping from DB or use default fallback
-const getGradePointsMap = async (regulation, semester) => {
+const getGradePointsMap = async (department, regulation, semester) => {
   const semNum = parseInt(semester);
-  if (!regulation || isNaN(semNum)) {
+  if (!department || !regulation || isNaN(semNum)) {
     return DEFAULT_GRADE_MAP;
   }
   try {
     const setting = await GradeSetting.findOne({
+      department: { $regex: new RegExp(`^${department}$`, 'i') },
       regulation: { $regex: new RegExp(`^${regulation}$`, 'i') },
       semester: semNum
     });
@@ -31,7 +32,6 @@ const getGradePointsMap = async (regulation, semester) => {
       setting.grades.forEach(g => {
         map[g.grade.toUpperCase()] = g.points;
       });
-      if (map['RA'] === undefined) map['RA'] = 0;
       return map;
     }
   } catch (error) {
@@ -116,7 +116,7 @@ router.post('/calculate', protect, hasPermission('DEPT_FULL_ACCESS'), async (req
   }
 
   try {
-    const gradeMap = await getGradePointsMap(regulation, semester);
+    const gradeMap = await getGradePointsMap(activeDept, regulation, semester);
     const { gpa, cgpa, subjects: subjectsDetails } = await calculateGPAAndCGPA(registerNo, semester, subjects, activeDept, regulation, gradeMap);
 
     // Update or create GPA record
@@ -257,7 +257,7 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
         }
 
         // Fetch custom grade map for this regulation and semester
-        const gradeMap = await getGradePointsMap(rowRegulation, rowSemester);
+        const gradeMap = await getGradePointsMap(activeDept, rowRegulation, rowSemester);
         const validGradesSet = new Set(Object.keys(gradeMap));
 
         // Collect subject columns (skip meta columns)

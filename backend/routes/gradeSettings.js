@@ -4,7 +4,7 @@ const GradeSetting = require('../models/GradeSetting');
 const HistoryLog = require('../models/HistoryLog');
 const { protect } = require('../middleware/auth');
 
-// Default grade point mapping to fall back on
+// Default grade point mapping to fall back on (excluding RA)
 const DEFAULT_GRADES = [
   { grade: 'O', points: 10 },
   { grade: 'A+', points: 9 },
@@ -12,22 +12,22 @@ const DEFAULT_GRADES = [
   { grade: 'B+', points: 7 },
   { grade: 'B', points: 6 },
   { grade: 'C', points: 5 },
-  { grade: 'U', points: 0 },
-  { grade: 'RA', points: 0 }
+  { grade: 'U', points: 0 }
 ];
 
-// 1. Get grade settings for a specific regulation and semester (Public — anonymous access allowed)
-router.get('/:regulation/:semester', async (req, res) => {
-  const { regulation, semester } = req.params;
+// 1. Get grade settings for a specific department, regulation, and semester (Public — anonymous access allowed)
+router.get('/:department/:regulation/:semester', async (req, res) => {
+  const { department, regulation, semester } = req.params;
   const semNum = parseInt(semester);
 
-  if (isNaN(semNum) || semNum < 1 || semNum > 8) {
-    return res.status(400).json({ message: 'Invalid semester' });
+  if (!department || isNaN(semNum) || semNum < 1 || semNum > 8) {
+    return res.status(400).json({ message: 'Invalid request parameters' });
   }
 
   try {
-    // case-insensitive match for regulation
+    // case-insensitive match for department and regulation
     const setting = await GradeSetting.findOne({
+      department: { $regex: new RegExp(`^${department}$`, 'i') },
       regulation: { $regex: new RegExp(`^${regulation}$`, 'i') },
       semester: semNum
     });
@@ -38,6 +38,7 @@ router.get('/:regulation/:semester', async (req, res) => {
 
     // Fallback to defaults
     return res.json({
+      department,
       regulation,
       semester: semNum,
       grades: DEFAULT_GRADES
@@ -49,11 +50,19 @@ router.get('/:regulation/:semester', async (req, res) => {
 
 // 2. Save/Update grade settings (Protected — staff, HOD, and Super Admin only)
 router.post('/', protect, async (req, res) => {
-  const { regulation, semester, grades } = req.body;
+  const { department, regulation, semester, grades } = req.body;
   const semNum = parseInt(semester);
 
-  if (!regulation || isNaN(semNum) || semNum < 1 || semNum > 8 || !Array.isArray(grades)) {
+  if (!department || !regulation || isNaN(semNum) || semNum < 1 || semNum > 8 || !Array.isArray(grades)) {
     return res.status(400).json({ message: 'Invalid payload parameters' });
+  }
+
+  // Authorization check: Super Admin can edit any department.
+  // Dept admin and staff can only edit settings for their own department.
+  if (req.user.role !== 'super_admin') {
+    if (!req.user.department || req.user.department.toUpperCase() !== department.toUpperCase()) {
+      return res.status(403).json({ message: 'Access Denied: You can only edit grade settings for your own department.' });
+    }
   }
 
   // Validate and sanitize grades array
@@ -74,14 +83,18 @@ router.post('/', protect, async (req, res) => {
 
   try {
     const setting = await GradeSetting.findOneAndUpdate(
-      { regulation, semester: semNum },
-      { regulation, semester: semNum, grades: sanitizedGrades },
+      { 
+        department: { $regex: new RegExp(`^${department}$`, 'i') }, 
+        regulation: { $regex: new RegExp(`^${regulation}$`, 'i') }, 
+        semester: semNum 
+      },
+      { department, regulation, semester: semNum, grades: sanitizedGrades },
       { upsert: true, new: true }
     );
 
     await HistoryLog.create({
       action: 'Update Grade System',
-      details: `Configured grade system for regulation ${regulation}, semester ${semNum} with ${sanitizedGrades.length} grades.`,
+      details: `Configured grade system for department ${department}, regulation ${regulation}, semester ${semNum} with ${sanitizedGrades.length} grades.`,
       performedBy: req.user._id,
       performedByName: req.user.name,
       department: req.user.department || ''

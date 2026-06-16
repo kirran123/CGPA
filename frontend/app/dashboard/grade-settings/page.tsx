@@ -14,7 +14,7 @@ import {
   Building,
   GraduationCap
 } from 'lucide-react';
-import { api } from '@/lib/api';
+import { api, Department } from '@/lib/api';
 
 const DEFAULT_GRADES = [
   { grade: 'O', points: 10 },
@@ -23,16 +23,17 @@ const DEFAULT_GRADES = [
   { grade: 'B+', points: 7 },
   { grade: 'B', points: 6 },
   { grade: 'C', points: 5 },
-  { grade: 'U', points: 0 },
-  { grade: 'RA', points: 0 }
+  { grade: 'U', points: 0 }
 ];
 
 export default function DashboardGradeSettings() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [regulations, setRegulations] = useState<string[]>([]);
   
   // Selection filters
+  const [selectedDept, setSelectedDept] = useState('');
   const [regulation, setRegulation] = useState('');
   const [semester, setSemester] = useState(1);
   
@@ -40,12 +41,12 @@ export default function DashboardGradeSettings() {
   const [grades, setGrades] = useState<{ grade: string; points: number }[]>(DEFAULT_GRADES);
   
   // Action status
-  const [loadingRegs, setLoadingRegs] = useState(true);
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Authenticate user & load regulations
+  // Authenticate user & load departments/regulations
   useEffect(() => {
     const init = async () => {
       try {
@@ -55,6 +56,17 @@ export default function DashboardGradeSettings() {
           return;
         }
         setCurrentUser(user);
+
+        // Fetch departments
+        const depts = await api.getPublicDepartments();
+        setDepartments(depts);
+        
+        // Initialize department selection
+        if (user.role === 'super_admin') {
+          setSelectedDept(depts.length > 0 ? depts[0].code : '');
+        } else {
+          setSelectedDept(user.department || '');
+        }
 
         // Fetch regulations
         const regs = await api.getRegulations();
@@ -70,21 +82,21 @@ export default function DashboardGradeSettings() {
         setRegulations(['R2021', 'R2023', 'R2017']);
         setRegulation('R2021');
       } finally {
-        setLoadingRegs(false);
+        setLoadingInitial(false);
       }
     };
     init();
   }, [navigate]);
 
-  // Load configured grades when regulation/semester is changed
+  // Load configured grades when department/regulation/semester is changed
   useEffect(() => {
-    if (!regulation || !semester) return;
+    if (!selectedDept || !regulation || !semester) return;
     
     const loadGrades = async () => {
       setLoadingSettings(true);
       setStatusMsg(null);
       try {
-        const gs = await api.getGradeSettings(regulation, semester);
+        const gs = await api.getGradeSettings(selectedDept, regulation, semester);
         if (gs && gs.grades && gs.grades.length > 0) {
           setGrades(gs.grades);
         } else {
@@ -98,7 +110,7 @@ export default function DashboardGradeSettings() {
       }
     };
     loadGrades();
-  }, [regulation, semester]);
+  }, [selectedDept, regulation, semester]);
 
   const handleGradeChange = (index: number, val: string) => {
     const updated = [...grades];
@@ -111,7 +123,6 @@ export default function DashboardGradeSettings() {
     const updated = [...grades];
     let num = parseFloat(val);
     if (isNaN(num)) {
-      // Allow empty/incomplete typing temporary value but store 0 internally
       updated[index].points = 0;
     } else {
       updated[index].points = Math.min(10, Math.max(0, num));
@@ -139,6 +150,11 @@ export default function DashboardGradeSettings() {
     setStatusMsg(null);
 
     // Validations
+    if (!selectedDept) {
+      setStatusMsg({ type: 'error', text: 'Department filter must be selected.' });
+      return;
+    }
+
     if (grades.length === 0) {
       setStatusMsg({ type: 'error', text: 'Please define at least one grade row.' });
       return;
@@ -160,9 +176,8 @@ export default function DashboardGradeSettings() {
 
     setSaving(true);
     try {
-      await api.saveGradeSettings(regulation, semester, grades);
+      await api.saveGradeSettings(selectedDept, regulation, semester, grades);
       setStatusMsg({ type: 'success', text: 'Grade system configuration saved successfully.' });
-      // Clear success message after 4 seconds
       setTimeout(() => setStatusMsg(null), 4000);
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message || 'Failed to save grade system settings.' });
@@ -171,7 +186,7 @@ export default function DashboardGradeSettings() {
     }
   };
 
-  if (loadingRegs) {
+  if (loadingInitial) {
     return (
       <div className="h-80 flex flex-col items-center justify-center text-sky-300 gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
@@ -190,7 +205,7 @@ export default function DashboardGradeSettings() {
             Grade Settings Manager
           </h1>
           <p className="text-xs text-sky-300/50 mt-1">
-            Configure grades and point weightings per regulation and semester.
+            Configure grades and point weights per department, regulation, and semester.
           </p>
         </div>
       </div>
@@ -202,7 +217,22 @@ export default function DashboardGradeSettings() {
           <span>Select Scope:</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Department Selection */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Department</span>
+            <select
+              value={selectedDept}
+              disabled={currentUser?.role !== 'super_admin'}
+              onChange={e => setSelectedDept(e.target.value)}
+              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px]"
+            >
+              {departments.map(d => (
+                <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
+              ))}
+            </select>
+          </div>
+
           {/* Regulation */}
           <div className="flex flex-col gap-1">
             <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Regulation</span>
@@ -259,7 +289,7 @@ export default function DashboardGradeSettings() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-sky-400" />
-                Grade Mapping for {regulation} — Semester {semester}
+                Grade Mapping for {selectedDept} — {regulation} — Semester {semester}
               </h2>
               <div className="flex items-center gap-2">
                 <button

@@ -85,6 +85,17 @@ const seedDatabase = async () => {
           console.log('Successfully dropped old gparecords index registerNo_1_semester_1_department_1.');
         }
       }
+
+      // Drop older gradesettings unique index regulation_1_semester_1
+      const collectionsGrades = await db.listCollections({ name: 'gradesettings' }).toArray();
+      if (collectionsGrades.length > 0) {
+        const indexesGrades = await db.collection('gradesettings').indexes();
+        const hasOldGradesIndex = indexesGrades.some(idx => idx.name === 'regulation_1_semester_1');
+        if (hasOldGradesIndex) {
+          await db.collection('gradesettings').dropIndex('regulation_1_semester_1');
+          console.log('Successfully dropped old gradesettings index regulation_1_semester_1.');
+        }
+      }
     } catch (e) {
       console.log('Index drop check skipped or not needed:', e.message);
     }
