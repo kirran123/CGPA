@@ -21,15 +21,31 @@ const gradePointsMap = {
   'RA': 0 // Re-appear
 };
 
+// Valid grade values — anything outside this set is treated as "not attempted" and skipped
+const VALID_GRADES = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
+
+// Returns true if the raw grade string from Excel/input represents an actual grade entry
+const isValidGrade = (raw) => {
+  if (!raw) return false;
+  const g = String(raw).trim().toUpperCase();
+  if (g === '' || g === '-' || g === 'N/A' || g === 'NA' || g === 'AB' ||
+      g === 'ABSENT' || g === '0' || g === 'NULL' || g === 'UNDEFINED') return false;
+  return VALID_GRADES.has(g);
+};
+
 // Helper: Calculate GPA and overall CGPA
+// Only subjects with a VALID grade are included — absent/empty subjects are silently skipped.
 const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, department, regulation) => {
   let currentGPA = 0;
   let totalCurrentCredits = 0;
   let totalCurrentPoints = 0;
 
-  // Compile subjects details
+  // Compile subjects details — skip any subject without a valid grade
   const subjectsDetails = [];
   for (const s of subjectsInput) {
+    // Skip subjects with no grade or an invalid/absent grade value
+    if (!isValidGrade(s.grade)) continue;
+
     const query = { code: s.subjectCode.toUpperCase(), department };
     if (regulation) {
       query.regulation = { $regex: regulation, $options: 'i' };
@@ -38,15 +54,16 @@ const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, departme
     if (!subject) {
       throw new Error(`Subject with code ${s.subjectCode} not found in department ${department}${regulation ? ' (Regulation: ' + regulation + ')' : ''}`);
     }
-    const gradePoint = gradePointsMap[s.grade.toUpperCase()] !== undefined ? gradePointsMap[s.grade.toUpperCase()] : 0;
-    
+    const normalGrade = s.grade.trim().toUpperCase();
+    const gradePoint = gradePointsMap[normalGrade] !== undefined ? gradePointsMap[normalGrade] : 0;
+
     totalCurrentCredits += subject.credits;
     totalCurrentPoints += (subject.credits * gradePoint);
 
     subjectsDetails.push({
       subjectCode: subject.code,
       subjectName: subject.name,
-      grade: s.grade.toUpperCase(),
+      grade: normalGrade,
       gradePoint: gradePoint,
       credits: subject.credits
     });
@@ -220,13 +237,15 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
         }
 
         // Collect subject columns (skip meta columns)
+        // Only include subjects where the student actually has a valid grade entered
         const metaKeys = ['registerno', 'register no', 'register_no', 'studentname', 'student name', 'student_name', 'name', 'semester', 'sem', 'regulation', 'reg'];
         const studentSubjects = [];
         Object.keys(row).forEach(key => {
           if (!metaKeys.includes(key.trim().toLowerCase())) {
-            const grade = String(row[key]).trim();
-            if (grade && grade !== '') {
-              studentSubjects.push({ subjectCode: key.trim(), grade });
+            const rawGrade = String(row[key] ?? '').trim();
+            // Skip empty cells and non-grade placeholders entirely
+            if (isValidGrade(rawGrade)) {
+              studentSubjects.push({ subjectCode: key.trim(), grade: rawGrade });
             }
           }
         });

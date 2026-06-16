@@ -59,10 +59,11 @@ const buildGpaPdf = (record) => {
       doc.text(h, TABLE_COLS[i] + 3, tableTop + 7, { width: TABLE_COL_W[i], lineBreak: false })
     );
 
-    // Data rows
+    // Data rows — only show subjects where a real grade was given
     let y = tableTop + ROW_H;
     let totalCredits = 0;
-    (record.subjects || []).forEach((s, idx) => {
+    const gradedSubjects = (record.subjects || []).filter(s => s.grade && s.grade.trim() !== '');
+    gradedSubjects.forEach((s, idx) => {
       const bg = idx % 2 === 0 ? '#f8fafc' : 'white';
       doc.rect(40, y, doc.page.width - 80, ROW_H).fill(bg);
       doc.fillColor('#1e293b').font('Helvetica').fontSize(9);
@@ -216,10 +217,11 @@ const buildBatchGpaPdf = (records, meta) => {
         doc.text(h, TABLE_COLS[i] + 3, tableTop + 7, { width: TABLE_COL_W[i], lineBreak: false })
       );
 
-      // Data rows
+      // Data rows — only show subjects where a real grade was given
       let y = tableTop + ROW_H;
       let totalCredits = 0;
-      (record.subjects || []).forEach((s, idx) => {
+      const gradedSubjects = (record.subjects || []).filter(s => s.grade && s.grade.trim() !== '');
+      gradedSubjects.forEach((s, idx) => {
         const bg = idx % 2 === 0 ? '#f8fafc' : 'white';
         doc.rect(40, y, doc.page.width - 80, ROW_H).fill(bg);
         doc.fillColor('#1e293b').font('Helvetica').fontSize(9);
