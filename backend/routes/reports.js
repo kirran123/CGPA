@@ -9,9 +9,36 @@ const { buildGpaPdf, buildCgpaPdf, buildRankListPdf, buildBatchGpaPdf } = requir
 const { protect } = require('../middleware/auth');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Helper to calculate grade points from grade text
-const gradePointsMap = {
+const GradeSetting = require('../models/GradeSetting');
+
+// Default fallback grade mapping
+const DEFAULT_GRADE_MAP = {
   'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'RA': 0
+};
+
+// Helper: fetch configured grade mapping from DB or use default fallback
+const getGradePointsMap = async (regulation, semester) => {
+  const semNum = parseInt(semester);
+  if (!regulation || isNaN(semNum)) {
+    return DEFAULT_GRADE_MAP;
+  }
+  try {
+    const setting = await GradeSetting.findOne({
+      regulation: { $regex: new RegExp(`^${regulation}$`, 'i') },
+      semester: semNum
+    });
+    if (setting && setting.grades && setting.grades.length > 0) {
+      const map = {};
+      setting.grades.forEach(g => {
+        map[g.grade.toUpperCase()] = g.points;
+      });
+      if (map['RA'] === undefined) map['RA'] = 0;
+      return map;
+    }
+  } catch (error) {
+    console.error('Error fetching grade settings:', error.message);
+  }
+  return DEFAULT_GRADE_MAP;
 };
 
 // 1. Public GPA PDF Download (No Login Required)
@@ -27,8 +54,11 @@ router.post('/gpa-pdf', async (req, res) => {
   registerNo = registerNo || `ANON-${Date.now()}`;
 
   try {
+    // Fetch dynamic grade mapping
+    const gradePointsMap = await getGradePointsMap(regulation, semester);
+    const validGrades = new Set(Object.keys(gradePointsMap));
+
     // Only process subjects that have a real grade — skip blank/absent ones
-    const validGrades = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
     let totalCredits = 0;
     let totalPoints = 0;
     const compiledSubjects = [];
@@ -276,23 +306,25 @@ router.get('/batch/:batchId/pdf', protect, async (req, res) => {
 // Helper for in-memory calculations without saving
 // Skips subjects with no valid grade — they won't appear in the PDF or GPA calculation.
 const VALID_GRADE_SET = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
-const isValidGrade = (raw) => {
+const isValidGrade = (raw, validGradesSet) => {
   if (!raw) return false;
   const g = String(raw).trim().toUpperCase();
   if (!g || g === '-' || g === 'N/A' || g === 'NA' || g === 'AB' ||
       g === 'ABSENT' || g === '0' || g === 'NULL') return false;
-  return VALID_GRADE_SET.has(g);
+  return (validGradesSet || VALID_GRADE_SET).has(g);
 };
 
-const calculateGPA = async (registerNo, semester, subjectsInput, department, regulation) => {
+const calculateGPA = async (registerNo, semester, subjectsInput, department, regulation, gradePointsMap) => {
   let currentGPA = 0;
   let totalCurrentCredits = 0;
   let totalCurrentPoints = 0;
 
+  const validGradesSet = new Set(Object.keys(gradePointsMap));
+
   const subjectsDetails = [];
   for (const s of subjectsInput) {
     // Skip subjects with no valid grade — absent/empty cells are not counted
-    if (!isValidGrade(s.grade)) continue;
+    if (!isValidGrade(s.grade, validGradesSet)) continue;
 
     const query = { code: s.subjectCode.toUpperCase(), department };
     if (regulation) {
@@ -416,6 +448,10 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
           rowRegulation = regulation || null;
         }
 
+        // Fetch custom grade map for this regulation and semester
+        const gradeMap = await getGradePointsMap(rowRegulation, rowSemester);
+        const validGradesSet = new Set(Object.keys(gradeMap));
+
         const metaKeys = [
           'registerno', 'register no', 'register_no',
           'studentname', 'student name', 'student_name', 'name',
@@ -432,7 +468,7 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
           if (!metaKeys.includes(keyLower)) {
             const rawGrade = String(row[key] ?? '').trim();
             // Only include subjects where a real grade was entered — skip empty/absent cells
-            if (isValidGrade(rawGrade)) {
+            if (isValidGrade(rawGrade, validGradesSet)) {
               studentSubjects.push({ subjectCode: trimmedKey, grade: rawGrade });
             }
           }
@@ -444,7 +480,8 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
             studentName: studentName || `Student_${registerNo}`,
             semester: rowSemester,
             regulation: rowRegulation,
-            subjects: studentSubjects
+            subjects: studentSubjects,
+            gradeMap
           });
         }
       }
@@ -459,11 +496,11 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
 
     for (let index = 0; index < parsedStudents.length; index++) {
       const student = parsedStudents[index];
-      const { registerNo, studentName, semester: rowSem, regulation: rowReg, subjects: studentSubjects } = student;
+      const { registerNo, studentName, semester: rowSem, regulation: rowReg, subjects: studentSubjects, gradeMap } = student;
 
       try {
         const { gpa, subjects: subjectsDetails } = await calculateGPA(
-          registerNo, rowSem, studentSubjects, activeDept, rowReg
+          registerNo, rowSem, studentSubjects, activeDept, rowReg, gradeMap
         );
 
         records.push({

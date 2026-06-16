@@ -5,46 +5,64 @@ const xlsx = require('xlsx');
 const GpaRecord = require('../models/GpaRecord');
 const Subject = require('../models/Subject');
 const HistoryLog = require('../models/HistoryLog');
+const GradeSetting = require('../models/GradeSetting');
 const { protect, hasPermission } = require('../middleware/auth');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Grade to Grade Point mapper
-const gradePointsMap = {
-  'O': 10,
-  'A+': 9,
-  'A': 8,
-  'B+': 7,
-  'B': 6,
-  'C': 5,
-  'U': 0,
-  'RA': 0 // Re-appear
+// Default fallback grade mapping
+const DEFAULT_GRADE_MAP = {
+  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'RA': 0
 };
 
-// Valid grade values — anything outside this set is treated as "not attempted" and skipped
-const VALID_GRADES = new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA']);
+// Helper: fetch configured grade mapping from DB or use default fallback
+const getGradePointsMap = async (regulation, semester) => {
+  const semNum = parseInt(semester);
+  if (!regulation || isNaN(semNum)) {
+    return DEFAULT_GRADE_MAP;
+  }
+  try {
+    const setting = await GradeSetting.findOne({
+      regulation: { $regex: new RegExp(`^${regulation}$`, 'i') },
+      semester: semNum
+    });
+    if (setting && setting.grades && setting.grades.length > 0) {
+      const map = {};
+      setting.grades.forEach(g => {
+        map[g.grade.toUpperCase()] = g.points;
+      });
+      if (map['RA'] === undefined) map['RA'] = 0;
+      return map;
+    }
+  } catch (error) {
+    console.error('Error fetching grade settings:', error.message);
+  }
+  return DEFAULT_GRADE_MAP;
+};
 
 // Returns true if the raw grade string from Excel/input represents an actual grade entry
-const isValidGrade = (raw) => {
+const isValidGrade = (raw, validGradesSet) => {
   if (!raw) return false;
   const g = String(raw).trim().toUpperCase();
   if (g === '' || g === '-' || g === 'N/A' || g === 'NA' || g === 'AB' ||
       g === 'ABSENT' || g === '0' || g === 'NULL' || g === 'UNDEFINED') return false;
-  return VALID_GRADES.has(g);
+  return (validGradesSet || new Set(['O', 'A+', 'A', 'B+', 'B', 'C', 'U', 'RA'])).has(g);
 };
 
 // Helper: Calculate GPA and overall CGPA
 // Only subjects with a VALID grade are included — absent/empty subjects are silently skipped.
-const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, department, regulation) => {
+const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, department, regulation, gradePointsMap) => {
   let currentGPA = 0;
   let totalCurrentCredits = 0;
   let totalCurrentPoints = 0;
+
+  const validGradesSet = new Set(Object.keys(gradePointsMap));
 
   // Compile subjects details — skip any subject without a valid grade
   const subjectsDetails = [];
   for (const s of subjectsInput) {
     // Skip subjects with no grade or an invalid/absent grade value
-    if (!isValidGrade(s.grade)) continue;
+    if (!isValidGrade(s.grade, validGradesSet)) continue;
 
     const query = { code: s.subjectCode.toUpperCase(), department };
     if (regulation) {
@@ -98,7 +116,8 @@ router.post('/calculate', protect, hasPermission('DEPT_FULL_ACCESS'), async (req
   }
 
   try {
-    const { gpa, cgpa, subjects: subjectsDetails } = await calculateGPAAndCGPA(registerNo, semester, subjects, activeDept, regulation);
+    const gradeMap = await getGradePointsMap(regulation, semester);
+    const { gpa, cgpa, subjects: subjectsDetails } = await calculateGPAAndCGPA(registerNo, semester, subjects, activeDept, regulation, gradeMap);
 
     // Update or create GPA record
     const record = await GpaRecord.findOneAndUpdate(
@@ -237,6 +256,10 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
           rowRegulation = regulation || null;
         }
 
+        // Fetch custom grade map for this regulation and semester
+        const gradeMap = await getGradePointsMap(rowRegulation, rowSemester);
+        const validGradesSet = new Set(Object.keys(gradeMap));
+
         // Collect subject columns (skip meta columns)
         // Only include subjects where the student actually has a valid grade entered
         const metaKeys = [
@@ -255,7 +278,7 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
           if (!metaKeys.includes(keyLower)) {
             const rawGrade = String(row[key] ?? '').trim();
             // Skip empty cells and non-grade placeholders entirely
-            if (isValidGrade(rawGrade)) {
+            if (isValidGrade(rawGrade, validGradesSet)) {
               studentSubjects.push({ subjectCode: trimmedKey, grade: rawGrade });
             }
           }
@@ -267,7 +290,8 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
             studentName: studentName || `Student_${registerNo}`,
             semester: rowSemester,
             regulation: rowRegulation,
-            subjects: studentSubjects
+            subjects: studentSubjects,
+            gradeMap
           });
         }
       }
@@ -282,11 +306,11 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
 
     for (let index = 0; index < parsedStudents.length; index++) {
       const student = parsedStudents[index];
-      const { registerNo, studentName, semester: rowSem, regulation: rowReg, subjects: studentSubjects } = student;
+      const { registerNo, studentName, semester: rowSem, regulation: rowReg, subjects: studentSubjects, gradeMap } = student;
 
       try {
         const { gpa, cgpa, subjects: subjectsDetails } = await calculateGPAAndCGPA(
-          registerNo, rowSem, studentSubjects, activeDept, rowReg
+          registerNo, rowSem, studentSubjects, activeDept, rowReg, gradeMap
         );
 
         const record = await GpaRecord.findOneAndUpdate(

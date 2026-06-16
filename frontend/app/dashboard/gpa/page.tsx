@@ -23,14 +23,24 @@ interface SubjectRow {
   grade: string;
 }
 
-const gradePoints: { [key: string]: number } = {
-  'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0
-};
+const DEFAULT_GRADES = [
+  { grade: 'O', points: 10 },
+  { grade: 'A+', points: 9 },
+  { grade: 'A', points: 8 },
+  { grade: 'B+', points: 7 },
+  { grade: 'B', points: 6 },
+  { grade: 'C', points: 5 },
+  { grade: 'U', points: 0 },
+  { grade: 'RA', points: 0 }
+];
 
-const gradeColors: { [key: string]: string } = {
-  'O': 'text-emerald-400', 'A+': 'text-green-400', 'A': 'text-teal-400',
-  'B+': 'text-blue-400', 'B': 'text-sky-400', 'C': 'text-amber-400',
-  'U': 'text-red-400'
+const getGradeColor = (grade: string) => {
+  const c: { [key: string]: string } = {
+    'O': 'text-emerald-400', 'A+': 'text-green-400', 'A': 'text-teal-400',
+    'B+': 'text-blue-400', 'B': 'text-sky-400', 'C': 'text-amber-400',
+    'U': 'text-red-400', 'RA': 'text-rose-400'
+  };
+  return c[grade.toUpperCase()] || 'text-indigo-400';
 };
 
 export default function InternalGpaCalculator() {
@@ -42,6 +52,7 @@ export default function InternalGpaCalculator() {
   const [regulation, setRegulation] = useState('');
   const [regulations, setRegulations] = useState<string[]>([]);
   const [rows, setRows] = useState<SubjectRow[]>([]);
+  const [gradeSettingsList, setGradeSettingsList] = useState<{ grade: string; points: number }[]>(DEFAULT_GRADES);
 
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
@@ -154,12 +165,38 @@ export default function InternalGpaCalculator() {
     fetchSubjects();
   }, [selectedDept, selectedSem, regulation]);
 
+  useEffect(() => {
+    if (!regulation || !selectedSem) return;
+    const fetchGrades = async () => {
+      try {
+        const gs = await api.getGradeSettings(regulation, selectedSem);
+        if (gs && gs.grades && gs.grades.length > 0) {
+          setGradeSettingsList(gs.grades);
+        } else {
+          setGradeSettingsList(DEFAULT_GRADES);
+        }
+      } catch (err) {
+        console.error('Error fetching grade settings:', err);
+        setGradeSettingsList(DEFAULT_GRADES);
+      }
+    };
+    fetchGrades();
+  }, [regulation, selectedSem]);
+
+  const dynamicGradePoints = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    gradeSettingsList.forEach(g => {
+      map[g.grade.toUpperCase()] = g.points;
+    });
+    return map;
+  }, [gradeSettingsList]);
+
   // Live GPA calculation — only count subjects where a grade has been entered
   let totalCredits = 0, totalPoints = 0;
   rows.forEach(r => {
     if (!r.grade || r.grade.trim() === '') return; // skip unentered subjects
     const cred = Number(r.credits) || 0;
-    const gp = gradePoints[r.grade] !== undefined ? gradePoints[r.grade] : -1;
+    const gp = dynamicGradePoints[r.grade.toUpperCase()] !== undefined ? dynamicGradePoints[r.grade.toUpperCase()] : -1;
     if (gp >= 0 && cred > 0) { totalCredits += cred; totalPoints += cred * gp; }
   });
   const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
@@ -445,17 +482,15 @@ export default function InternalGpaCalculator() {
                         value={row.grade}
                         onChange={e => updateGrade(row.id, e.target.value)}
                         className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-2 text-xs focus:outline-none text-center font-bold transition-all ${
-                          row.grade ? gradeColors[row.grade] || 'text-white' : 'text-sky-300/40'
+                          row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
                         }`}
                       >
                         <option value="">-- Grade --</option>
-                        <option value="O">O (10)</option>
-                        <option value="A+">A+ (9)</option>
-                        <option value="A">A (8)</option>
-                        <option value="B+">B+ (7)</option>
-                        <option value="B">B (6)</option>
-                        <option value="C">C (5)</option>
-                        <option value="U">U (0)</option>
+                        {gradeSettingsList.map(g => (
+                          <option key={g.grade} value={g.grade} className={getGradeColor(g.grade)}>
+                            {g.grade} ({g.points})
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

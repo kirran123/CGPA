@@ -49,6 +49,7 @@ app.use('/api/cgpa', require('./routes/cgpa'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/regulations', require('./routes/regulations'));
+app.use('/api/grade-settings', require('./routes/gradeSettings'));
 
 // Enforce seed data on startup
 const seedDatabase = async () => {

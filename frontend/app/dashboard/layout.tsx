@@ -16,6 +16,7 @@ import {
   Shield,
   TrendingUp,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -34,6 +35,7 @@ const allNavItems: NavItem[] = [
   { label: 'Departments',     path: '/dashboard/departments',   icon: <Building       className="h-4 w-4" />, roles: ['super_admin'],                      group: 'admin' },
   { label: 'Staff Management',path: '/dashboard/staff',         icon: <Users          className="h-4 w-4" />, roles: ['super_admin','dept_admin'],          group: 'admin' },
   { label: 'Syllabus Catalog',path: '/dashboard/subjects',      icon: <BookOpen       className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'admin' },
+  { label: 'Grade Settings',  path: '/dashboard/grade-settings',icon: <Settings       className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'admin' },
   { label: 'GPA Calculation', path: '/dashboard/gpa',           icon: <GraduationCap  className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'calc'  },
   { label: 'CGPA Calculation',path: '/dashboard/cgpa',          icon: <TrendingUp     className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'calc'  },
   { label: 'Bulk GPA Upload', path: '/dashboard/bulk/gpa',      icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'], group: 'tools' },

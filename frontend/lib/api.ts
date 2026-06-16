@@ -514,5 +514,26 @@ export const api = {
       throw new Error(err.message || 'Failed bulk PDF generation');
     }
     return res.blob();
+  },
+
+  getGradeSettings: async (regulation: string, semester: number): Promise<any> => {
+    const res = await fetch(`${API_BASE_URL}/grade-settings/${regulation}/${semester}`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Failed to fetch grade settings');
+    return res.json();
+  },
+
+  saveGradeSettings: async (regulation: string, semester: number, grades: { grade: string; points: number }[]): Promise<any> => {
+    const res = await fetch(`${API_BASE_URL}/grade-settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ regulation, semester, grades })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Failed to save grade settings');
+    }
+    return res.json();
   }
 };
