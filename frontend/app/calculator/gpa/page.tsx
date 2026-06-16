@@ -97,15 +97,17 @@ export default function GpaCalculator() {
     fetchSubjects();
   }, [selectedDept, selectedSem, regulation]);
 
-  // Compute GPA
+  // Compute GPA — only count subjects where a grade has been entered
   let totalCredits = 0, totalPoints = 0;
   rows.forEach(r => {
+    if (!r.grade || r.grade.trim() === '') return; // skip unentered subjects
     const cred = Number(r.credits) || 0;
     const gp = gradePoints[r.grade] !== undefined ? gradePoints[r.grade] : -1;
     if (gp >= 0 && cred > 0) { totalCredits += cred; totalPoints += cred * gp; }
   });
   const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
-  const allGradesSet = rows.length > 0 && rows.every(r => r.grade !== '');
+  // Enable download/save as soon as at least one grade is entered
+  const anyGradeSet = rows.some(r => r.grade && r.grade.trim() !== '');
 
 
   const updateGrade = (id: string, grade: string) => {
@@ -120,15 +122,21 @@ export default function GpaCalculator() {
     setDownloadingPdf(true);
     try {
       const activeDeptObj = departments.find(d => d.code === selectedDept);
+      // Only send subjects where a grade was actually entered — skip unentered ones
+      const gradedRows = rows.filter(r => r.grade && r.grade.trim() !== '');
+      if (gradedRows.length === 0) {
+        alert('Please enter at least one grade before downloading the PDF.');
+        return;
+      }
       const payload = {
         department: activeDeptObj ? activeDeptObj.name : selectedDept,
         semester: Number(selectedSem),
         regulation,
-        subjects: rows.map(r => ({
+        subjects: gradedRows.map(r => ({
           subjectCode: r.subjectCode,
           subjectName: r.subjectName,
           credits: Number(r.credits) || 0,
-          grade: r.grade || 'U'
+          grade: r.grade
         }))
       };
       const blob = await api.downloadPublicGpaPdf(payload);
@@ -249,7 +257,7 @@ export default function GpaCalculator() {
                 <span className="text-xl text-sky-300/30 ml-1.5">/ 10</span>
               </div>
               <span className={`text-xs font-semibold ${gpaLabel.color}`}>{gpaLabel.text}</span>
-              {allGradesSet && rows.length > 0 && (
+              {anyGradeSet && rows.length > 0 && (
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="bg-sky-500/[0.06] rounded-xl p-2 text-center">
                     <div className="text-[9px] text-sky-300/40 mb-0.5">Credits</div>
@@ -267,7 +275,7 @@ export default function GpaCalculator() {
             <div className="space-y-2">
               <button
                 onClick={downloadReport}
-                disabled={downloadingPdf || rows.length === 0}
+                disabled={downloadingPdf || rows.length === 0 || !anyGradeSet}
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none text-sm cursor-pointer"
               >
                 {downloadingPdf ? (
