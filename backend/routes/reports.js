@@ -300,7 +300,8 @@ const calculateGPA = async (registerNo, semester, subjectsInput, department, reg
     }
     const subject = await Subject.findOne(query);
     if (!subject) {
-      throw new Error(`Subject with code ${s.subjectCode} not found in department ${department}${regulation ? ' (Regulation: ' + regulation + ')' : ''}`);
+      console.warn(`Subject with code ${s.subjectCode} not found in department ${department}, skipping.`);
+      continue;
     }
     const normalGrade = s.grade.trim().toUpperCase();
     const gradePoint = gradePointsMap[normalGrade] !== undefined ? gradePointsMap[normalGrade] : 0;
@@ -415,14 +416,24 @@ router.post('/bulk-gpa-pdf', protect, upload.single('file'), async (req, res) =>
           rowRegulation = regulation || null;
         }
 
-        const metaKeys = ['registerno', 'register no', 'register_no', 'studentname', 'student name', 'student_name', 'name', 'semester', 'sem', 'regulation', 'reg'];
+        const metaKeys = [
+          'registerno', 'register no', 'register_no',
+          'studentname', 'student name', 'student_name', 'name',
+          'semester', 'sem',
+          'regulation', 'reg',
+          'gpa', 'cgpa', 'total', 'result', 'remarks', 'rank', 's.no', 'sno', 'sl.no', 'slno', 'status'
+        ];
         const studentSubjects = [];
         Object.keys(row).forEach(key => {
-          if (!metaKeys.includes(key.trim().toLowerCase())) {
+          const trimmedKey = key.trim();
+          const keyLower = trimmedKey.toLowerCase();
+          if (keyLower === '' || keyLower.startsWith('__empty')) return;
+
+          if (!metaKeys.includes(keyLower)) {
             const rawGrade = String(row[key] ?? '').trim();
             // Only include subjects where a real grade was entered — skip empty/absent cells
             if (isValidGrade(rawGrade)) {
-              studentSubjects.push({ subjectCode: key.trim(), grade: rawGrade });
+              studentSubjects.push({ subjectCode: trimmedKey, grade: rawGrade });
             }
           }
         });

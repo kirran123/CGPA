@@ -52,7 +52,8 @@ const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, departme
     }
     const subject = await Subject.findOne(query);
     if (!subject) {
-      throw new Error(`Subject with code ${s.subjectCode} not found in department ${department}${regulation ? ' (Regulation: ' + regulation + ')' : ''}`);
+      console.warn(`Subject with code ${s.subjectCode} not found in department ${department}, skipping.`);
+      continue;
     }
     const normalGrade = s.grade.trim().toUpperCase();
     const gradePoint = gradePointsMap[normalGrade] !== undefined ? gradePointsMap[normalGrade] : 0;
@@ -238,14 +239,24 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
 
         // Collect subject columns (skip meta columns)
         // Only include subjects where the student actually has a valid grade entered
-        const metaKeys = ['registerno', 'register no', 'register_no', 'studentname', 'student name', 'student_name', 'name', 'semester', 'sem', 'regulation', 'reg'];
+        const metaKeys = [
+          'registerno', 'register no', 'register_no',
+          'studentname', 'student name', 'student_name', 'name',
+          'semester', 'sem',
+          'regulation', 'reg',
+          'gpa', 'cgpa', 'total', 'result', 'remarks', 'rank', 's.no', 'sno', 'sl.no', 'slno', 'status'
+        ];
         const studentSubjects = [];
         Object.keys(row).forEach(key => {
-          if (!metaKeys.includes(key.trim().toLowerCase())) {
+          const trimmedKey = key.trim();
+          const keyLower = trimmedKey.toLowerCase();
+          if (keyLower === '' || keyLower.startsWith('__empty')) return;
+
+          if (!metaKeys.includes(keyLower)) {
             const rawGrade = String(row[key] ?? '').trim();
             // Skip empty cells and non-grade placeholders entirely
             if (isValidGrade(rawGrade)) {
-              studentSubjects.push({ subjectCode: key.trim(), grade: rawGrade });
+              studentSubjects.push({ subjectCode: trimmedKey, grade: rawGrade });
             }
           }
         });
