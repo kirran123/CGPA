@@ -155,17 +155,6 @@ export default function GpaCalculator() {
     }
   };
 
-  const getGpaLabel = (g: number) => {
-    if (g >= 9) return { text: 'Outstanding 🏆', color: 'text-emerald-400' };
-    if (g >= 8) return { text: 'Excellent ⭐', color: 'text-green-400' };
-    if (g >= 7) return { text: 'Very Good 👍', color: 'text-teal-400' };
-    if (g >= 6) return { text: 'Good', color: 'text-blue-400' };
-    if (g >= 5) return { text: 'Average', color: 'text-amber-400' };
-    if (g > 0)  return { text: 'Below Average', color: 'text-orange-400' };
-    return { text: 'No Grades Set', color: 'text-sky-300/50' };
-  };
-
-  const gpaLabel = getGpaLabel(gpa);
 
   return (
     <div className="min-h-screen bg-[#040f24] text-white">
@@ -256,16 +245,11 @@ export default function GpaCalculator() {
                 {gpa.toFixed(2)}
                 <span className="text-xl text-sky-300/30 ml-1.5">/ 10</span>
               </div>
-              <span className={`text-xs font-semibold ${gpaLabel.color}`}>{gpaLabel.text}</span>
               {anyGradeSet && rows.length > 0 && (
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-3">
                   <div className="bg-sky-500/[0.06] rounded-xl p-2 text-center">
-                    <div className="text-[9px] text-sky-300/40 mb-0.5">Credits</div>
+                    <div className="text-[9px] text-sky-300/40 mb-0.5">Total Credits</div>
                     <div className="text-sm font-bold text-white">{totalCredits}</div>
-                  </div>
-                  <div className="bg-sky-500/[0.06] rounded-xl p-2 text-center">
-                    <div className="text-[9px] text-sky-300/40 mb-0.5">Points</div>
-                    <div className="text-sm font-bold text-white">{totalPoints}</div>
                   </div>
                 </div>
               )}
