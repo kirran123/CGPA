@@ -409,7 +409,7 @@ export default function SubjectManagement() {
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Credits *</label>
-                    <input type="number" required min="1" max="10" value={credits} onChange={e => setCredits(Number(e.target.value))} disabled={!canEditSubjects}
+                    <input type="number" required min="0" max="10" value={credits} onChange={e => setCredits(Number(e.target.value))} disabled={!canEditSubjects}
                       className="w-full bg-white/[0.03] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none transition-all disabled:opacity-60" />
                   </div>
                   <div>

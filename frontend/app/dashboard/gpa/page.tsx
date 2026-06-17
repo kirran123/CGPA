@@ -196,7 +196,7 @@ export default function InternalGpaCalculator() {
     if (!r.grade || r.grade.trim() === '') return; // skip unentered subjects
     const cred = Number(r.credits) || 0;
     const gp = dynamicGradePoints[r.grade.toUpperCase()] !== undefined ? dynamicGradePoints[r.grade.toUpperCase()] : -1;
-    if (gp >= 0 && cred > 0) { totalCredits += cred; totalPoints += cred * gp; }
+    if (gp >= 0 && cred >= 0) { totalCredits += cred; totalPoints += cred * gp; }
   });
   const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
   // Allow save/download as long as at least one grade is entered

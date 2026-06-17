@@ -89,7 +89,7 @@ function parsePdf(text) {
           if (!parts[ci]) return;
           if (col === 'code') code = parts[ci].toUpperCase();
           else if (col === 'name') name = parts[ci];
-          else if (col === 'credits') credits = parseInt(parts[ci], 10) || 3;
+          else if (col === 'credits') credits = (parts[ci] !== undefined && parts[ci] !== '') ? parseInt(parts[ci], 10) : 3;
           else if (col === 'semester') semester = parseInt(parts[ci], 10) || 0;
           else if (col === 'regulation') regulation = parts[ci];
         });
@@ -108,7 +108,7 @@ function parsePdf(text) {
         subjects.push({
           code: m[1].trim().toUpperCase(),
           name: m[2].trim(),
-          credits: parseInt(m[3], 10) || 3,
+          credits: (m[3] !== undefined && m[3] !== '') ? parseInt(m[3], 10) : 3,
           semester: parseInt(m[4], 10) || 0,
           regulation: (m[5] || '').trim()
         });
@@ -175,7 +175,7 @@ router.post('/bulk-upload', protect, hasPermission('EDIT_SUBJECT_CATALOGUE'), up
           }
           // Update existing
           existing.name = row.name;
-          existing.credits = row.credits || existing.credits;
+          existing.credits = (row.credits !== undefined && row.credits !== '') ? Number(row.credits) : existing.credits;
           existing.semester = finalSem;
           existing.regulation = finalReg;
           await existing.save();
@@ -184,7 +184,7 @@ router.post('/bulk-upload', protect, hasPermission('EDIT_SUBJECT_CATALOGUE'), up
           await Subject.create({
             code: finalCode,
             name: row.name,
-            credits: row.credits || 3,
+            credits: (row.credits !== undefined && row.credits !== '') ? Number(row.credits) : 3,
             semester: finalSem,
             department: activeDept,
             regulation: finalReg
