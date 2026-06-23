@@ -280,6 +280,12 @@
   color: #0369a1 !important;
 }
 
+/* Force light theme colors for icons inside feature cards (prevents bg-gradient child color override) */
+:root[data-theme="light"] .glass-card svg.text-sky-400 { color: #0284c7 !important; }
+:root[data-theme="light"] .glass-card svg.text-blue-400 { color: #0ea5e9 !important; }
+:root[data-theme="light"] .glass-card svg.text-amber-400 { color: #d97706 !important; }
+:root[data-theme="light"] .glass-card svg.text-emerald-400 { color: #059669 !important; }
+
 /* Opacity variants made solid and legible */
 :root[data-theme="light"] [class*="text-sky-100/"],
 :root[data-theme="light"] [class*="text-sky-200/"],
