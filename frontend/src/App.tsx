@@ -27,6 +27,11 @@ import DashboardBulkGpaBatches from '@/app/dashboard/bulk/gpa/batches/page';
 import DashboardBulkCgpa from '@/app/dashboard/bulk/cgpa/page';
 
 export default function App() {
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('rit_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
   return (
     <BrowserRouter>
       <PublicLayoutWrapper>

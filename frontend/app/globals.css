@@ -1192,3 +1192,85 @@ body {
   background-color: rgba(14, 165, 233, 0.15) !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PAGE LIGHT & DARK THEME SUPPORT
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Dark Theme overrides/fixes */
+.login-tab {
+  border-bottom: 2px solid transparent;
+}
+.login-tab-inactive {
+  color: rgba(186, 230, 253, 0.45) !important;
+}
+.login-tab-inactive:hover {
+  color: rgba(240, 249, 255, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+.login-tab-active {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Light Theme overrides */
+:root[data-theme="light"] .login-tab-inactive {
+  color: #64748b !important;
+  background-color: transparent !important;
+}
+:root[data-theme="light"] .login-tab-inactive:hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+:root[data-theme="light"] .login-tab-active {
+  background-color: #ffffff !important;
+}
+:root[data-theme="light"] .login-tab-active.super_admin {
+  color: #0284c7 !important;
+  background-color: rgba(14, 165, 233, 0.06) !important;
+}
+:root[data-theme="light"] .login-tab-active.dept_admin {
+  color: #b45309 !important;
+  background-color: rgba(245, 158, 11, 0.06) !important;
+}
+:root[data-theme="light"] .login-tab-active.staff {
+  color: #047857 !important;
+  background-color: rgba(16, 185, 129, 0.06) !important;
+}
+
+/* Return Button */
+.login-return-btn {
+  color: #7dd3fc !important;
+  background-color: rgba(56, 189, 248, 0.08) !important;
+  border: 1px solid rgba(56, 189, 248, 0.16) !important;
+}
+.login-return-btn:hover {
+  color: #ffffff !important;
+  background-color: rgba(56, 189, 248, 0.22) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+:root[data-theme="light"] .login-return-btn {
+  color: #0284c7 !important;
+  background-color: rgba(14, 165, 233, 0.06) !important;
+  border-color: rgba(14, 165, 233, 0.20) !important;
+}
+:root[data-theme="light"] .login-return-btn:hover {
+  color: #ffffff !important;
+  background-color: #0284c7 !important;
+  border-color: #0284c7 !important;
+}
+
+/* Session Logs message */
+.login-sessions-logged {
+  color: rgba(125, 211, 252, 0.25) !important;
+}
+:root[data-theme="light"] .login-sessions-logged {
+  color: #64748b !important;
+  opacity: 0.65 !important;
+}
+
+/* Error message in Light Mode */
+:root[data-theme="light"] .text-red-400 {
+  color: #dc2626 !important;
+}
+
+

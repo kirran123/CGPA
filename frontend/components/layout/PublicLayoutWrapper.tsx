@@ -11,6 +11,21 @@ export default function PublicLayoutWrapper({ children }: { children: React.Reac
   const isDashboard = pathname.startsWith('/dashboard');
   const isLogin = pathname.startsWith('/login');
 
+  React.useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname, location.hash]);
+
   if (isDashboard || isLogin) {
     return <>{children}</>;
   }

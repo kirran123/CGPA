@@ -181,7 +181,7 @@ export default function Home() {
       </section>
 
       {/* ── Departments Section ── */}
-      <section id="departments" className="py-20 relative">
+      <section id="departments" className="py-20 relative scroll-mt-20">
         <div className="orb orb-blue w-[420px] h-[420px] top-1/2 right-0 -translate-y-1/2 opacity-25" />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

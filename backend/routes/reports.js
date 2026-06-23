@@ -136,7 +136,12 @@ router.post('/cgpa-pdf', async (req, res) => {
       };
     });
 
-    const cgpa = totalCredits > 0 ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2)) : 0;
+    const validSemesters = compiledSemesters.filter(s => s.gpa > 0);
+    const cgpa = totalCredits > 0 
+      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2)) 
+      : (validSemesters.length > 0 
+          ? parseFloat((validSemesters.reduce((sum, s) => sum + s.gpa, 0) / validSemesters.length).toFixed(2)) 
+          : 0);
 
     const pdfBuffer = await buildCgpaPdf({
       studentName,

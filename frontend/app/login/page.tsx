@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { LogIn, Mail, Lock, Loader2, GraduationCap, ShieldAlert, Shield, Building, Users, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import FooterCredit from '@/components/layout/FooterCredit';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 type RoleTab = 'super_admin' | 'dept_admin' | 'staff';
 
@@ -113,6 +114,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#040f24] flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Floating Theme Toggle */}
+      <div className="absolute top-6 right-6 z-50 glass-card p-1 rounded-xl border border-sky-500/15 shadow-xl hover:scale-105 transition-all duration-300">
+        <ThemeToggle />
+      </div>
+
       {/* Background orbs */}
       <div className="orb orb-sky  w-[500px] h-[500px] top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-45" />
       <div className="orb orb-blue w-[300px] h-[300px] bottom-0 right-1/4 opacity-25" />
@@ -139,10 +145,10 @@ export default function LoginPage() {
               <button
                 key={role.id}
                 onClick={() => handleTabChange(role.id)}
-                className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all duration-200 relative cursor-pointer ${
+                className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all duration-200 relative cursor-pointer login-tab ${
                   activeRole === role.id
-                    ? `${role.color} bg-white/[0.03]`
-                    : 'text-sky-200/38 hover:text-sky-200/65 hover:bg-white/[0.015]'
+                    ? `${role.color} bg-white/[0.03] login-tab-active ${role.id}`
+                    : 'text-sky-200/38 hover:text-sky-200/65 hover:bg-white/[0.015] login-tab-inactive'
                 }`}
               >
                 {role.icon}
@@ -239,14 +245,14 @@ export default function LoginPage() {
         <div className="text-center mt-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-xs font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/18 border border-sky-500/18 hover:border-sky-400/38 px-5 py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10 hover:-translate-y-0.5 cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/18 border border-sky-500/18 hover:border-sky-400/38 px-5 py-2.5 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/10 hover:-translate-y-0.5 cursor-pointer login-return-btn"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Return to Public Website</span>
           </Link>
         </div>
 
-        <p className="text-center text-[10px] text-sky-300/20 mt-3">
+        <p className="text-center text-[10px] text-sky-300/20 mt-3 login-sessions-logged">
           Authorized access only. All sessions are logged.
         </p>
         <FooterCredit className="mt-3" />

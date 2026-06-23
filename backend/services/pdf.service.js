@@ -112,17 +112,49 @@ const buildCgpaPdf = (record) => {
        .text(`Name: ${record.studentName}   |   Register No: ${record.registerNo}   |   Department: ${record.department}`, 50, 162);
 
     const tableTop = 205;
+    let hasCredits = false;
+    let totalCredits = 0;
+    (record.semesters || []).forEach(s => {
+      if (s.credits > 0) {
+        hasCredits = true;
+        totalCredits += s.credits;
+      }
+    });
+
     doc.rect(40, tableTop, doc.page.width - 80, 20).fill('#1e1b4b');
     doc.fillColor('white').font('Helvetica-Bold').fontSize(10);
-    ['Semester', 'GPA'].forEach((h, i) => doc.text(h, 50 + i * 180, tableTop + 5));
+    
+    if (hasCredits) {
+      doc.text('Semester', 80, tableTop + 5);
+      doc.text('Credits', 240, tableTop + 5);
+      doc.text('GPA', 400, tableTop + 5);
+    } else {
+      doc.text('Semester', 80, tableTop + 5);
+      doc.text('GPA', 400, tableTop + 5);
+    }
 
     let y = tableTop + 20;
     (record.semesters || []).forEach((s, idx) => {
       doc.rect(40, y, doc.page.width - 80, 18).fill(idx % 2 === 0 ? '#f8fafc' : 'white');
       doc.fillColor('#1e293b').font('Helvetica').fontSize(10);
-      [s.semester, s.gpa.toFixed(2)].forEach((v, i) => doc.text(String(v), 50 + i * 180, y + 4));
+      
+      if (hasCredits) {
+        doc.text(String(s.semester), 80, y + 4);
+        doc.text(String(s.credits || 0), 240, y + 4);
+        doc.text(s.gpa.toFixed(2), 400, y + 4);
+      } else {
+        doc.text(String(s.semester), 80, y + 4);
+        doc.text(s.gpa.toFixed(2), 400, y + 4);
+      }
       y += 18;
     });
+
+    if (hasCredits && totalCredits > 0) {
+      doc.rect(40, y, doc.page.width - 80, 20).fill('#e0e7ff');
+      doc.fillColor('#1e1b4b').font('Helvetica-Bold').fontSize(10)
+         .text(`Total Credits: ${totalCredits}`, 80, y + 5);
+      y += 20;
+    }
 
     y += 15;
     const cx = doc.page.width / 2;
