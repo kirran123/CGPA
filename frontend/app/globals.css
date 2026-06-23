@@ -1145,3 +1145,50 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─ Navbar Dropdown & Mobile Menu Light Mode Overrides ─ */
+:root[data-theme="light"] .navbar-dropdown {
+  background-color: #ffffff !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+:root[data-theme="light"] .navbar-dropdown a {
+  color: #1e4976 !important;
+}
+:root[data-theme="light"] .navbar-dropdown a:hover {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+  color: #0284c7 !important;
+}
+:root[data-theme="light"] .navbar-dropdown a p {
+  color: #0c2a48 !important;
+}
+:root[data-theme="light"] .navbar-dropdown a p.text-sky-300\/60 {
+  color: #3d7aad !important;
+}
+:root[data-theme="light"] .navbar-dropdown a span.bg-sky-500\/12 {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  color: #0284c7 !important;
+}
+:root[data-theme="light"] .navbar-dropdown a span.bg-emerald-500\/12 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+}
+
+:root[data-theme="light"] .mobile-navbar-menu {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(14, 165, 233, 0.18) !important;
+}
+:root[data-theme="light"] .mobile-navbar-menu a {
+  color: #1e4976 !important;
+}
+:root[data-theme="light"] .mobile-navbar-menu a:hover {
+  background-color: rgba(14, 165, 233, 0.10) !important;
+  color: #0284c7 !important;
+}
+:root[data-theme="light"] .mobile-navbar-menu p.text-sky-400\/50 {
+  color: #0284c7 !important;
+  opacity: 1 !important;
+}
+:root[data-theme="light"] .mobile-navbar-menu div.bg-sky-500\/10 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+}
+

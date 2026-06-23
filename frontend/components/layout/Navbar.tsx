@@ -65,7 +65,7 @@ export default function Navbar() {
                 <span>Student</span>
                 <ChevronDown className="h-3.5 w-3.5 text-sky-400/70 group-hover/menu:rotate-180 transition-transform duration-300" />
               </button>
-              <div className="absolute top-full left-0 mt-2 w-58 rounded-2xl bg-[#071830]/98 border border-sky-500/18 p-2 shadow-2xl shadow-sky-900/30 opacity-0 translate-y-2 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:translate-y-0 group-hover/menu:pointer-events-auto transition-all duration-300 z-50">
+              <div className="navbar-dropdown absolute top-full left-0 mt-2 w-58 rounded-2xl bg-[#071830]/98 border border-sky-500/18 p-2 shadow-2xl shadow-sky-900/30 opacity-0 translate-y-2 pointer-events-none group-hover/menu:opacity-100 group-hover/menu:translate-y-0 group-hover/menu:pointer-events-auto transition-all duration-300 z-50">
                 <Link
                   to="/calculator/gpa"
                   className="flex items-center gap-3 px-3 py-2.5 text-sm text-sky-100/80 hover:bg-sky-500/10 hover:text-white rounded-xl transition-all duration-200"
@@ -142,7 +142,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <div className={`md:hidden overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[500px] border-b border-sky-500/12' : 'max-h-0'}`}>
-        <div className="px-4 pt-2 pb-6 space-y-1.5 bg-[#040f24]/98 backdrop-blur-xl">
+        <div className="mobile-navbar-menu px-4 pt-2 pb-6 space-y-1.5 bg-[#040f24]/98 backdrop-blur-xl">
           <p className="text-[10px] font-bold text-sky-400/50 uppercase tracking-[0.15em] px-3 pt-2 pb-1">Student Services</p>
           <Link
             to="/calculator/gpa"
