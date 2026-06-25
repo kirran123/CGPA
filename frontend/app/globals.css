@@ -249,6 +249,28 @@
   background-color: #ffffff !important;
   color: #0c2a48 !important;
 }
+:root[data-theme="light"] .bg-\[\#071830\]\/30 {
+  background-color: rgba(226, 232, 240, 0.45) !important;
+  color: #0c2a48 !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+}
+:root[data-theme="light"] .bg-\[\#071830\]\/80 {
+  background-color: #dde3eb !important;
+  color: #1e4976 !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+}
+:root[data-theme="light"] .bg-\[\#040f24\]\/60 {
+  background-color: rgba(226, 232, 240, 0.6) !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+}
+:root[data-theme="light"] .bg-sky-950\/20 {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+  border-color: rgba(14, 165, 233, 0.15) !important;
+}
+:root[data-theme="light"] .bg-sky-950\/30 {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  border-color: rgba(14, 165, 233, 0.20) !important;
+}
 
 /* ─ All general text colors ─ */
 :root[data-theme="light"] .text-white {
