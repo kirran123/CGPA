@@ -1,0 +1,585 @@
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ *  MOBILE STYLES — DO NOT AFFECT DESKTOP
+ *  All rules below are wrapped in max-width media queries.
+ *  Desktop view (≥ 768px / ≥ 1024px) is completely unchanged.
+ *  This file is the ONLY location for mobile-specific overrides.
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   0. GLOBAL MOBILE FOUNDATIONS
+   Prevent horizontal overflow. Touch-friendly interactions.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  html,
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent long words / URLs from breaking layout */
+  p, span, a, td, th, li, label, h1, h2, h3, h4 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Images & media never overflow */
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Minimum tap-target size for accessibility (WCAG 2.5.5) */
+  button,
+  [role="button"],
+  a {
+    min-height: 36px;
+  }
+
+  /* Prevent iOS auto-zoom on input focus — requires font-size >= 16px */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Remove tap-highlight flash on iOS */
+  * {
+    -webkit-tap-highlight-color: rgba(56, 189, 248, 0.12);
+  }
+
+  /* Touch-action: remove 300ms tap delay globally on mobile */
+  a, button, [role="button"], input, select, textarea, label {
+    touch-action: manipulation;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. PUBLIC NAVBAR  (component: Navbar.tsx)
+      The navbar already has a hamburger menu via md:hidden / hidden md:flex.
+      We only need layout polish for the mobile state.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Ensure navbar is full-width with no horizontal bleed */
+  nav.rit-navbar {
+    padding-left: 0;
+    padding-right: 0;
+    contain: layout;
+  }
+
+  nav.rit-navbar .max-w-7xl {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Animate the mobile drawer smoothly */
+  nav.rit-navbar .md\:hidden.overflow-hidden {
+    transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Mobile menu list items — comfortable touch targets */
+  .mobile-navbar-menu {
+    padding: 0.5rem 1rem 1.5rem !important;
+  }
+
+  /* Safe-area padding for notched phones */
+  .mobile-navbar-menu {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Sticky header z-index above content when sidebar drawer opens */
+@media (max-width: 1023px) {
+  header.sticky {
+    z-index: 30 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. HOME PAGE — HERO SECTION  (app/page.tsx)
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Hero top padding shrinks so content isn't buried under navbar */
+  section.relative.pt-32 {
+    padding-top: 5.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  /* Background orbs capped so they never cause horizontal scroll */
+  .orb {
+    max-width: 90vw !important;
+    max-height: 90vw !important;
+  }
+
+  /* Hero H1 — scale with viewport */
+  h1.text-4xl {
+    font-size: clamp(1.75rem, 7vw, 2.6rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Hero badge pill */
+  .inline-flex.items-center.gap-2.px-4.py-1\.5.rounded-full.bg-sky-500\/10 {
+    font-size: 0.6rem;
+    padding: 0.35rem 0.75rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* Hero sub-text */
+  section p.text-sm {
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
+  }
+
+  /* CTA button row — stack vertically, fill width */
+  .flex.flex-col.sm\:flex-row.justify-center.items-center.gap-4 {
+    flex-direction: column !important;
+    width: 100%;
+    padding: 0 1rem;
+    gap: 0.75rem !important;
+  }
+  .flex.flex-col.sm\:flex-row.justify-center.items-center.gap-4 > a {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* Stats 2×2 grid stays as-is (already grid-cols-2) */
+  .grid.grid-cols-2.md\:grid-cols-4 {
+    gap: 0.75rem !important;
+  }
+
+  /* Section headings */
+  h2.text-3xl {
+    font-size: clamp(1.4rem, 5.5vw, 2rem) !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. HOME PAGE — FEATURES & DEPARTMENTS SECTIONS
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Single column on very small phones */
+  .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  /* 2 columns on medium phones */
+  .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. HOME PAGE — ADMIN CTA SECTION
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .glass-card-premium.rounded-3xl.p-8,
+  .glass-card-premium.rounded-3xl.p-10 {
+    padding: 1.5rem 1.25rem !important;
+    border-radius: 1.5rem !important;
+  }
+
+  .glass-card-premium h2.text-2xl,
+  .glass-card-premium h2.text-3xl {
+    font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+  }
+
+  /* Admin portal CTA button — full width */
+  #admin-login-cta {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1.5rem !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. FOOTER  (components/layout/Footer.tsx)
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  footer .grid.grid-cols-1.md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  footer .max-w-7xl {
+    padding: 2.5rem 1.25rem !important;
+  }
+
+  footer h3 {
+    font-size: 0.875rem;
+  }
+
+  footer p,
+  footer li,
+  footer a {
+    font-size: 0.8rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. LOGIN PAGE  (app/login/page.tsx)
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Page — scroll from top instead of centering vertically */
+  .min-h-screen.flex.items-center.justify-center.px-4 {
+    align-items: flex-start !important;
+    padding-top: 4.5rem;
+    padding-bottom: 2rem;
+  }
+
+  /* Card container fills viewport width */
+  .w-full.max-w-md {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 0.25rem;
+  }
+
+  /* Role tab buttons — compact on small screens */
+  .flex.border-b.border-sky-500\/10 button {
+    padding: 0.625rem 0.25rem;
+    font-size: 0.65rem;
+  }
+
+  .flex.border-b.border-sky-500\/10 button svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  /* Card inner padding */
+  .glass-card.rounded-2xl.border .p-7 {
+    padding: 1.25rem 1rem !important;
+  }
+
+  /* Return-to-site button — full width */
+  .text-center.mt-6 a {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+}
+
+/* Hide role label text on very tiny phones — keep just the icon */
+@media (max-width: 360px) {
+  .flex.border-b.border-sky-500\/10 button span.text-\[11px\] {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   7. DASHBOARD LAYOUT — SIDEBAR + HEADER  (app/dashboard/layout.tsx)
+      The sidebar already switches to a mobile drawer via the lg:hidden/
+      hidden lg:flex Tailwind classes. We just add layout polish.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Remove the desktop lg:ml-64 left-margin on mobile */
+  .lg\:ml-64 {
+    margin-left: 0 !important;
+  }
+
+  /* Dashboard header — breadcrumb text truncation */
+  header .flex.items-center.gap-2.text-sky-300\/32 {
+    overflow: hidden;
+    max-width: calc(100vw - 7rem);
+    white-space: nowrap;
+  }
+
+  header .flex.items-center.gap-2.text-sky-300\/32 span.text-white {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50vw;
+    display: inline-block;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Dashboard main area — tighter padding */
+  main.flex-grow {
+    padding: 1rem !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   8. DASHBOARD — OVERVIEW PAGE  (app/dashboard/page.tsx)
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Welcome banner — stack on mobile */
+  .flex.flex-col.md\:flex-row.md\:items-center.justify-between.gap-5 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .flex.flex-col.md\:flex-row.md\:items-center.justify-between.gap-5 h1 {
+    font-size: clamp(1.1rem, 5vw, 1.5rem) !important;
+  }
+
+  .flex.flex-col.md\:flex-row.md\:items-center.justify-between.gap-5 p {
+    font-size: 0.7rem;
+  }
+
+  /* KPI cards — 2 columns on mobile */
+  .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4.gap-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* KPI card — compact padding */
+  .glass-card.rounded-2xl.p-5.border.border-sky-500\/10 {
+    padding: 0.875rem !important;
+  }
+
+  /* KPI value number */
+  .glass-card.rounded-2xl.p-5.border.border-sky-500\/10 .text-3xl {
+    font-size: 1.5rem !important;
+  }
+
+  /* Super-admin 3-column overview grid — single column */
+  .grid.grid-cols-1.lg\:grid-cols-3.gap-6 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Department cards inside the 3-col — single column */
+  .grid.grid-cols-1.md\:grid-cols-2.gap-4 {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Department stat 3-col row — reduce gap */
+  .grid.grid-cols-3.gap-2 {
+    gap: 0.375rem !important;
+  }
+  .grid.grid-cols-3.gap-2 > div {
+    padding: 0.375rem 0.25rem !important;
+  }
+
+  /* Recent records header row — wrap */
+  .flex.items-center.justify-between.flex-wrap.gap-3 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   9. TABLES — Universal horizontal scroll on mobile
+      Wraps any overflow-x-auto container; desktop min-widths are untouched.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.75rem;
+  }
+
+  /* Tables inside overflow containers enforce a minimum width so cells don't crunch */
+  .overflow-x-auto table {
+    min-width: 540px;
+  }
+
+  /* Dashboard recent records table */
+  .bg-white\/\[0\.02\].border.border-sky-500\/10.rounded-2xl.p-5 .overflow-x-auto table {
+    min-width: 600px;
+  }
+
+  /* Table cells — compact & nowrap so they don't wrap mid-word */
+  td, th {
+    padding: 0.6rem 0.7rem !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   10. GPA / CGPA CALCULATOR PAGES  (app/calculator/gpa and cgpa)
+    ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* 3-col layout (controls | grade table) — stack vertically */
+  .grid.grid-cols-1.lg\:grid-cols-3.gap-6 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* GPA display number — slightly smaller */
+  .gpa-display .display-number,
+  .cgpa-display .display-number {
+    font-size: 3.5rem !important;
+  }
+
+  /* GPA/CGPA display card padding — compact */
+  .gpa-display,
+  .cgpa-display {
+    padding: 1.125rem 1rem !important;
+  }
+
+  /* Subject row grid — each row stacks (code | name | credits | grade) */
+  .grid.grid-cols-1.md\:grid-cols-12 {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem;
+  }
+
+  /* Each subject row pill spans full width on mobile */
+  .grid.grid-cols-1.md\:grid-cols-12 .col-span-2,
+  .grid.grid-cols-1.md\:grid-cols-12 .col-span-5,
+  .grid.grid-cols-1.md\:grid-cols-12 .col-span-3 {
+    grid-column: auto !important;
+  }
+
+  /* Action buttons — full width */
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    font-size: 0.875rem !important;
+    padding: 0.75rem 1.25rem !important;
+  }
+
+  /* Calculator page title */
+  h1.text-3xl,
+  h1.text-4xl {
+    font-size: clamp(1.6rem, 7vw, 2.4rem) !important;
+    line-height: 1.2 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   11. MODALS — Full-width bottom-sheet style on mobile
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Full-height overlay stays scrollable */
+  div[class*="fixed"][class*="inset-0"] {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal card — full width, stick to bottom */
+  .modal-container,
+  div[class*="max-w-"][class*="rounded-2xl"],
+  div[class*="max-w-"][class*="rounded-3xl"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-left-radius: 1.25rem !important;
+    border-top-right-radius: 1.25rem !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   12. GLASS CARDS & COMMON COMPONENTS — Compact on tiny screens
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Root font size slightly smaller on very tiny screens */
+  html {
+    font-size: 14.5px;
+  }
+
+  /* Card padding compact */
+  .glass-card,
+  .glass-card-premium {
+    padding: 0.875rem !important;
+  }
+
+  /* Section dividers — tighter margin */
+  .section-divider {
+    margin: 0.75rem 0 !important;
+  }
+
+  /* Hero pt adjust */
+  section.relative.pt-32 {
+    padding-top: 5rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   13. TABLET ADJUSTMENTS  (768px – 1023px)
+       Only for grids and layouts that need a 2-column intermediate state.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Feature & department grids — 2 columns */
+  .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* KPI cards — 2 columns on tablet */
+  .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4.gap-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Dashboard 3-column layout → 1 column on tablet */
+  .grid.grid-cols-1.lg\:grid-cols-3.gap-6 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Dashboard main padding — intermediate */
+  main.flex-grow {
+    padding: 1.5rem !important;
+  }
+
+  /* Tables — horizontal scroll on tablet too */
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .overflow-x-auto table {
+    min-width: 540px;
+  }
+
+  /* GPA calculator — 2-col on tablet */
+  .grid.grid-cols-1.lg\:grid-cols-3.gap-6 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   14. SAFE-AREA INSETS — Notched phones (iPhone X+)
+   ───────────────────────────────────────────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 767px) {
+    nav.rit-navbar {
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .mobile-navbar-menu {
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+    }
+
+    footer {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    body {
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   15. ACCESSIBILITY & FOCUS RINGS
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  :focus-visible {
+    outline: 2px solid rgba(56, 189, 248, 0.65);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ *  END OF MOBILE STYLES
+ *  Everything above targets max-width ≤ 1023px.
+ *  Nothing here runs at full desktop width (≥ 1024px) unless explicitly noted.
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
