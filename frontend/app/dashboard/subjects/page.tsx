@@ -372,12 +372,12 @@ export default function SubjectManagement() {
 
       {/* ─── Single Add/Edit Modal ─────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/75 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
           {/* Modal card: max-h + flex-col so header/footer stay visible, body scrolls */}
           <div
-            className="bg-[#071830] border border-sky-500/20 max-w-sm w-full rounded-2xl relative z-10 shadow-2xl animate-scale-in flex flex-col"
-            style={{ maxHeight: 'calc(100dvh - 2rem)' }}
+            className="bg-[#071830] border border-sky-500/20 max-w-sm w-full rounded-t-2xl sm:rounded-2xl relative z-10 shadow-2xl animate-scale-in flex flex-col"
+            style={{ maxHeight: '92dvh' }}
           >
             {/* Sticky Header */}
             <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-sky-500/10 shrink-0">
@@ -466,9 +466,9 @@ export default function SubjectManagement() {
 
       {/* ─── Bulk Upload Modal ─────────────────────────────────────────────── */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-3">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => { if (!bulkUploading) setShowBulkModal(false); }} />
-          <div className="bg-[#071830] border border-emerald-500/20 max-w-xl w-full rounded-2xl p-4 relative z-10 shadow-2xl animate-scale-in flex flex-col" style={{maxHeight: 'calc(100dvh - 2rem)'}}>
+          <div className="bg-[#071830] border border-emerald-500/20 max-w-xl w-full rounded-t-2xl sm:rounded-2xl p-4 relative z-10 shadow-2xl animate-scale-in flex flex-col" style={{maxHeight: '92dvh', overflowY: 'auto'}}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-3 shrink-0">

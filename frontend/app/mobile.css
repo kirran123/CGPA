@@ -304,6 +304,39 @@
   main.flex-grow {
     padding: 1rem !important;
   }
+
+  /* Grade Settings: scope selector panel — stack items vertically */
+  .grade-scope-panel,
+  .flex.flex-wrap.items-center.gap-4.bg-white\/\[0\.02\] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* Subjects filter bar — stack on mobile */
+  .flex.flex-wrap.items-center.gap-4.bg-white\/\[0\.02\].border.border-sky-500\/10.p-4.rounded-2xl {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* Action buttons in filter bar — push to full width row */
+  .flex.flex-wrap.items-center.gap-4.bg-white\/\[0\.02\].border.border-sky-500\/10.p-4.rounded-2xl .ml-auto {
+    margin-left: 0 !important;
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  /* Add Subject / Bulk Upload buttons — fill remaining space */
+  .flex.flex-wrap.items-center.gap-4.bg-white\/\[0\.02\].border.border-sky-500\/10.p-4.rounded-2xl .ml-auto button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Grade settings: grade mapping header — wrap buttons */
+  .flex.items-center.justify-between > div.flex.items-center.gap-2 {
+    flex-wrap: wrap;
+    gap: 0.375rem !important;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -450,27 +483,52 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   11. MODALS — Full-width bottom-sheet style on mobile
+   11. MODALS — Proper fixed-position overlay on mobile (NO black screen)
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
-  /* Full-height overlay stays scrollable */
+  /*
+   * CRITICAL: The overlay must be overflow:hidden so it does NOT scroll the
+   * page. The inner modal card handles its own scroll via overflow-y:auto.
+   * Setting overflow-y:auto here was causing the "black screen / layout
+   * going down" bug.
+   */
   div[class*="fixed"][class*="inset-0"] {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden !important;
+    /* Ensure the fixed overlay covers the full viewport */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
   }
 
-  /* Modal card — full width, stick to bottom */
-  .modal-container,
-  div[class*="max-w-"][class*="rounded-2xl"],
-  div[class*="max-w-"][class*="rounded-3xl"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-    border-top-left-radius: 1.25rem !important;
-    border-top-right-radius: 1.25rem !important;
+  /*
+   * For modals that use items-center (centered vertically), ensure they
+   * stay visible and contained within the viewport.
+   */
+  div[class*="fixed"][class*="inset-0"][class*="flex"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1rem !important;
+  }
+
+  /*
+   * For modals that slide up from the bottom (items-end pattern),
+   * override to align to end (bottom sheet) on mobile.
+   */
+  div[class*="fixed"][class*="inset-0"][class*="items-end"] {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* Modal card — constrain height so it fits in the viewport */
+  div[class*="fixed"][class*="inset-0"] > div[class*="bg-"][class*="rounded"] {
+    max-height: 92dvh !important;
+    max-height: 92vh !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }
 

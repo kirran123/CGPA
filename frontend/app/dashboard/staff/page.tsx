@@ -157,7 +157,7 @@ export default function StaffManagement() {
   return (
     <div className="space-y-6">
       {/* Header Area */}
-      <div className="flex justify-between items-center pb-4 border-b border-sky-500/10">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pb-4 border-b border-sky-500/10">
         <div>
           <p className="text-xs text-sky-300">
             {currentUser?.role === 'super_admin' 
@@ -168,7 +168,7 @@ export default function StaffManagement() {
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-sky-500 to-purple-650 hover:from-sky-500 hover:to-purple-750 text-white rounded-xl text-xs font-bold transition-all shadow-md"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-sky-500 to-purple-650 hover:from-sky-500 hover:to-purple-750 text-white rounded-xl text-xs font-bold transition-all shadow-md w-full sm:w-auto shrink-0"
         >
           <Plus className="h-4 w-4" /> Add Staff Member
         </button>

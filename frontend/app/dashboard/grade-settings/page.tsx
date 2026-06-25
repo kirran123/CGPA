@@ -211,21 +211,21 @@ export default function DashboardGradeSettings() {
       </div>
 
       {/* Filter Selection Panel */}
-      <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-300/60 uppercase tracking-wider">
           <Building className="h-4 w-4" />
           <span>Select Scope:</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
           {/* Department Selection */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
             <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Department</span>
             <select
               value={selectedDept}
               disabled={currentUser?.role !== 'super_admin'}
               onChange={e => setSelectedDept(e.target.value)}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed min-w-[150px]"
+              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[150px]"
             >
               {departments.map(d => (
                 <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
@@ -234,24 +234,24 @@ export default function DashboardGradeSettings() {
           </div>
 
           {/* Regulation */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
             <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Regulation</span>
             <select
               value={regulation}
               onChange={e => setRegulation(e.target.value)}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none w-full sm:w-auto"
             >
               {regulations.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
 
           {/* Semester */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
             <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Semester</span>
             <select
               value={semester}
               onChange={e => setSemester(Number(e.target.value))}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none w-full sm:w-auto"
             >
               {[...Array(8)].map((_, i) => <option key={i+1} value={i+1}>Semester {i+1}</option>)}
             </select>
@@ -286,12 +286,12 @@ export default function DashboardGradeSettings() {
           </div>
         ) : (
           <form onSubmit={saveSettings} className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
                 <GraduationCap className="h-4 w-4 text-sky-400" />
                 Grade Mapping for {selectedDept} — {regulation} — Semester {semester}
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={resetToDefault}
