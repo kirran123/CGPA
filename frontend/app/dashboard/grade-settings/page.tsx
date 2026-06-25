@@ -225,7 +225,7 @@ export default function DashboardGradeSettings() {
               value={selectedDept}
               disabled={currentUser?.role !== 'super_admin'}
               onChange={e => setSelectedDept(e.target.value)}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[150px]"
+              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[150px] truncate"
             >
               {departments.map(d => (
                 <option key={d._id} value={d.code}>{d.name} ({d.code})</option>

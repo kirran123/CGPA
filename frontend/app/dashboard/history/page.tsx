@@ -211,7 +211,7 @@ export default function HistoryLogs() {
               <select
                 value={selectedDept}
                 onChange={e => setSelectedDept(e.target.value)}
-                className="appearance-none bg-[#040f24] border border-sky-500/20 focus:border-sky-500 rounded-xl pl-3 pr-8 py-2 text-xs text-white focus:outline-none cursor-pointer"
+                className="appearance-none bg-[#040f24] border border-sky-500/20 focus:border-sky-500 rounded-xl pl-3 pr-8 py-2 text-xs text-white focus:outline-none cursor-pointer max-w-[180px] xs:max-w-[240px] sm:max-w-xs truncate"
               >
                 <option value="">All Departments</option>
                 {departments.map(d => (

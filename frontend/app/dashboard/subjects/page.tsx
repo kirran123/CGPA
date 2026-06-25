@@ -247,70 +247,75 @@ export default function SubjectManagement() {
       </div>
 
       {/* Filters + Action Buttons */}
-      <div className="flex flex-wrap items-center gap-4 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-2 text-xs font-semibold text-sky-300/60 uppercase tracking-wider">
-          <Building className="h-4 w-4" />
-          <span>Filters:</span>
-        </div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-2 text-xs font-semibold text-sky-300/60 uppercase tracking-wider shrink-0">
+            <Building className="h-4 w-4" />
+            <span>Filters:</span>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Dept Filter */}
-          <select
-            value={filterDept}
-            disabled={currentUser?.role !== 'super_admin'}
-            onChange={e => setFilterDept(e.target.value)}
-            className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {departments
-              .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
-              .map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
-          </select>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            {/* Dept Filter */}
+            <select
+              value={filterDept}
+              disabled={currentUser?.role !== 'super_admin'}
+              onChange={e => setFilterDept(e.target.value)}
+              className="w-full sm:w-64 bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed truncate"
+            >
+              {departments
+                .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                .map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
+            </select>
 
-          {/* Semester Filter */}
-          <select
-            value={filterSem}
-            onChange={e => setFilterSem(e.target.value ? Number(e.target.value) : '')}
-            className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-          >
-            <option value="">All Semesters</option>
-            {[...Array(8)].map((_, i) => <option key={i+1} value={i+1}>Semester {i+1}</option>)}
-          </select>
+            <div className="grid grid-cols-2 gap-3 w-full sm:w-auto sm:flex">
+              {/* Semester Filter */}
+              <select
+                value={filterSem}
+                onChange={e => setFilterSem(e.target.value ? Number(e.target.value) : '')}
+                className="w-full sm:w-auto bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              >
+                <option value="">All Semesters</option>
+                {[...Array(8)].map((_, i) => <option key={i+1} value={i+1}>Semester {i+1}</option>)}
+              </select>
 
-          {/* Regulation Filter */}
-          <select
-            value={filterReg}
-            onChange={e => setFilterReg(e.target.value)}
-            className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-          >
-            <option value="">All Regulations</option>
-            {(() => {
-              const opts = [...regulations];
-              subjects.forEach(sub => {
-                if (sub.regulation && !opts.includes(sub.regulation)) {
-                  opts.push(sub.regulation);
-                }
-              });
-              return opts.map(r => <option key={r} value={r}>{r}</option>);
-            })()}
-          </select>
+              {/* Regulation Filter */}
+              <select
+                value={filterReg}
+                onChange={e => setFilterReg(e.target.value)}
+                className="w-full sm:w-auto bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              >
+                <option value="">All Regulations</option>
+                {(() => {
+                  const opts = [...regulations];
+                  subjects.forEach(sub => {
+                    if (sub.regulation && !opts.includes(sub.regulation)) {
+                      opts.push(sub.regulation);
+                    }
+                  });
+                  return opts.map(r => <option key={r} value={r}>{r}</option>);
+                })()}
+              </select>
+            </div>
+          </div>
         </div>
 
         {canEditSubjects && (
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full lg:w-auto lg:justify-end">
             {/* Bulk Upload Button */}
             <button
               onClick={openBulkModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+              className="flex-1 lg:flex-none justify-center flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
             >
               <Upload className="h-4 w-4" />
-              Bulk Upload
+              <span>Bulk Upload</span>
             </button>
             {/* Single Add Button */}
             <button
               onClick={openCreateModal}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-sky-500 to-purple-600 hover:from-sky-500 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+              className="flex-1 lg:flex-none justify-center flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-sky-500 to-purple-600 hover:from-sky-500 hover:to-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
             >
-              <Plus className="h-4 w-4" /> Add Subject
+              <Plus className="h-4 w-4" />
+              <span>Add Subject</span>
             </button>
           </div>
         )}
@@ -436,7 +441,7 @@ export default function SubjectManagement() {
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1">Department</label>
                   {currentUser?.role === 'super_admin' ? (
                     <select value={department} onChange={e => setDepartment(e.target.value)}
-                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
+                      className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none truncate">
                       {departments.map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
                     </select>
                   ) : (
