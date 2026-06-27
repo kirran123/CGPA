@@ -11,6 +11,27 @@ const getAuthHeaders = (): Record<string, string> => {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
+const performLogout = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('rit_token');
+    localStorage.removeItem('rit_user');
+    window.dispatchEvent(new Event('auth-change'));
+  }
+};
+
+// Shadow global fetch to intercept 401 Unauthorized errors
+const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const res = await window.fetch(input, init);
+  if (res.status === 401) {
+    const url = typeof input === 'string' ? input : (input instanceof URL ? input.toString() : input.url);
+    if (!url.includes('/auth/login')) {
+      performLogout();
+    }
+  }
+  return res;
+};
+const fetch = customFetch;
+
 export interface User {
   _id: string;
   name: string;
@@ -125,20 +146,44 @@ export const api = {
       department: data.department,
       permissions: data.permissions || []
     }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-change'));
+    }
     return data;
   },
 
   logout: () => {
-    localStorage.removeItem('rit_token');
-    localStorage.removeItem('rit_user');
+    performLogout();
   },
 
   getCurrentUser: (): User | null => {
     if (typeof window === 'undefined') return null;
-    const user = localStorage.getItem('rit_user');
-    if (!user) return null;
+    const token = localStorage.getItem('rit_token');
+    const userStr = localStorage.getItem('rit_user');
+    if (!token || !userStr) {
+      if (token || userStr) {
+        localStorage.removeItem('rit_token');
+        localStorage.removeItem('rit_user');
+      }
+      return null;
+    }
+    
+    // Check if token is expired
     try {
-      return JSON.parse(user);
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp && Date.now() >= payload.exp * 1000) {
+          performLogout();
+          return null;
+        }
+      }
+    } catch (e) {
+      console.error('Error checking token expiration:', e);
+    }
+
+    try {
+      return JSON.parse(userStr);
     } catch (e) {
       console.error('Error parsing user from localStorage:', e);
       return null;

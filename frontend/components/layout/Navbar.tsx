@@ -15,15 +15,27 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setUser(api.getCurrentUser());
+    const handleAuthChange = () => {
+      setUser(api.getCurrentUser());
+    };
+
+    handleAuthChange();
+
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [pathname]);
 
   const handleLogout = () => {
     api.logout();
-    setUser(null);
     navigate('/');
   };
 

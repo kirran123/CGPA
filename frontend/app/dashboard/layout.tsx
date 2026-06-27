@@ -87,15 +87,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname  = location.pathname;
 
   useEffect(() => {
-    const currentUser = api.getCurrentUser();
-    if (!currentUser) { navigate('/login'); return; }
-    setUser(currentUser);
-    setLoading(false);
+    const handleAuth = () => {
+      const currentUser = api.getCurrentUser();
+      if (!currentUser) {
+        navigate('/login');
+        return;
+      }
+      setUser(currentUser);
+      setLoading(false);
 
-    if ((pathname === '/dashboard' || pathname === '/dashboard/') && currentUser.role !== 'super_admin') {
-      const allowed = allNavItems.filter(item => item.roles.includes(currentUser.role));
-      if (allowed.length > 0) navigate(allowed[0].path);
-    }
+      if ((pathname === '/dashboard' || pathname === '/dashboard/') && currentUser.role !== 'super_admin') {
+        const allowed = allNavItems.filter(item => item.roles.includes(currentUser.role));
+        if (allowed.length > 0) navigate(allowed[0].path);
+      }
+    };
+
+    handleAuth();
+
+    window.addEventListener('auth-change', handleAuth);
+    window.addEventListener('storage', handleAuth);
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuth);
+      window.removeEventListener('storage', handleAuth);
+    };
   }, [pathname]);
 
   const handleLogout = () => { api.logout(); navigate('/'); };
