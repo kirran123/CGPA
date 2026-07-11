@@ -127,7 +127,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex flex-col items-center gap-3 group">
-            <img src="/rit-logo.jpg" alt="RIT Logo" className="h-20 w-20 object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply" />
+            <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center overflow-hidden shadow-lg mx-auto group-hover:scale-105 transition-transform duration-300">
+              <img src="/rit-logo.jpg" alt="RIT Logo" className="h-[72px] w-[72px] object-contain" />
+            </div>
             <div>
               <div className="text-white font-bold text-lg tracking-wide font-['Outfit']">RIT Portal</div>
               <div className="text-sky-400/50 text-xs font-medium">CGPA Calculator</div>
