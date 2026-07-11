@@ -20,14 +20,14 @@ const convex = new ConvexHttpClient(CONVEX_URL);
 // ── Auth helpers ──────────────────────────────────────────────────────────
 const performLogout = () => {
   if (typeof window === "undefined") return;
-  localStorage.removeItem("rit_token");
-  localStorage.removeItem("rit_user");
+  sessionStorage.removeItem("rit_token");
+  sessionStorage.removeItem("rit_user");
   window.dispatchEvent(new Event("auth-change"));
 };
 
 const getCurrentUserRaw = (): { _id: string; role: string; department: string; name: string } | null => {
   if (typeof window === "undefined") return null;
-  const userStr = localStorage.getItem("rit_user");
+  const userStr = sessionStorage.getItem("rit_user");
   if (!userStr) return null;
   try {
     return JSON.parse(userStr);
@@ -176,8 +176,8 @@ export const api = {
     const data = await convex.mutation(convexApi.users.login, credentials);
 
     // Persist session (same keys as the original Express client)
-    localStorage.setItem("rit_token", data.token);
-    localStorage.setItem(
+    sessionStorage.setItem("rit_token", data.token);
+    sessionStorage.setItem(
       "rit_user",
       JSON.stringify({
         _id: data._id,
@@ -200,12 +200,12 @@ export const api = {
 
   getCurrentUser: (): User | null => {
     if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("rit_token");
-    const userStr = localStorage.getItem("rit_user");
+    const token = sessionStorage.getItem("rit_token");
+    const userStr = sessionStorage.getItem("rit_user");
     if (!token || !userStr) {
       if (token || userStr) {
-        localStorage.removeItem("rit_token");
-        localStorage.removeItem("rit_user");
+        sessionStorage.removeItem("rit_token");
+        sessionStorage.removeItem("rit_user");
       }
       return null;
     }
