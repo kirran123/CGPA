@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115">
+  <defs>
+    <clipPath id="shield-clip">
+      <path d="M50 2 L96 19 L96 62 Q96 92 50 113 Q4 92 4 62 L4 19 Z"/>
+    </clipPath>
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8C15A;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#C89B2A;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Gold upper half -->
+  <rect x="4" y="19" width="92" height="38" fill="url(#gold-grad)" clip-path="url(#shield-clip)"/>
+
+  <!-- Navy lower half -->
+  <rect x="4" y="57" width="92" height="56" fill="#1B2E5A" clip-path="url(#shield-clip)"/>
+
+  <!-- Red band -->
+  <rect x="4" y="52" width="92" height="12" fill="#B22222" clip-path="url(#shield-clip)"/>
+
+  <!-- Shield border outline -->
+  <path d="M50 2 L96 19 L96 62 Q96 92 50 113 Q4 92 4 62 L4 19 Z"
+        fill="none" stroke="#9A7620" stroke-width="2.5"/>
+
+  <!-- Open book – left page -->
+  <path d="M50 22 Q35 25 28 32 Q38 30 50 35 Z" fill="white" opacity="0.95" clip-path="url(#shield-clip)"/>
+  <!-- Open book – right page -->
+  <path d="M50 22 Q65 25 72 32 Q62 30 50 35 Z" fill="white" opacity="0.85" clip-path="url(#shield-clip)"/>
+  <!-- Book spine -->
+  <line x1="50" y1="22" x2="50" y2="35" stroke="white" stroke-width="1.2" opacity="0.9" clip-path="url(#shield-clip)"/>
+
+  <!-- Wing-like lines above book -->
+  <path d="M38 19 Q44 16 50 15 Q56 16 62 19" fill="none" stroke="white" stroke-width="1.5" opacity="0.8" clip-path="url(#shield-clip)"/>
+  <path d="M34 22 Q42 18 50 17 Q58 18 66 22" fill="none" stroke="white" stroke-width="1" opacity="0.5" clip-path="url(#shield-clip)"/>
+
+  <!-- RIT text -->
+  <text x="50" y="82" text-anchor="middle"
+        font-family="Georgia, serif" font-weight="bold"
+        font-size="13" fill="white" letter-spacing="1">RIT</text>
+
+  <!-- Decorative dots -->
+  <circle cx="32" cy="60" r="2" fill="white" opacity="0.5" clip-path="url(#shield-clip)"/>
+  <circle cx="68" cy="60" r="2" fill="white" opacity="0.5" clip-path="url(#shield-clip)"/>
+</svg>
