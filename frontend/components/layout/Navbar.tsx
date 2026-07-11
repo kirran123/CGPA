@@ -53,8 +53,8 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="bg-gradient-to-tr from-sky-500 to-blue-600 p-2 rounded-xl shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform duration-300">
-              <GraduationCap className="h-5 w-5 text-white" />
+            <div className="group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+              <img src="/favicon.svg" alt="RIT Logo" className="h-9 w-9 object-contain drop-shadow-md" />
             </div>
             <div className="flex flex-col leading-none">
               <span className="text-white font-bold text-base tracking-wide group-hover:text-sky-300 transition-colors duration-300 font-['Outfit']">

@@ -127,8 +127,8 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="bg-gradient-to-tr from-sky-500 to-blue-600 p-3 rounded-2xl shadow-xl shadow-sky-500/25 group-hover:shadow-sky-500/40 transition-all duration-300 group-hover:scale-105">
-              <GraduationCap className="h-7 w-7 text-white" />
+            <div className="transition-all duration-300 group-hover:scale-105 drop-shadow-lg">
+              <img src="/favicon.svg" alt="RIT Logo" className="h-14 w-14 object-contain" />
             </div>
             <div>
               <div className="text-white font-bold text-lg tracking-wide font-['Outfit']">RIT Portal</div>
