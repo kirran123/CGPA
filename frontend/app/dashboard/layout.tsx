@@ -154,8 +154,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Logo */}
       <div className="h-16 flex items-center gap-3 px-5 border-b border-sky-900/40 shrink-0">
-        <div className="flex-shrink-0">
-          <img src="/favicon.svg" alt="RIT Logo" className="h-9 w-9 object-contain drop-shadow-md" />
+        <div className="flex-shrink-0 h-9 w-9 rounded-full overflow-hidden border border-sky-500/30 shadow-md shadow-sky-500/20">
+          <img src="/rit-logo.jpg" alt="RIT Logo" className="h-full w-full object-cover scale-110" />
         </div>
         <div className="flex flex-col leading-none">
           <span className="font-bold text-sm text-white tracking-wide font-['Outfit']">RIT Portal</span>
