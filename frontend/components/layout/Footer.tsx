@@ -12,9 +12,7 @@ export default function Footer() {
           {/* RIT Branding */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-sky-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-sky-500/25">
-                <GraduationCap className="h-6 w-6 text-white" />
-              </div>
+              <img src="/rit-logo.jpg" alt="RIT Logo" className="h-12 w-12 object-contain mix-blend-multiply flex-shrink-0" />
               <span className="text-white font-bold text-xl tracking-wide font-['Outfit']">
                 Ramco Institute of Technology
               </span>
