@@ -53,9 +53,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="group-hover:scale-105 transition-transform duration-300 flex-shrink-0 h-9 w-9 rounded-full overflow-hidden border border-sky-500/30 shadow-lg shadow-sky-500/20 bg-white/90 flex items-center justify-center">
-              <img src="/rit-logo.jpg" alt="RIT Logo" className="h-8 w-8 object-contain" />
-            </div>
+            <img src="/rit-logo.jpg" alt="RIT Logo" className="h-10 w-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0" />
             <div className="flex flex-col leading-none">
               <span className="text-white font-bold text-base tracking-wide group-hover:text-sky-300 transition-colors duration-300 font-['Outfit']">
                 RIT Portal
