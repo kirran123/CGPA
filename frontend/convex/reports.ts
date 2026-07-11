@@ -283,11 +283,11 @@ const buildBatchGpaPdfBuffer = (records: any[], meta: any): Promise<Buffer> => {
 
 export const generateGpaPdf = action({
   args: {
-    studentName: v.string(),
-    registerNo: v.string(),
+    studentName: v.optional(v.string()),
+    registerNo: v.optional(v.string()),
     semester: v.number(),
     department: v.string(),
-    regulation: v.string(),
+    regulation: v.optional(v.string()),
     subjects: v.array(
       v.object({
         subjectCode: v.string(),
@@ -297,33 +297,78 @@ export const generateGpaPdf = action({
         gradePoint: v.optional(v.number()),
       })
     ),
-    totalCredits: v.number(),
-    totalPoints: v.number(),
-    gpa: v.number(),
+    totalCredits: v.optional(v.number()),
+    totalPoints: v.optional(v.number()),
+    gpa: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const buffer = await buildGpaPdfBuffer(args);
+    // Default grade-point lookup when caller doesn't supply gradePoint per subject
+    const DEFAULT_GP: Record<string, number> = {
+      O: 10, "A+": 9, A: 8, "B+": 7, B: 6, C: 5, U: 0, RA: 0,
+    };
+    // Enrich each subject with a gradePoint if missing
+    const subjects = args.subjects.map((s) => ({
+      ...s,
+      gradePoint: s.gradePoint ?? DEFAULT_GP[s.grade.trim().toUpperCase()] ?? 0,
+    }));
+    // Compute totals when caller didn't send them
+    let totalCredits = args.totalCredits ?? 0;
+    let totalPoints  = args.totalPoints  ?? 0;
+    if (args.totalCredits === undefined) {
+      totalCredits = 0; totalPoints = 0;
+      for (const s of subjects) {
+        totalCredits += s.credits;
+        totalPoints  += s.credits * s.gradePoint;
+      }
+    }
+    const gpa = args.gpa ?? (totalCredits > 0
+      ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0);
+
+    const buffer = await buildGpaPdfBuffer({
+      studentName: args.studentName || "ANONYMOUS",
+      registerNo:  args.registerNo  || "N/A",
+      semester: args.semester,
+      department: args.department,
+      regulation: args.regulation || "R2021",
+      subjects,
+      totalCredits,
+      totalPoints,
+      gpa,
+    });
     return buffer.toString("base64");
   },
 });
 
 export const generateCgpaPdf = action({
   args: {
-    studentName: v.string(),
-    registerNo: v.string(),
+    studentName: v.optional(v.string()),
+    registerNo:  v.optional(v.string()),
     department: v.string(),
-    regulation: v.string(),
+    regulation: v.optional(v.string()),
     semesters: v.array(
       v.object({
         semester: v.number(),
         gpa: v.number(),
-        credits: v.number(),
+        credits: v.optional(v.number()),
       })
     ),
-    cgpa: v.number(),
+    cgpa: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const buffer = await buildCgpaPdfBuffer(args);
+    // Compute cgpa from semesters when caller didn't supply it
+    const semesters = args.semesters.map((s) => ({ ...s, credits: s.credits ?? 0 }));
+    let gpaSum = 0, count = 0;
+    for (const s of semesters) { if (s.gpa > 0) { gpaSum += s.gpa; count++; } }
+    const cgpa = args.cgpa ?? (count > 0 ? parseFloat((gpaSum / count).toFixed(2)) : 0);
+
+    const buffer = await buildCgpaPdfBuffer({
+      studentName: args.studentName || "ANONYMOUS",
+      registerNo:  args.registerNo  || "N/A",
+      department: args.department,
+      regulation: args.regulation || "R2021",
+      semesters,
+      cgpa,
+    });
     return buffer.toString("base64");
   },
 });
