@@ -129,41 +129,44 @@
   box-shadow: 2px 0 16px rgba(0, 0, 0, 0.03) !important;
 }
 /* ═══════════════════════════════════════════════════════════════
-   RIT LOGO — theme-aware blend
-   mix-blend-multiply makes the white JPG background disappear
-   into whatever colour is behind the wrapper element.
-   Dark mode: wrapper = dark navy (matches navbar/sidebar bg)
-   Light mode: wrapper = light blue-grey (matches page bg)
+   RIT LOGO — theme-aware rendering
+   DARK MODE  : white rounded container so the full-colour logo
+                shows clearly against the dark navy background.
+   LIGHT MODE : mix-blend-mode:multiply makes the white JPG
+                background dissolve into the light page bg.
    ═══════════════════════════════════════════════════════════════ */
 
-/* Dark mode (default) — wrapper matches the deep-navy background */
+/* Dark mode (default) — white container, no blend */
 .rit-logo-wrap {
-  background-color: #040f24;
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 2px;
 }
 .rit-logo {
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
   display: block;
 }
 
-/* Light mode — wrapper matches the light page/navbar background */
+/* Light mode — wrapper matches light page bg, multiply removes white border */
 :root[data-theme="light"] .rit-logo-wrap {
   background-color: #e8edf3 !important;
+  padding: 0 !important;
+}
+:root[data-theme="light"] .rit-logo {
+  mix-blend-mode: multiply !important;
 }
 
-/* Footer has a slightly different bg in light mode */
+/* Footer light mode */
 :root[data-theme="light"] footer .rit-logo-wrap {
   background-color: #e2e8f0 !important;
 }
 
-/* Sidebar logo wrap matches sidebar bg in dark mode */
-aside .rit-logo-wrap {
-  background-color: #040f24;
-}
-
-/* Sidebar logo wrap in light mode */
+/* Sidebar light mode */
 :root[data-theme="light"] aside .rit-logo-wrap {
   background-color: #f1f5f9 !important;
 }
+
+
 
 /* Sidebar logo area */
 :root[data-theme="light"] aside .border-b,
