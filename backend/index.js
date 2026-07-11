@@ -24,6 +24,8 @@ app.use(cors({
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:5173',
+      'https://cgpa.ritrjpm.ac.in',
+      'http://cgpa.ritrjpm.ac.in',
     ];
     // Allow any Vercel deployment URL automatically
     if (
