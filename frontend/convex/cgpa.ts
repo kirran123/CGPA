@@ -58,6 +58,16 @@ export const getRecords = query({
   },
 });
 
+export const getById = query({
+  args: { id: v.id("cgpaRecords") },
+  handler: async (ctx, args) => {
+    const r = await ctx.db.get(args.id);
+    if (!r) return null;
+    const user = await ctx.db.get(r.calculatedBy as any);
+    return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+  },
+});
+
 export const deleteRecord = mutation({
   args: { id: v.id("cgpaRecords"), userId: v.id("users") },
   handler: async (ctx, args) => {

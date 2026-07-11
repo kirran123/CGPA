@@ -294,7 +294,7 @@ export const generateGpaPdf = action({
         subjectName: v.string(),
         credits: v.number(),
         grade: v.string(),
-        gradePoint: v.number(),
+        gradePoint: v.optional(v.number()),
       })
     ),
     totalCredits: v.number(),
@@ -331,8 +331,8 @@ export const generateCgpaPdf = action({
 export const generateStoredGpaPdf = action({
   args: { recordId: v.id("gpaRecords") },
   handler: async (ctx, args) => {
-    const record = await ctx.runQuery(api.gpa.getRecords, {});
-    const r = record.find((x: any) => x._id === args.recordId);
+    // Fetch the single record directly by ID — avoids loading all records
+    const r = await ctx.runQuery(api.gpa.getById, { id: args.recordId });
     if (!r) throw new Error("GPA record not found");
 
     const buffer = await buildGpaPdfBuffer(r);
@@ -343,8 +343,8 @@ export const generateStoredGpaPdf = action({
 export const generateStoredCgpaPdf = action({
   args: { recordId: v.id("cgpaRecords") },
   handler: async (ctx, args) => {
-    const record = await ctx.runQuery(api.cgpa.getRecords, {});
-    const r = record.find((x: any) => x._id === args.recordId);
+    // Fetch the single record directly by ID — avoids loading all records
+    const r = await ctx.runQuery(api.cgpa.getById, { id: args.recordId });
     if (!r) throw new Error("CGPA record not found");
 
     const buffer = await buildCgpaPdfBuffer(r);

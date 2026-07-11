@@ -126,6 +126,16 @@ export const getRecords = query({
   },
 });
 
+export const getById = query({
+  args: { id: v.id("gpaRecords") },
+  handler: async (ctx, args) => {
+    const r = await ctx.db.get(args.id);
+    if (!r) return null;
+    const user = await ctx.db.get(r.calculatedBy as any);
+    return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+  },
+});
+
 export const getBatches = query({
   args: { department: v.optional(v.string()) },
   handler: async (ctx, args) => {
