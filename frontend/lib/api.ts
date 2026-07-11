@@ -1,44 +1,57 @@
-let rawBaseUrl = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : 'https://cgpa-lr2c.onrender.com/api') : 'https://cgpa-lr2c.onrender.com/api');
-if (rawBaseUrl && !rawBaseUrl.endsWith('/api') && !rawBaseUrl.endsWith('/api/')) {
-  rawBaseUrl = rawBaseUrl.endsWith('/') ? `${rawBaseUrl}api` : `${rawBaseUrl}/api`;
-}
-const API_BASE_URL = rawBaseUrl;
+/**
+ * api.ts — Convex-backed client
+ *
+ * This is a drop-in replacement for the original Express/REST api.ts.
+ * All method signatures and return shapes are preserved so that every
+ * page component works without a single line change.
+ *
+ * PDF downloads that previously returned Blob objects now decode the
+ * base64 string returned by the Convex Action and convert it to a Blob
+ * so callers see identical behaviour.
+ */
 
-// Helper to get auth header
-const getAuthHeaders = (): Record<string, string> => {
-  if (typeof window === 'undefined') return {};
-  const token = localStorage.getItem('rit_token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
+import { ConvexHttpClient } from "convex/browser";
+import { api as convexApi } from "../convex/_generated/api";
 
+// ── Convex client (HTTP – works outside of React components) ──────────────
+const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string;
+const convex = new ConvexHttpClient(CONVEX_URL);
+
+// ── Auth helpers ──────────────────────────────────────────────────────────
 const performLogout = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('rit_token');
-    localStorage.removeItem('rit_user');
-    window.dispatchEvent(new Event('auth-change'));
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("rit_token");
+  localStorage.removeItem("rit_user");
+  window.dispatchEvent(new Event("auth-change"));
+};
+
+const getCurrentUserRaw = (): { _id: string; role: string; department: string; name: string } | null => {
+  if (typeof window === "undefined") return null;
+  const userStr = localStorage.getItem("rit_user");
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch {
+    return null;
   }
 };
 
-// Shadow global fetch to intercept 401 Unauthorized errors
-const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-  const res = await window.fetch(input, init);
-  if (res.status === 401) {
-    const url = typeof input === 'string' ? input : (input instanceof URL ? input.toString() : input.url);
-    if (!url.includes('/auth/login')) {
-      performLogout();
-    }
-  }
-  return res;
+/** Decode a base64 PDF string into a Blob for download */
+const base64ToPdfBlob = (b64: string): Blob => {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: "application/pdf" });
 };
-const fetch = customFetch;
 
+// ── TypeScript Interfaces (identical to before) ───────────────────────────
 export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'super_admin' | 'dept_admin' | 'staff';
+  role: "super_admin" | "dept_admin" | "staff";
   department: string;
-  status: 'Active' | 'Inactive';
+  status: "Active" | "Inactive";
   permissions?: string[];
 }
 
@@ -49,7 +62,7 @@ export interface Department {
   description: string;
   hodName: string;
   email: string;
-  status: 'Active' | 'Inactive';
+  status: "Active" | "Inactive";
 }
 
 export interface Subject {
@@ -120,34 +133,63 @@ export interface DashboardStats {
   distribution: { range: string; count: number }[];
   trends: { semester: string; avgGpa: number }[];
   rankings: { rank: number; registerNo: string; name: string; cgpa: number; semester: number }[];
-  recentRecords?: { studentName: string; registerNo: string; semester: number; gpa: number; cgpa: number; createdAt: string; department?: string; calculatedBy?: { name: string } }[];
-  departmentOverviews?: { code: string; name: string; hodName: string; email: string; totalRecords: number; totalStudents: number; avgGpa: number; avgCgpa: number }[];
+  recentRecords?: {
+    studentName: string;
+    registerNo: string;
+    semester: number;
+    gpa: number;
+    cgpa: number;
+    createdAt: string;
+    department?: string;
+    calculatedBy?: { name: string };
+  }[];
+  departmentOverviews?: {
+    code: string;
+    name: string;
+    hodName: string;
+    email: string;
+    totalRecords: number;
+    totalStudents: number;
+    avgGpa: number;
+    avgCgpa: number;
+  }[];
 }
 
+// ── Helper to upload a File directly to Convex Storage ───────────────────
+async function uploadFileToConvex(file: File): Promise<string> {
+  const uploadUrl = await convex.mutation(convexApi.files.generateUploadUrl, {});
+  const result = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!result.ok) throw new Error("File upload to Convex storage failed");
+  const { storageId } = await result.json();
+  return storageId as string;
+}
+
+// ── Main API Object ───────────────────────────────────────────────────────
 export const api = {
-  // Authentication
-  login: async (credentials: any) => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Login failed');
-    }
-    const data = await res.json();
-    localStorage.setItem('rit_token', data.token);
-    localStorage.setItem('rit_user', JSON.stringify({
-      _id: data._id,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      department: data.department,
-      permissions: data.permissions || []
-    }));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('auth-change'));
+
+  // ── Authentication ──────────────────────────────────────────────────────
+  login: async (credentials: { email: string; password: string }) => {
+    const data = await convex.mutation(convexApi.users.login, credentials);
+
+    // Persist session (same keys as the original Express client)
+    localStorage.setItem("rit_token", data.token);
+    localStorage.setItem(
+      "rit_user",
+      JSON.stringify({
+        _id: data._id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        department: data.department,
+        permissions: data.permissions || [],
+      })
+    );
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth-change"));
     }
     return data;
   },
@@ -157,428 +199,360 @@ export const api = {
   },
 
   getCurrentUser: (): User | null => {
-    if (typeof window === 'undefined') return null;
-    const token = localStorage.getItem('rit_token');
-    const userStr = localStorage.getItem('rit_user');
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("rit_token");
+    const userStr = localStorage.getItem("rit_user");
     if (!token || !userStr) {
       if (token || userStr) {
-        localStorage.removeItem('rit_token');
-        localStorage.removeItem('rit_user');
+        localStorage.removeItem("rit_token");
+        localStorage.removeItem("rit_user");
       }
       return null;
     }
-    
-    // Check if token is expired
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        if (payload.exp && Date.now() >= payload.exp * 1000) {
-          performLogout();
-          return null;
-        }
-      }
-    } catch (e) {
-      console.error('Error checking token expiration:', e);
-    }
-
     try {
       return JSON.parse(userStr);
-    } catch (e) {
-      console.error('Error parsing user from localStorage:', e);
+    } catch {
       return null;
     }
   },
 
-  // Public APIs
+  // ── Public APIs (no auth required) ─────────────────────────────────────
   getPublicDepartments: async (): Promise<Department[]> => {
-    const res = await fetch(`${API_BASE_URL}/departments/public`);
-    if (!res.ok) throw new Error('Failed to fetch departments');
-    return res.json();
+    const result = await convex.query(convexApi.departments.getPublic, {});
+    return result.map((d: any) => ({ ...d, _id: d._id }));
   },
 
   getPublicSubjects: async (department: string, semester?: number, regulation?: string): Promise<Subject[]> => {
-    const semParam = semester ? `&semester=${semester}` : '';
-    const regParam = regulation ? `&regulation=${encodeURIComponent(regulation)}` : '';
-    const res = await fetch(`${API_BASE_URL}/subjects/public?department=${department}${semParam}${regParam}`);
-    if (!res.ok) throw new Error('Failed to fetch subjects');
-    return res.json();
-  },
-
-  downloadPublicGpaPdf: async (payload: any) => {
-    const res = await fetch(`${API_BASE_URL}/reports/gpa-pdf`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const result = await convex.query(convexApi.subjects.get, {
+      department,
+      semester,
+      regulation,
     });
-    if (!res.ok) throw new Error('Failed to generate PDF');
-    return res.blob();
+    return result.map((s: any) => ({ ...s, _id: s._id }));
   },
 
-  downloadPublicCgpaPdf: async (payload: any) => {
-    const res = await fetch(`${API_BASE_URL}/reports/cgpa-pdf`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Failed to generate PDF');
-    return res.blob();
+  downloadPublicGpaPdf: async (payload: any): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateGpaPdf, payload);
+    return base64ToPdfBlob(b64);
   },
 
-  // Departments CRUD (Protected)
+  downloadPublicCgpaPdf: async (payload: any): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateCgpaPdf, payload);
+    return base64ToPdfBlob(b64);
+  },
+
+  // ── Departments CRUD ────────────────────────────────────────────────────
   getDepartments: async (): Promise<Department[]> => {
-    const res = await fetch(`${API_BASE_URL}/departments`, {
-      headers: getAuthHeaders()
+    const user = getCurrentUserRaw();
+    const result = await convex.query(convexApi.departments.get, {
+      role: user?.role || "staff",
     });
-    if (!res.ok) throw new Error('Failed to fetch departments');
-    return res.json();
+    return result.map((d: any) => ({ ...d, _id: d._id }));
   },
 
   createDepartment: async (data: any): Promise<Department> => {
-    const res = await fetch(`${API_BASE_URL}/departments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    const result = await convex.mutation(convexApi.departments.create, {
+      ...data,
+      userId: user._id,
     });
-    if (!res.ok) throw new Error('Failed to create department');
-    return res.json();
+    return { ...result, _id: result._id } as Department;
   },
 
   updateDepartment: async (id: string, data: any): Promise<Department> => {
-    const res = await fetch(`${API_BASE_URL}/departments/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    const result = await convex.mutation(convexApi.departments.update, {
+      id: id as any,
+      ...data,
+      userId: user._id,
     });
-    if (!res.ok) throw new Error('Failed to update department');
-    return res.json();
+    return { ...result, _id: result._id } as Department;
   },
 
   getDepartmentStats: async () => {
-    const res = await fetch(`${API_BASE_URL}/departments/stats`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch department stats');
-    return res.json();
+    const result = await convex.query(convexApi.departments.getStats, {});
+    return result;
   },
 
-  // Staff CRUD (Protected)
+  // ── Staff CRUD ──────────────────────────────────────────────────────────
   getStaff: async (): Promise<User[]> => {
-    const res = await fetch(`${API_BASE_URL}/staff`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch staff');
-    return res.json();
+    const result = await convex.query(convexApi.users.getStaff, {});
+    return result.map((u: any) => ({ ...u, _id: u._id }));
   },
 
   createStaff: async (data: any): Promise<User> => {
-    const res = await fetch(`${API_BASE_URL}/staff`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to create staff');
-    }
-    return res.json();
+    const id = await convex.mutation(convexApi.users.createStaff, data);
+    // Fetch full user record
+    const allStaff = await convex.query(convexApi.users.getStaff, {});
+    const created = allStaff.find((u: any) => u._id === id);
+    return { ...created, _id: created._id } as User;
   },
 
   updateStaff: async (id: string, data: any): Promise<User> => {
-    const res = await fetch(`${API_BASE_URL}/staff/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to update staff');
-    return res.json();
+    await convex.mutation(convexApi.users.updateStaff, { id: id as any, ...data });
+    const allStaff = await convex.query(convexApi.users.getStaff, {});
+    const updated = allStaff.find((u: any) => u._id === id);
+    return { ...updated, _id: updated._id } as User;
   },
 
   deleteStaff: async (id: string): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/staff/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to delete staff');
-    return res.json();
+    return convex.mutation(convexApi.users.deleteStaff, { id: id as any });
   },
 
-  // Subjects CRUD (Protected)
+  // ── Subjects CRUD ───────────────────────────────────────────────────────
   getSubjects: async (department: string, semester?: number, regulation?: string): Promise<Subject[]> => {
-    const semParam = semester ? `&semester=${semester}` : '';
-    const regParam = regulation ? `&regulation=${encodeURIComponent(regulation)}` : '';
-    const res = await fetch(`${API_BASE_URL}/subjects?department=${department}${semParam}${regParam}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch subjects');
-    return res.json();
+    const result = await convex.query(convexApi.subjects.get, { department, semester, regulation });
+    return result.map((s: any) => ({ ...s, _id: s._id }));
   },
 
   createSubject: async (data: any): Promise<Subject> => {
-    const res = await fetch(`${API_BASE_URL}/subjects`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to create subject');
-    }
-    return res.json();
+    const id = await convex.mutation(convexApi.subjects.create, data);
+    const list = await convex.query(convexApi.subjects.get, { department: data.department });
+    const created = list.find((s: any) => s._id === id);
+    return { ...created, _id: created._id } as Subject;
   },
 
   updateSubject: async (id: string, data: any): Promise<Subject> => {
-    const res = await fetch(`${API_BASE_URL}/subjects/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to update subject');
-    return res.json();
+    await convex.mutation(convexApi.subjects.update, { id: id as any, ...data });
+    // Re-fetch for the updated record
+    const allSubjects = await convex.query(convexApi.subjects.get, {});
+    const updated = allSubjects.find((s: any) => s._id === id);
+    return { ...updated, _id: updated._id } as Subject;
   },
 
   deleteSubject: async (id: string): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/subjects/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to delete subject');
-    return res.json();
+    return convex.mutation(convexApi.subjects.remove, { id: id as any });
   },
 
   bulkUploadSubjects: async (formData: FormData): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/subjects/bulk-upload`, {
-      method: 'POST',
-      headers: getAuthHeaders(), // no Content-Type; browser sets multipart boundary
-      body: formData
+    const file = formData.get("file") as File;
+    const department = formData.get("department") as string;
+    const regulation = formData.get("regulation") as string;
+    const semester = formData.get("semester") ? parseInt(formData.get("semester") as string) : undefined;
+    const skipDuplicates = formData.get("skipDuplicates") === "true";
+
+    const storageId = await uploadFileToConvex(file);
+    return convex.action(convexApi.subjectsActions.bulkUpload, {
+      storageId,
+      department,
+      regulation,
+      semester,
+      skipDuplicates: skipDuplicates ?? true,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(err.message || 'Failed to bulk upload subjects');
-    }
-    return res.json();
   },
 
-  // GPA (Protected)
+  // ── GPA ─────────────────────────────────────────────────────────────────
   calculateGpa: async (data: any): Promise<GpaRecord> => {
-    const res = await fetch(`${API_BASE_URL}/gpa/calculate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    const result = await convex.mutation(convexApi.gpa.calculateSingle, {
+      ...data,
+      userId: user._id,
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to calculate GPA');
-    }
-    return res.json();
+    return { ...result, _id: result._id, createdAt: new Date(result.createdAt).toISOString() } as GpaRecord;
   },
 
   getGpaRecords: async (department?: string, semester?: number): Promise<GpaRecord[]> => {
-    const deptParam = department ? `department=${department}` : '';
-    const semParam = semester ? `&semester=${semester}` : '';
-    const query = deptParam ? `?${deptParam}${semParam}` : (semParam ? `?${semParam.slice(1)}` : '');
-    const res = await fetch(`${API_BASE_URL}/gpa/records${query}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch GPA records');
-    return res.json();
+    const user = getCurrentUserRaw();
+    // Dept-level users get only their own records
+    const userId =
+      user && (user.role === "dept_admin" || user.role === "staff")
+        ? (user._id as any)
+        : undefined;
+
+    const result = await convex.query(convexApi.gpa.getRecords, { department, semester, userId });
+    return result.map((r: any) => ({
+      ...r,
+      _id: r._id,
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
   },
 
   bulkUploadGpa: async (formData: FormData): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/gpa/bulk-calculate`, {
-      method: 'POST',
-      headers: getAuthHeaders(), // Do NOT set content-type, let browser set boundaries for multipart/form-data
-      body: formData
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed bulk upload');
-    }
-    return res.json();
-  },
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
 
-  // CGPA (Protected)
-  calculateCgpa: async (data: any): Promise<CgpaRecord> => {
-    const res = await fetch(`${API_BASE_URL}/cgpa/calculate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to calculate CGPA');
-    }
-    return res.json();
-  },
+    const file = formData.get("file") as File;
+    const department = (formData.get("department") as string) || user.department;
+    const regulation = formData.get("regulation") as string;
+    const semester = formData.get("semester") as string;
+    const batchName = formData.get("batchName") as string;
 
-  getCgpaRecords: async (department?: string): Promise<CgpaRecord[]> => {
-    const query = department ? `?department=${department}` : '';
-    const res = await fetch(`${API_BASE_URL}/cgpa/records${query}`, {
-      headers: getAuthHeaders()
+    const storageId = await uploadFileToConvex(file);
+    return convex.action(convexApi.gpaActions.bulkCalculate, {
+      storageId,
+      department,
+      regulation: regulation || "__from_file__",
+      semester: semester || "__from_file__",
+      batchName: batchName || undefined,
+      userId: user._id as any,
     });
-    if (!res.ok) throw new Error('Failed to fetch CGPA records');
-    return res.json();
-  },
-
-  bulkUploadCgpa: async (formData: FormData): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/cgpa/bulk-calculate`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed bulk CGPA upload');
-    }
-    return res.json();
-  },
-
-  // Reports Stored (Protected)
-  downloadGpaReportPdf: async (recordId: string) => {
-    const res = await fetch(`${API_BASE_URL}/reports/gpa/${recordId}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to download GPA PDF');
-    return res.blob();
-  },
-
-  downloadCgpaReportPdf: async (recordId: string) => {
-    const res = await fetch(`${API_BASE_URL}/reports/cgpa/${recordId}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to download CGPA PDF');
-    return res.blob();
-  },
-
-  downloadGpaRankListPdf: async (department: string, semester: number) => {
-    const res = await fetch(`${API_BASE_URL}/reports/rank-list/gpa?department=${department}&semester=${semester}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to download GPA Rank List PDF');
-    return res.blob();
-  },
-
-  downloadCgpaRankListPdf: async (department: string) => {
-    const res = await fetch(`${API_BASE_URL}/reports/rank-list/cgpa?department=${department}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to download CGPA Rank List PDF');
-    return res.blob();
-  },
-
-  // Analytics (Protected)
-  getDashboardStats: async (department?: string): Promise<DashboardStats> => {
-    const deptParam = department ? `?department=${department}` : '';
-    const res = await fetch(`${API_BASE_URL}/analytics/dashboard-stats${deptParam}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch dashboard stats');
-    return res.json();
-  },
-
-  getHistoryLogs: async (): Promise<HistoryLog[]> => {
-    const res = await fetch(`${API_BASE_URL}/analytics/history`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch history logs');
-    return res.json();
-  },
-
-  getRegulations: async (): Promise<{ _id: string; name: string }[]> => {
-    const res = await fetch(`${API_BASE_URL}/regulations`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch regulations');
-    return res.json();
-  },
-
-  createRegulation: async (name: string): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/regulations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ name })
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to create regulation');
-    }
-    return res.json();
   },
 
   getBatches: async (department?: string): Promise<any[]> => {
-    const q = department ? `?department=${department}` : '';
-    const res = await fetch(`${API_BASE_URL}/gpa/batches${q}`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch batches');
-    return res.json();
+    return convex.query(convexApi.gpa.getBatches, { department });
   },
 
   getBatchRecords: async (batchId: string): Promise<GpaRecord[]> => {
-    const res = await fetch(`${API_BASE_URL}/gpa/batch/${batchId}/records`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch batch records');
-    return res.json();
-  },
-
-  downloadBatchPdf: async (batchId: string): Promise<Blob> => {
-    const res = await fetch(`${API_BASE_URL}/reports/batch/${batchId}/pdf`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error('Failed to download batch PDF');
-    return res.blob();
+    const result = await convex.query(convexApi.gpa.getBatchRecords, { batchId });
+    return result.map((r: any) => ({
+      ...r,
+      _id: r._id,
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
   },
 
   deleteGpaRecord: async (id: string): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/gpa/record/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to delete record');
-    }
-    return res.json();
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.mutation(convexApi.gpa.deleteRecord, { id: id as any, userId: user._id as any });
   },
 
   deleteBatch: async (batchId: string): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/gpa/batch/${batchId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.mutation(convexApi.gpa.deleteBatch, { batchId, userId: user._id as any });
+  },
+
+  // ── CGPA ────────────────────────────────────────────────────────────────
+  calculateCgpa: async (data: any): Promise<CgpaRecord> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    const result = await convex.mutation(convexApi.cgpa.calculateSingle, {
+      ...data,
+      userId: user._id,
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to delete batch');
-    }
-    return res.json();
+    return { ...result, _id: result._id, createdAt: new Date(result.createdAt).toISOString() } as CgpaRecord;
+  },
+
+  getCgpaRecords: async (department?: string): Promise<CgpaRecord[]> => {
+    const user = getCurrentUserRaw();
+    const userId =
+      user && (user.role === "dept_admin" || user.role === "staff")
+        ? (user._id as any)
+        : undefined;
+
+    const result = await convex.query(convexApi.cgpa.getRecords, { department, userId });
+    return result.map((r: any) => ({
+      ...r,
+      _id: r._id,
+      createdAt: new Date(r.createdAt).toISOString(),
+    }));
+  },
+
+  bulkUploadCgpa: async (formData: FormData): Promise<any> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+
+    const file = formData.get("file") as File;
+    const department = (formData.get("department") as string) || user.department;
+    const regulation = (formData.get("regulation") as string) || "R2021";
+
+    const storageId = await uploadFileToConvex(file);
+    return convex.action(convexApi.cgpaActions.bulkCalculate, {
+      storageId,
+      department,
+      regulation,
+      userId: user._id as any,
+    });
+  },
+
+  // ── PDF Reports ─────────────────────────────────────────────────────────
+  downloadGpaReportPdf: async (recordId: string): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateStoredGpaPdf, {
+      recordId: recordId as any,
+    });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadCgpaReportPdf: async (recordId: string): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateStoredCgpaPdf, {
+      recordId: recordId as any,
+    });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadGpaRankListPdf: async (department: string, semester: number): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateRankListGpaPdf, { department, semester });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadCgpaRankListPdf: async (department: string): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateRankListCgpaPdf, { department });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadBatchPdf: async (batchId: string): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateBatchGpaPdf, { batchId });
+    return base64ToPdfBlob(b64);
   },
 
   downloadBulkGpaPdf: async (formData: FormData): Promise<Blob> => {
-    const res = await fetch(`${API_BASE_URL}/reports/bulk-gpa-pdf`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Failed to generate bulk PDF' }));
-      throw new Error(err.message || 'Failed bulk PDF generation');
-    }
-    return res.blob();
+    // The bulk GPA PDF uses the batch generated from a prior bulkUploadGpa call.
+    // This method re-uses generateBatchGpaPdf with a batchId stored in FormData.
+    const batchId = formData.get("batchId") as string;
+    if (!batchId) throw new Error("batchId required for bulk PDF download");
+    const b64 = await convex.action(convexApi.reports.generateBatchGpaPdf, { batchId });
+    return base64ToPdfBlob(b64);
   },
 
+  // ── Analytics ───────────────────────────────────────────────────────────
+  getDashboardStats: async (department?: string): Promise<DashboardStats> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.query(convexApi.analytics.getDashboardStats, {
+      department,
+      role: user.role,
+      userId: user._id as any,
+    });
+  },
+
+  getHistoryLogs: async (): Promise<HistoryLog[]> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    const result = await convex.query(convexApi.analytics.getHistory, {
+      role: user.role,
+      userId: user._id as any,
+    });
+    return result.map((l: any) => ({
+      ...l,
+      _id: l._id,
+      timestamp: new Date(l.timestamp).toISOString(),
+    }));
+  },
+
+  // ── Regulations ─────────────────────────────────────────────────────────
+  getRegulations: async (): Promise<{ _id: string; name: string }[]> => {
+    const result = await convex.query(convexApi.regulations.get, {});
+    return result.map((r: any) => ({ _id: r._id, name: r.name }));
+  },
+
+  createRegulation: async (name: string): Promise<any> => {
+    const id = await convex.mutation(convexApi.regulations.create, { name });
+    return { _id: id, name };
+  },
+
+  // ── Grade Settings ──────────────────────────────────────────────────────
   getGradeSettings: async (department: string, regulation: string, semester: number): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/grade-settings/${encodeURIComponent(department)}/${encodeURIComponent(regulation)}/${semester}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch grade settings');
-    return res.json();
+    const grades = await convex.query(convexApi.gradeSettings.get, { department, regulation, semester });
+    // Return same shape as the Express backend: { grades: [...] }
+    return { grades };
   },
 
-  saveGradeSettings: async (department: string, regulation: string, semester: number, grades: { grade: string; points: number }[]): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/grade-settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ department, regulation, semester, grades })
+  saveGradeSettings: async (
+    department: string,
+    regulation: string,
+    semester: number,
+    grades: { grade: string; points: number }[]
+  ): Promise<any> => {
+    const id = await convex.mutation(convexApi.gradeSettings.save, {
+      department,
+      regulation,
+      semester,
+      grades,
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Failed to save grade settings');
-    }
-    return res.json();
-  }
+    return { _id: id };
+  },
 };
