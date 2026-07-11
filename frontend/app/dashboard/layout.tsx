@@ -31,60 +31,60 @@ interface NavItem {
 }
 
 const allNavItems: NavItem[] = [
-  { label: 'Overview',        path: '/dashboard',               icon: <BarChart3      className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'], group: 'core'  },
-  { label: 'Departments',     path: '/dashboard/departments',   icon: <Building       className="h-4 w-4" />, roles: ['super_admin'],                      group: 'admin' },
-  { label: 'Staff Management',path: '/dashboard/staff',         icon: <Users          className="h-4 w-4" />, roles: ['super_admin','dept_admin'],          group: 'admin' },
-  { label: 'Syllabus Catalog',path: '/dashboard/subjects',      icon: <BookOpen       className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'admin' },
-  { label: 'Grade Settings',  path: '/dashboard/grade-settings',icon: <Settings       className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'admin' },
-  { label: 'GPA Calculation', path: '/dashboard/gpa',           icon: <GraduationCap  className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'calc'  },
-  { label: 'CGPA Calculation',path: '/dashboard/cgpa',          icon: <TrendingUp     className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'calc'  },
-  { label: 'Bulk GPA Upload', path: '/dashboard/bulk/gpa',      icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'], group: 'tools' },
-  { label: 'Batch Results',   path: '/dashboard/bulk/gpa/batches', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'], group: 'tools' },
-  { label: 'History & Logs',  path: '/dashboard/history',       icon: <History        className="h-4 w-4" />, roles: ['super_admin','dept_admin','staff'],  group: 'logs'  },
+  { label: 'Overview', path: '/dashboard', icon: <BarChart3 className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'core' },
+  { label: 'Departments', path: '/dashboard/departments', icon: <Building className="h-4 w-4" />, roles: ['super_admin'], group: 'admin' },
+  { label: 'Staff Management', path: '/dashboard/staff', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin'], group: 'admin' },
+  { label: 'Syllabus Catalog', path: '/dashboard/subjects', icon: <BookOpen className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
+  { label: 'Grade Settings', path: '/dashboard/grade-settings', icon: <Settings className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
+  { label: 'GPA Calculation', path: '/dashboard/gpa', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },
+  { label: 'CGPA Calculation', path: '/dashboard/cgpa', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },
+  { label: 'Bulk GPA Upload', path: '/dashboard/bulk/gpa', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
+  { label: 'Batch Results', path: '/dashboard/bulk/gpa/batches', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
+  { label: 'History & Logs', path: '/dashboard/history', icon: <History className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'logs' },
 ];
 
 const groupLabels: Record<string, string> = {
-  core:  'Overview',
+  core: 'Overview',
   admin: 'Administration',
-  calc:  'Calculations',
+  calc: 'Calculations',
   tools: 'Bulk Tools',
-  logs:  'Activity Logs'
+  logs: 'Activity Logs'
 };
 
 const roleConfig: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode; dotColor: string }> = {
   super_admin: {
-    label:     'Super Administrator',
-    color:     'text-sky-300',
-    bg:        'bg-sky-500/10',
-    border:    'border-sky-500/25',
-    icon:      <Shield  className="h-3 w-3" />,
-    dotColor:  'bg-sky-400'
+    label: 'Super Administrator',
+    color: 'text-sky-300',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/25',
+    icon: <Shield className="h-3 w-3" />,
+    dotColor: 'bg-sky-400'
   },
   dept_admin: {
-    label:     'Department Admin',
-    color:     'text-amber-300',
-    bg:        'bg-amber-500/10',
-    border:    'border-amber-500/25',
-    icon:      <Building className="h-3 w-3" />,
-    dotColor:  'bg-amber-400'
+    label: 'Department Admin',
+    color: 'text-amber-300',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/25',
+    icon: <Building className="h-3 w-3" />,
+    dotColor: 'bg-amber-400'
   },
   staff: {
-    label:     'Academic Staff',
-    color:     'text-emerald-300',
-    bg:        'bg-emerald-500/10',
-    border:    'border-emerald-500/25',
-    icon:      <Users   className="h-3 w-3" />,
-    dotColor:  'bg-emerald-400'
+    label: 'Academic Staff',
+    color: 'text-emerald-300',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/25',
+    icon: <Users className="h-3 w-3" />,
+    dotColor: 'bg-emerald-400'
   }
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [user,        setUser]        = useState<any>(null);
-  const [loading,     setLoading]     = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const pathname  = location.pathname;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   useEffect(() => {
     const handleAuth = () => {
@@ -123,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="relative">
             <div className="w-14 h-14 border-2 border-sky-500/15 rounded-full" />
             <div className="absolute inset-0 w-14 h-14 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-            <div className="absolute inset-2 w-10 h-10 border border-blue-400/30 border-b-transparent rounded-full animate-spin" style={{animationDirection:'reverse', animationDuration:'0.8s'}} />
+            <div className="absolute inset-2 w-10 h-10 border border-blue-400/30 border-b-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }} />
           </div>
           <div className="text-center">
             <p className="text-sm text-sky-300/70 font-semibold">Initializing secure session</p>
@@ -203,11 +203,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group mb-0.5 ${
-                    active
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group mb-0.5 ${active
                       ? 'nav-link-active text-white'
                       : 'text-sky-200/45 hover:bg-sky-500/[0.08] hover:text-white'
-                  }`}
+                    }`}
                 >
                   <span className={`${active ? 'text-white' : 'text-sky-400/50 group-hover:text-sky-300'} transition-colors`}>
                     {item.icon}
@@ -236,7 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="min-h-screen bg-[#040f24] text-white flex" style={{overflowX:'hidden'}}>
+    <div className="min-h-screen bg-[#040f24] text-white flex" style={{ overflowX: 'hidden' }}>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 glass-sidebar border-r border-sky-900/35 shrink-0 fixed top-0 bottom-0 left-0 z-40">
@@ -246,9 +245,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Drawer */}
       <div className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${sidebarOpen ? 'pointer-events-auto visible' : 'pointer-events-none invisible'}`}>
         <div
-          className={`absolute inset-0 bg-black/70 transition-all duration-300 ${
-            sidebarOpen ? 'opacity-100 backdrop-blur-sm pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
-          }`}
+          className={`absolute inset-0 bg-black/70 transition-all duration-300 ${sidebarOpen ? 'opacity-100 backdrop-blur-sm pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
+            }`}
           onClick={() => setSidebarOpen(false)}
         />
         <aside className={`absolute top-0 bottom-0 left-0 w-64 glass-sidebar border-r border-sky-900/40 flex flex-col transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -257,7 +255,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow flex flex-col lg:ml-64" style={{minHeight:'100vh', overflowX:'hidden'}}>
+      <div className="flex-grow flex flex-col lg:ml-64" style={{ minHeight: '100vh', overflowX: 'hidden' }}>
 
         {/* Top Header */}
         <header className="h-16 bg-[#040f24]/80 border-b border-sky-900/30 px-4 sm:px-6 flex justify-between items-center shrink-0 sticky top-0 z-30 backdrop-blur-2xl">

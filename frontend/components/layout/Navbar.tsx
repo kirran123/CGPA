@@ -43,11 +43,10 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`rit-navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+      className={`rit-navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
           ? 'bg-[#040f24]/96 backdrop-blur-xl shadow-lg shadow-sky-900/20 border-b border-sky-500/20 py-2'
           : 'bg-[#040f24]/80 backdrop-blur-md py-3'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14">
@@ -104,9 +103,8 @@ export default function Navbar() {
             {/* Departments */}
             <Link
               to="/#departments"
-              className={`flex items-center gap-1.5 font-medium transition-colors duration-200 nav-text ${
-                isLinkActive('/#departments') ? 'text-white' : 'text-sky-100/75 hover:text-white'
-              }`}
+              className={`flex items-center gap-1.5 font-medium transition-colors duration-200 nav-text ${isLinkActive('/#departments') ? 'text-white' : 'text-sky-100/75 hover:text-white'
+                }`}
             >
               <Building className="h-4 w-4 text-sky-400" />
               <span>Departments</span>

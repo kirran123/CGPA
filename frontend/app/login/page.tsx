@@ -56,10 +56,10 @@ const roles: RoleConfig[] = [
 
 export default function LoginPage() {
   const [activeRole, setActiveRole] = useState<RoleTab>('super_admin');
-  const [email,      setEmail]      = useState('');
-  const [password,   setPassword]   = useState('');
-  const [error,      setError]      = useState<string | null>(null);
-  const [loading,    setLoading]    = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,8 +67,8 @@ export default function LoginPage() {
     if (user) {
       const path =
         user.role === 'super_admin' ? '/dashboard'
-        : user.role === 'dept_admin' ? '/dashboard/staff'
-        : '/dashboard/subjects';
+          : user.role === 'dept_admin' ? '/dashboard/staff'
+            : '/dashboard/subjects';
       navigate(path);
     }
   }, []);
@@ -83,8 +83,8 @@ export default function LoginPage() {
       const user = await api.login({ email, password });
       const roleMap: Record<string, RoleTab> = {
         super_admin: 'super_admin',
-        dept_admin:  'dept_admin',
-        staff:       'staff'
+        dept_admin: 'dept_admin',
+        staff: 'staff'
       };
       const userRole = roleMap[user.role];
       if (userRole !== activeRole) {
@@ -95,8 +95,8 @@ export default function LoginPage() {
       }
       const path =
         user.role === 'super_admin' ? '/dashboard'
-        : user.role === 'dept_admin' ? '/dashboard/staff'
-        : '/dashboard/subjects';
+          : user.role === 'dept_admin' ? '/dashboard/staff'
+            : '/dashboard/subjects';
       navigate(path);
     } catch (err: any) {
       setError(err.message || 'Invalid credentials. Please try again.');
@@ -145,11 +145,10 @@ export default function LoginPage() {
               <button
                 key={role.id}
                 onClick={() => handleTabChange(role.id)}
-                className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all duration-200 relative cursor-pointer login-tab ${
-                  activeRole === role.id
+                className={`flex-1 flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all duration-200 relative cursor-pointer login-tab ${activeRole === role.id
                     ? `${role.color} bg-white/[0.03] login-tab-active ${role.id}`
                     : 'text-sky-200/38 hover:text-sky-200/65 hover:bg-white/[0.015] login-tab-inactive'
-                }`}
+                  }`}
               >
                 {role.icon}
                 <span className="text-[11px] font-semibold">{role.label}</span>
