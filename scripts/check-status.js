@@ -1,5 +1,5 @@
 const https = require("https");
-const CONVEX_URL = "https://successful-cuttlefish-940.convex.cloud";
+const CONVEX_URL = "https://aromatic-crow-956.convex.cloud";
 
 function convexQuery(fnPath, args = {}) {
   return new Promise((resolve, reject) => {

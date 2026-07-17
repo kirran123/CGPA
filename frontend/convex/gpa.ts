@@ -93,7 +93,7 @@ export const calculateSingle = mutation({
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Calculate GPA", details: `Calculated GPA (${gpa}) for ${studentName} (${registerNo}), Sem ${args.semester}`, performedBy: args.userId, performedByName: user?.name || "Unknown", department: activeDept, timestamp: Date.now() });
     const record = await ctx.db.get(recordId);
-    return { ...record, calculatedBy: { name: user?.name || "Unknown" } };
+    return { ...(record as any), calculatedBy: { name: user?.name || "Unknown" } };
   },
 });
 
@@ -101,10 +101,10 @@ export const getBatchRecords = query({
   args: { batchId: v.string() },
   handler: async (ctx, args) => {
     const records = await ctx.db.query("gpaRecords").withIndex("by_batch", (q) => q.eq("batchId", args.batchId)).collect();
-    const out = [];
+    const out: any[] = [];
     for (const r of records) {
-      const user = await ctx.db.get(r.calculatedBy as any);
-      out.push({ ...r, calculatedBy: { name: user?.name || "Unknown" } });
+      const user = (await ctx.db.get(r.calculatedBy as any)) as any;
+      out.push({ ...(r as any), calculatedBy: { name: user?.name || "Unknown" } });
     }
     return out.sort((a, b) => a.registerNo.localeCompare(b.registerNo));
   },
@@ -117,10 +117,10 @@ export const getRecords = query({
     if (args.department) records = records.filter((r) => r.department === args.department!.toUpperCase());
     if (args.semester !== undefined) records = records.filter((r) => r.semester === args.semester);
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
-    const out = [];
+    const out: any[] = [];
     for (const r of records) {
-      const user = await ctx.db.get(r.calculatedBy as any);
-      out.push({ ...r, calculatedBy: { name: user?.name || "Unknown" } });
+      const user = (await ctx.db.get(r.calculatedBy as any)) as any;
+      out.push({ ...(r as any), calculatedBy: { name: user?.name || "Unknown" } });
     }
     return out.sort((a, b) => b.createdAt - a.createdAt);
   },
@@ -131,8 +131,8 @@ export const getById = query({
   handler: async (ctx, args) => {
     const r = await ctx.db.get(args.id);
     if (!r) return null;
-    const user = await ctx.db.get(r.calculatedBy as any);
-    return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+    const user = (await ctx.db.get(r.calculatedBy as any)) as any;
+    return { ...(r as any), calculatedBy: { name: user?.name || "Unknown" } };
   },
 });
 
@@ -147,9 +147,9 @@ export const getBatches = query({
       if (!ex) batchMap.set(r.batchId!, { batchId: r.batchId, batchName: r.batchName || r.batchId, department: r.department, semester: r.semester, regulation: r.regulation, count: 1, sumGpa: r.gpa, createdAt: r.createdAt, calculatedBy: r.calculatedBy });
       else { ex.count++; ex.sumGpa += r.gpa; if (r.createdAt < ex.createdAt) ex.createdAt = r.createdAt; }
     }
-    const output = [];
+    const output: any[] = [];
     for (const b of batchMap.values()) {
-      const user = await ctx.db.get(b.calculatedBy);
+      const user = (await ctx.db.get(b.calculatedBy)) as any;
       output.push({ batchId: b.batchId, batchName: b.batchName, department: b.department, semester: b.semester, regulation: b.regulation, count: b.count, avgGpa: parseFloat((b.sumGpa / b.count).toFixed(2)), createdAt: b.createdAt, calculatedBy: { name: user?.name || "Unknown" } });
     }
     return output.sort((a, b) => b.createdAt - a.createdAt);

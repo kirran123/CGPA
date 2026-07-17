@@ -19,14 +19,14 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo 📦 Step 3: Syncing functions to Development Convex (successful-cuttlefish-940)...
+echo 📦 Step 3: Syncing functions to Development Convex (aromatic-crow-956)...
 echo Starting local Convex dev watcher in background to sync functions...
 start "convex-dev-watcher" /min cmd /c "cd frontend && npx convex dev"
 echo Waiting 12 seconds for sync to complete...
 timeout /t 12 /nobreak
 
 echo 🚚 Step 4: Running migration to Development Convex...
-set CONVEX_URL=https://successful-cuttlefish-940.convex.cloud
+set CONVEX_URL=https://aromatic-crow-956.convex.cloud
 node scripts/migrate-to-convex.js
 if %errorlevel% neq 0 (
     echo ❌ Development migration failed.

@@ -12,8 +12,9 @@ export const bulkCalculate = action({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const arrayBuffer = await ctx.storage.get(args.storageId);
-    if (!arrayBuffer) throw new Error("File not found in storage");
+    const blob = await ctx.storage.get(args.storageId);
+    if (!blob) throw new Error("File not found in storage");
+    const arrayBuffer = await blob.arrayBuffer();
     const activeDept = args.department.toUpperCase();
     const regulation = args.regulation.toUpperCase();
 
@@ -97,7 +98,7 @@ export const bulkCalculate = action({
     }
 
     if (!recordsToWrite.length) throw new Error("All calculations failed:\n" + errors.join("\n"));
-    const result = await ctx.runMutation(api.cgpa.bulkInsert, { records: recordsToWrite, userId: args.userId });
+    const result = (await ctx.runMutation(api.cgpa.bulkInsert, { records: recordsToWrite, userId: args.userId })) as any;
     await ctx.storage.delete(args.storageId);
     return { message: `Successfully calculated ${result.count} CGPA records.`, recordsCount: result.count, errors };
   },

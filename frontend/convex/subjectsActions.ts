@@ -13,8 +13,9 @@ export const bulkUpload = action({
     skipDuplicates: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const arrayBuffer = await ctx.storage.get(args.storageId);
-    if (!arrayBuffer) throw new Error("File not found in storage");
+    const blob = await ctx.storage.get(args.storageId);
+    if (!blob) throw new Error("File not found in storage");
+    const arrayBuffer = await blob.arrayBuffer();
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const xlsx = require("xlsx");
@@ -45,7 +46,7 @@ export const bulkUpload = action({
     }
 
     if (!subjects.length) throw new Error("No valid subjects found in the file");
-    const result = await ctx.runMutation(api.subjects.insertBulk, { subjects, skipDuplicates: args.skipDuplicates });
+    const result = (await ctx.runMutation(api.subjects.insertBulk, { subjects, skipDuplicates: args.skipDuplicates })) as any;
     await ctx.storage.delete(args.storageId);
     return result;
   },

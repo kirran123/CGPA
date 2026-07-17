@@ -278,7 +278,11 @@ export const api = {
 
   // ── Staff CRUD ──────────────────────────────────────────────────────────
   getStaff: async (): Promise<User[]> => {
-    const result = await convex.query(convexApi.users.getStaff, {});
+    const user = getCurrentUserRaw();
+    const result = await convex.query(convexApi.users.getStaff, {
+      department: user?.department || undefined,
+      role: user?.role || undefined,
+    });
     return result.map((u: any) => ({ ...u, _id: u._id }));
   },
 

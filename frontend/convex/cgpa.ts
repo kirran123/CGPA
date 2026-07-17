@@ -49,10 +49,10 @@ export const getRecords = query({
     let records = await ctx.db.query("cgpaRecords").collect();
     if (args.department) records = records.filter((r) => r.department === args.department!.toUpperCase());
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
-    const out = [];
+    const out: any[] = [];
     for (const r of records) {
-      const user = await ctx.db.get(r.calculatedBy as any);
-      out.push({ ...r, calculatedBy: { name: user?.name || "Unknown" } });
+      const user = (await ctx.db.get(r.calculatedBy as any)) as any;
+      out.push({ ...(r as any), calculatedBy: { name: user?.name || "Unknown" } });
     }
     return out.sort((a, b) => b.cgpa !== a.cgpa ? b.cgpa - a.cgpa : a.registerNo.localeCompare(b.registerNo));
   },
@@ -63,8 +63,8 @@ export const getById = query({
   handler: async (ctx, args) => {
     const r = await ctx.db.get(args.id);
     if (!r) return null;
-    const user = await ctx.db.get(r.calculatedBy as any);
-    return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+    const user = (await ctx.db.get(r.calculatedBy as any)) as any;
+    return { ...(r as any), calculatedBy: { name: user?.name || "Unknown" } };
   },
 });
 

@@ -21,7 +21,7 @@ const MONGO_URI =
   "mongodb+srv://digicertify:digicertify30@digicertify.klw4qlw.mongodb.net/cgpa?appName=DigiCertify";
 
 const CONVEX_URL =
-  process.env.CONVEX_URL || "https://successful-cuttlefish-940.convex.cloud";
+  process.env.CONVEX_URL || "https://aromatic-crow-956.convex.cloud";
 
 // Chunk size for batched mutations (Convex has a 8MB per-call limit)
 const CHUNK = 50;

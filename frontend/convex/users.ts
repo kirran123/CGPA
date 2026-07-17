@@ -75,10 +75,20 @@ export const login = mutation({
 
 // Get staff list
 export const getStaff = query({
-  args: {},
-  handler: async (ctx) => {
-    const allUsers = await ctx.db.query("users").collect();
-    // Exclude super_admins or return all for admin dashboard
+  args: {
+    department: v.optional(v.string()),
+    role: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    let allUsers;
+    if (args.role === "dept_admin" && args.department) {
+      allUsers = await ctx.db
+        .query("users")
+        .withIndex("by_department", (q) => q.eq("department", args.department))
+        .collect();
+    } else {
+      allUsers = await ctx.db.query("users").collect();
+    }
     return allUsers
       .filter((u) => u.role !== "super_admin")
       .sort((a, b) => a.name.localeCompare(b.name));

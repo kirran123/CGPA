@@ -90,9 +90,9 @@ export const getDashboardStats = query({
         .slice(0, 10);
 
       for (const r of combinedRecent) {
-        const user = await ctx.db.get(r.calculatedBy as any);
+        const user = (await ctx.db.get(r.calculatedBy as any)) as any;
         recentRecords.push({
-          ...r,
+          ...(r as any),
           calculatedBy: { name: user?.name || "Unknown" },
         });
       }
@@ -202,9 +202,9 @@ export const getDashboardStats = query({
         .slice(0, 10);
 
       for (const r of combinedRecent) {
-        const user = await ctx.db.get(r.calculatedBy as any);
+        const user = (await ctx.db.get(r.calculatedBy as any)) as any;
         recentRecords.push({
-          ...r,
+          ...(r as any),
           calculatedBy: { name: user?.name || "Unknown" },
         });
       }
