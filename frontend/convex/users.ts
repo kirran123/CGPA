@@ -97,7 +97,7 @@ export const createStaff = mutation({
     department: v.string(),
     designation: v.optional(v.string()),
     permissions: v.array(v.string()),
-    status: v.union(v.literal("Active"), v.literal("Inactive")),
+    status: v.optional(v.union(v.literal("Active"), v.literal("Inactive"))),
   },
   handler: async (ctx, args) => {
     const emailLower = args.email.toLowerCase().trim();
@@ -125,7 +125,7 @@ export const createStaff = mutation({
       department: args.department,
       designation: args.designation,
       permissions: args.permissions,
-      status: args.status,
+      status: args.status ?? "Active",
       firstLogin: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
