@@ -55,7 +55,7 @@ const roles: RoleConfig[] = [
 ];
 
 export default function LoginPage() {
-  const [activeRole, setActiveRole] = useState<RoleTab>('super_admin');
+  const [activeRole, setActiveRole] = useState<RoleTab>('staff');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
