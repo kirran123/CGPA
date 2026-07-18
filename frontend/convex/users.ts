@@ -56,7 +56,7 @@ export const login = mutation({
 
     const isMatch = bcrypt.compareSync(args.password, user.password);
     if (!isMatch) {
-      throw new Error("Invalid email or password");
+      throw new Error("Password Incorrect");
     }
 
     // Return user info and a mock token (frontend uses it to store in localstorage)

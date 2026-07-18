@@ -99,7 +99,10 @@ export default function LoginPage() {
             : '/dashboard/subjects';
       navigate(path);
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials. Please try again.');
+      const rawMessage = err.message || 'Invalid credentials. Please try again.';
+      const match = rawMessage.match(/Uncaught Error:\s*([\s\S]+?)\s*at handler/);
+      const cleanMsg = match && match[1] ? match[1].trim() : rawMessage;
+      setError(cleanMsg);
     } finally {
       setLoading(false);
     }
