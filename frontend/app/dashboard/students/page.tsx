@@ -15,7 +15,8 @@ import {
   Loader2,
   X,
   Building,
-  GraduationCap
+  GraduationCap,
+  ArrowUpDown
 } from 'lucide-react';
 import { api, Department, Student } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
@@ -53,6 +54,26 @@ export default function StudentManagementPage() {
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<'registerNo' | 'name'>('registerNo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const toggleSort = (field: 'registerNo' | 'name') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedStudents = [...students].sort((a, b) => {
+    const valA = (sortField === 'registerNo' ? a.registerNo : a.name).trim().toUpperCase();
+    const valB = (sortField === 'registerNo' ? b.registerNo : b.name).trim().toUpperCase();
+    const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+    return sortOrder === 'asc' ? cmp : -cmp;
+  });
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -390,8 +411,24 @@ export default function StudentManagementPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-sky-500/10 text-sky-300/40 font-bold uppercase tracking-wider text-[9px] bg-sky-500/[0.02]">
-                  <th className="py-3 px-4">Register No</th>
-                  <th className="py-3 px-4">Student Name</th>
+                  <th onClick={() => toggleSort('registerNo')} className="py-3 px-4 cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Register No</span>
+                      <ArrowUpDown className={`h-3 w-3 ${sortField === 'registerNo' ? 'text-sky-400' : 'opacity-40'}`} />
+                      {sortField === 'registerNo' && (
+                        <span className="text-[8px] font-bold text-sky-400">({sortOrder.toUpperCase()})</span>
+                      )}
+                    </div>
+                  </th>
+                  <th onClick={() => toggleSort('name')} className="py-3 px-4 cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Student Name</span>
+                      <ArrowUpDown className={`h-3 w-3 ${sortField === 'name' ? 'text-sky-400' : 'opacity-40'}`} />
+                      {sortField === 'name' && (
+                        <span className="text-[8px] font-bold text-sky-400">({sortOrder.toUpperCase()})</span>
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Department</th>
                   <th className="py-3 px-4">Batch</th>
                   <th className="py-3 px-4">Regulation</th>
@@ -399,7 +436,7 @@ export default function StudentManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {students.map((st, idx) => (
+                {sortedStudents.map((st, idx) => (
                   <tr
                     key={st._id}
                     className={`border-b border-sky-500/5 hover:bg-sky-500/[0.03] transition-colors ${

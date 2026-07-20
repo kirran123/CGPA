@@ -13,7 +13,8 @@ import {
   Loader2,
   CheckCircle,
   X,
-  Filter
+  Filter,
+  ArrowUpDown
 } from 'lucide-react';
 import { api, Department, GpaRecord } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
@@ -25,6 +26,19 @@ export default function GpaResultsPage() {
   const [selectedSem, setSelectedSem] = useState<string>('');
   const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Sorting state
+  const [sortField, setSortField] = useState<'registerNo' | 'name'>('registerNo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const toggleSort = (field: 'registerNo' | 'name') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,8 +141,13 @@ export default function GpaResultsPage() {
       rowsList = rowsList.filter((r) => r.semesters[sNum] !== undefined);
     }
 
-    return rowsList.sort((a, b) => a.registerNo.localeCompare(b.registerNo));
-  }, [students, records, searchQuery, selectedSem, selectedStudentReg]);
+    return rowsList.sort((a, b) => {
+      const valA = (sortField === 'registerNo' ? a.registerNo : a.studentName).trim().toUpperCase();
+      const valB = (sortField === 'registerNo' ? b.registerNo : b.studentName).trim().toUpperCase();
+      const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [students, records, searchQuery, selectedSem, selectedStudentReg, sortField, sortOrder]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string, sem: number) => {
     setDownloadingRowId(recordId);
@@ -366,8 +385,24 @@ export default function GpaResultsPage() {
             <table className="w-full text-left text-xs min-w-[900px]">
               <thead>
                 <tr className="border-b border-sky-500/10 text-sky-300/40 font-bold uppercase tracking-wider text-[9px] bg-sky-500/[0.02]">
-                  <th className="py-3 px-4">Register No</th>
-                  <th className="py-3 px-4">Student Name</th>
+                  <th onClick={() => toggleSort('registerNo')} className="py-3 px-4 cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Register No</span>
+                      <ArrowUpDown className={`h-3 w-3 ${sortField === 'registerNo' ? 'text-sky-400' : 'opacity-40'}`} />
+                      {sortField === 'registerNo' && (
+                        <span className="text-[8px] font-bold text-sky-400">({sortOrder.toUpperCase()})</span>
+                      )}
+                    </div>
+                  </th>
+                  <th onClick={() => toggleSort('name')} className="py-3 px-4 cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Student Name</span>
+                      <ArrowUpDown className={`h-3 w-3 ${sortField === 'name' ? 'text-sky-400' : 'opacity-40'}`} />
+                      {sortField === 'name' && (
+                        <span className="text-[8px] font-bold text-sky-400">({sortOrder.toUpperCase()})</span>
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-3 text-center">Dept</th>
                   <th className="py-3 px-2 text-center">Sem 1</th>
                   <th className="py-3 px-2 text-center">Sem 2</th>
