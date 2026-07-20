@@ -14,6 +14,7 @@ import {
   Check,
   X,
   Search,
+  ChevronDown,
 } from 'lucide-react';
 import { api, User as UserType, Department } from '@/lib/api';
 
@@ -38,18 +39,27 @@ export default function StaffManagement() {
   
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
   const navigate = useNavigate();
 
-  // Filter staff list (search only shown / active for super_admin)
+  // Filter staff list (search and department filter only active/shown for super_admin)
   const filteredStaff = useMemo(() => {
-    if (!search.trim() || currentUser?.role !== 'super_admin') return staffList;
-    const q = search.trim().toLowerCase();
-    return staffList.filter(s =>
-      s.name.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q) ||
-      (s.department || '').toLowerCase().includes(q)
-    );
-  }, [staffList, search, currentUser?.role]);
+    let result = staffList;
+    if (currentUser?.role === 'super_admin') {
+      if (selectedDept) {
+        result = result.filter(s => s.department === selectedDept);
+      }
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        result = result.filter(s =>
+          s.name.toLowerCase().includes(q) ||
+          s.email.toLowerCase().includes(q) ||
+          (s.department || '').toLowerCase().includes(q)
+        );
+      }
+    }
+    return result;
+  }, [staffList, search, selectedDept, currentUser?.role]);
 
   const loadData = async () => {
     setLoading(true);
@@ -196,21 +206,56 @@ export default function StaffManagement() {
         </button>
       </div>
 
-      {/* Search bar — super_admin only */}
+      {/* Search + Dept Filter toolbar — super_admin only */}
       {currentUser?.role === 'super_admin' && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sky-400/50 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, email or department…"
-            className="w-full bg-white/[0.03] border border-sky-500/15 focus:border-sky-500/40 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none placeholder:text-sky-300/25 transition-colors"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400/50 hover:text-sky-300 transition-colors">
-              <X className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-2">
+          {/* Search input */}
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-sky-400/40 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search name or email…"
+              className="w-full bg-white/[0.03] border border-sky-500/15 focus:border-sky-500/35 rounded-lg pl-7 pr-6 py-1.5 text-xs text-white focus:outline-none placeholder:text-sky-300/20 transition-colors"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-sky-400/40 hover:text-sky-300 transition-colors">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Department filter */}
+          <div className="relative">
+            <select
+              value={selectedDept}
+              onChange={e => setSelectedDept(e.target.value)}
+              className="appearance-none bg-white/[0.03] border border-sky-500/15 focus:border-sky-500/35 rounded-lg pl-3 pr-7 py-1.5 text-xs text-white focus:outline-none transition-colors cursor-pointer"
+            >
+              <option value="">All Depts</option>
+              {Array.from(new Set(staffList.map(s => s.department).filter(Boolean))).sort().map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-sky-400/40 pointer-events-none" />
+          </div>
+
+          {/* Active filter pills */}
+          {(search || selectedDept) && (
+            <button
+              onClick={() => { setSearch(''); setSelectedDept(''); }}
+              className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-sky-300/50 hover:text-sky-300 border border-sky-500/10 hover:border-sky-500/25 rounded-lg transition-colors"
+            >
+              <X className="h-2.5 w-2.5" /> Clear
             </button>
+          )}
+
+          {/* Result count badge */}
+          {(search || selectedDept) && (
+            <span className="text-[10px] text-sky-300/40 shrink-0">
+              {filteredStaff.length} of {staffList.length}
+            </span>
           )}
         </div>
       )}
@@ -310,16 +355,17 @@ export default function StaffManagement() {
           </div>
         ))}
 
-        {/* No results from search */}
-        {filteredStaff.length === 0 && search.trim() && (
+        {/* No results from filter/search */}
+        {filteredStaff.length === 0 && (search.trim() || selectedDept) && (
           <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/40">
             <Search className="h-8 w-8" />
-            <p className="text-sm">No staff found for <span className="font-semibold text-sky-300/60">&ldquo;{search}&rdquo;</span></p>
+            <p className="text-sm">No staff match the current filters</p>
+            <button onClick={() => { setSearch(''); setSelectedDept(''); }} className="text-xs text-sky-400 hover:underline mt-1">Clear filters</button>
           </div>
         )}
 
         {/* No staff at all */}
-        {staffList.length === 0 && !search.trim() && (
+        {staffList.length === 0 && !search.trim() && !selectedDept && (
           <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/30">
             <Users className="h-8 w-8" />
             <p className="text-sm font-medium">No staff members found</p>
