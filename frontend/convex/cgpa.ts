@@ -211,6 +211,20 @@ export const getStudentGpaHistory = query({
   },
 });
 
+export const getByRegNo = query({
+  args: { registerNo: v.string(), department: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const regUpper = args.registerNo.trim().toUpperCase();
+    let records = await ctx.db.query("cgpaRecords").collect();
+    records = records.filter((r) => r.registerNo.trim().toUpperCase() === regUpper);
+    if (args.department) {
+      records = records.filter((r) => r.department.toUpperCase() === args.department!.trim().toUpperCase());
+    }
+    if (records.length === 0) return null;
+    return records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+  },
+});
+
 export const updateRecord = mutation({
   args: {
     id: v.string(),

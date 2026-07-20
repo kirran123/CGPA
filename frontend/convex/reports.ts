@@ -95,41 +95,51 @@ async function buildGpaPdf(record: any): Promise<Uint8Array> {
   await drawHeader(page, bold, reg, record.department, "Semester GPA Report");
 
   // Student info box
-  fillRect(page, 40, 140, PW - 80, 60, C.lightBg);
+  fillRect(page, 40, 140, PW - 80, 55, C.lightBg);
   txt(page, "Student Details",        50, 148, 11, bold);
   txt(page, `Name: ${record.studentName}`,  50, 162, 10, reg);
   txt(page, `Register No: ${record.registerNo}`, 300, 162, 10, reg);
-  txt(page, `Semester: ${record.semester}  |  Regulation: ${record.regulation || "R2021"}  |  Dept: ${record.department}`, 50, 176, 9, reg);
+  txt(page, `Department: ${record.department}  |  Regulation: ${record.regulation || "R2021"}`, 50, 176, 9, reg);
 
-  // Table header
-  const tableTop = 215;
+  // Table header for Semester GPAs
+  const tableTop = 210;
   fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
-  THEADERS.forEach((h, i) => txt(page, h, TCOLS[i] + 3, tableTop + 7, 9, bold, C.white, TWIDTHS[i]));
+  txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
+  txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
+  txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
+  txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
 
   // Data rows
   let y = tableTop + ROW_H;
   let totalCredits = 0;
-  const graded = (record.subjects || []).filter((s: any) => s.grade && s.grade.trim());
-  graded.forEach((s: any, idx: number) => {
+  const semesters: any[] = record.semesters && record.semesters.length > 0
+    ? record.semesters
+    : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+
+  semesters.forEach((s: any, idx: number) => {
     const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
     fillRect(page, 40, y, PW - 80, ROW_H, bg);
     totalCredits += Number(s.credits) || 0;
-    [idx + 1, s.subjectCode, s.subjectName, s.credits, s.grade].forEach((val, i) =>
-      txt(page, String(val ?? ""), TCOLS[i] + 3, y + 7, 9, reg, C.dark, TWIDTHS[i])
-    );
+    txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
+    txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
+    txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
+    txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
     y += ROW_H;
   });
 
   // Totals bar
-  fillRect(page, 40, y, PW - 80, 22, C.purple);
-  txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
-  y += 22 + 18;
+  if (totalCredits > 0) {
+    fillRect(page, 40, y, PW - 80, 22, C.purple);
+    txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+    y += 22;
+  }
+  y += 18;
 
   // GPA badge
   const cx = PW / 2;
   fillRect(page, cx - 80, y, 160, 58, C.navy);
-  txt(page, "Semester GPA", cx - 80, y + 10, 10, reg, C.white, 160, "center");
-  txt(page, (Number(record.gpa) || 0).toFixed(2), cx - 80, y + 26, 26, bold, C.periwinkle, 160, "center");
+  txt(page, record.semesters && record.semesters.length > 1 ? "Cumulative CGPA" : `Semester ${record.semester || 1} GPA`, cx - 80, y + 10, 10, reg, C.white, 160, "center");
+  txt(page, (Number(record.cgpa || record.gpa) || 0).toFixed(2), cx - 80, y + 26, 26, bold, C.periwinkle, 160, "center");
 
   drawFooter(page, reg);
   return doc.save();
@@ -255,24 +265,34 @@ async function buildBatchGpaPdf(records: any[], meta: any): Promise<Uint8Array> 
 
     const tableTop = 170;
     fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
-    THEADERS.forEach((h, i) => txt(page, h, TCOLS[i] + 3, tableTop + 7, 9, bold, C.white, TWIDTHS[i]));
+    txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
+    txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
+    txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
+    txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
 
     let y = tableTop + ROW_H;
     let totalCredits = 0;
-    const graded = (record.subjects || []).filter((s: any) => s.grade && s.grade.trim());
-    graded.forEach((s: any, idx: number) => {
+    const semesters: any[] = record.semesters && record.semesters.length > 0
+      ? record.semesters
+      : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+
+    semesters.forEach((s: any, idx: number) => {
       const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
       fillRect(page, 40, y, PW - 80, ROW_H, bg);
       totalCredits += Number(s.credits) || 0;
-      [idx + 1, s.subjectCode, s.subjectName, s.credits, s.grade].forEach((val, i) =>
-        txt(page, String(val ?? ""), TCOLS[i] + 3, y + 7, 9, reg, C.dark, TWIDTHS[i])
-      );
+      txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
+      txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
+      txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
+      txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
       y += ROW_H;
     });
 
-    fillRect(page, 40, y, PW - 80, 22, C.purple);
-    txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
-    y += 22 + 16;
+    if (totalCredits > 0) {
+      fillRect(page, 40, y, PW - 80, 22, C.purple);
+      txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+      y += 22;
+    }
+    y += 16;
 
     const cx = PW / 2;
     fillRect(page, cx - 80, y, 160, 58, C.navy);
@@ -376,7 +396,20 @@ export const generateStoredGpaPdf = action({
   handler: async (ctx, args) => {
     const r = await ctx.runQuery(api.gpa.getById, { id: args.recordId });
     if (!r) throw new Error("GPA record not found");
-    const bytes = await buildGpaPdf(r);
+    const cgpaRec = await ctx.runQuery(api.cgpa.getByRegNo, { registerNo: r.registerNo, department: r.department });
+    const semesters = cgpaRec?.semesters && cgpaRec.semesters.length > 0
+      ? cgpaRec.semesters
+      : [{ semester: r.semester, gpa: r.gpa, credits: r.totalCredits || 0 }];
+    const bytes = await buildGpaPdf({
+      studentName: r.studentName,
+      registerNo: r.registerNo,
+      department: r.department,
+      regulation: r.regulation || "R2021",
+      semester: r.semester,
+      gpa: r.gpa,
+      semesters,
+      cgpa: cgpaRec?.cgpa || r.gpa,
+    });
     return Buffer.from(bytes).toString("base64");
   },
 });
@@ -396,8 +429,11 @@ export const generateStoredCgpaPdf = action({
 export const generateRankListGpaPdf = action({
   args: { department: v.string(), semester: v.number() },
   handler: async (ctx, args) => {
+    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const records = await ctx.runQuery(api.gpa.getRecords, { department: args.department, semester: args.semester });
-    const sorted = [...records].sort((a: any, b: any) => b.gpa - a.gpa).slice(0, 100);
+    const valid = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()));
+    const sorted = [...valid].sort((a: any, b: any) => b.gpa - a.gpa).slice(0, 100);
     const bytes = await buildRankListPdf(sorted, { department: args.department, semester: args.semester, type: "GPA" });
     return Buffer.from(bytes).toString("base64");
   },
@@ -407,8 +443,11 @@ export const generateRankListGpaPdf = action({
 export const generateRankListCgpaPdf = action({
   args: { department: v.string() },
   handler: async (ctx, args) => {
+    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const records = await ctx.runQuery(api.cgpa.getRecords, { department: args.department });
-    const sorted = [...records].sort((a: any, b: any) => b.cgpa - a.cgpa).slice(0, 100);
+    const valid = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && r.cgpa > 0);
+    const sorted = [...valid].sort((a: any, b: any) => b.cgpa - a.cgpa).slice(0, 100);
     const bytes = await buildRankListPdf(sorted, { department: args.department, type: "CGPA" });
     return Buffer.from(bytes).toString("base64");
   },
@@ -420,8 +459,12 @@ export const generateBatchGpaPdf = action({
   handler: async (ctx, args) => {
     const records = await ctx.runQuery(api.gpa.getBatchRecords, { batchId: args.batchId });
     if (records.length === 0) throw new Error("Batch empty or not found");
-    const batchName = (records[0] as any).batchName || args.batchId;
-    const bytes = await buildBatchGpaPdf(records, { batchName });
+    const students = await ctx.runQuery(api.students.getStudents, {});
+    const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
+    const validRecords = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()));
+    const recordsToUse = validRecords.length > 0 ? validRecords : records;
+    const batchName = (recordsToUse[0] as any).batchName || args.batchId;
+    const bytes = await buildBatchGpaPdf(recordsToUse, { batchName });
     return Buffer.from(bytes).toString("base64");
   },
 });
@@ -430,9 +473,21 @@ export const generateBatchGpaPdf = action({
 export const generateOverallSemesterGpaPdf = action({
   args: { department: v.optional(v.string()), semester: v.optional(v.number()) },
   handler: async (ctx, args) => {
+    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
+    const studentMap = new Map<string, string>();
+    students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
+
     const records = await ctx.runQuery(api.gpa.getRecords, { department: args.department, semester: args.semester });
-    if (records.length === 0) throw new Error("No GPA records found for the selected filter");
-    const sorted = [...records].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
+    const validRecords = records
+      .filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && r.gpa > 0)
+      .map((r: any) => ({
+        ...r,
+        studentName: studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName,
+      }));
+
+    if (validRecords.length === 0) throw new Error("No GPA records found for students registered in Student Management");
+    const sorted = [...validRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
     const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", semester: args.semester || "All Semesters", type: "GPA" });
     return Buffer.from(bytes).toString("base64");
   },
@@ -442,9 +497,21 @@ export const generateOverallSemesterGpaPdf = action({
 export const generateOverallCgpaPdf = action({
   args: { department: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
+    const studentMap = new Map<string, string>();
+    students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
+
     const records = await ctx.runQuery(api.cgpa.getRecords, { department: args.department });
-    if (records.length === 0) throw new Error("No CGPA records found for the selected filter");
-    const sorted = [...records].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
+    const validRecords = records
+      .filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && (r.cgpa > 0 || (r.semesters && r.semesters.length > 0)))
+      .map((r: any) => ({
+        ...r,
+        studentName: studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName,
+      }));
+
+    if (validRecords.length === 0) throw new Error("No CGPA records found for students registered in Student Management");
+    const sorted = [...validRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
     const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", type: "CGPA" });
     return Buffer.from(bytes).toString("base64");
   },
