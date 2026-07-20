@@ -129,7 +129,7 @@ export default defineSchema({
     name: v.string(),
     registerNo: v.string(),
     department: v.string(),
-    batch: v.string(), // e.g. "2021-2025"
+    batch: v.string(), // e.g. "2023-2027"
     regulation: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),

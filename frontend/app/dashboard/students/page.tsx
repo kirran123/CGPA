@@ -24,9 +24,9 @@ import * as XLSX from 'xlsx';
 /* ─── Excel Template Generator for Student Roster ───────────────────────── */
 function downloadStudentTemplate() {
   const rows = [
-    { RegNo: '953621104001', Name: 'Abinesh S', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
-    { RegNo: '953621104002', Name: 'Bhuvanesh R', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
-    { RegNo: '953621104003', Name: 'Deepak Kumar K', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
+    { RegNo: '953621104001', Name: 'Abinesh S', Department: 'IT', Batch: '2023-2027', Regulation: 'R2021' },
+    { RegNo: '953621104002', Name: 'Bhuvanesh R', Department: 'IT', Batch: '2023-2027', Regulation: 'R2021' },
+    { RegNo: '953621104003', Name: 'Deepak Kumar K', Department: 'IT', Batch: '2023-2027', Regulation: 'R2021' },
   ];
 
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -137,7 +137,7 @@ export default function StudentManagementPage() {
       ? currentUser?.department || 'IT'
       : (selectedDept || (departments.length > 0 ? departments[0].code : 'IT'));
     setFormDept(defaultDept);
-    setFormBatch(selectedBatch || '2021-2025');
+    setFormBatch(selectedBatch || '2023-2027');
     if (regulations.length > 0) setFormReg(regulations[0]);
     setShowAddModal(true);
   };
@@ -213,7 +213,7 @@ export default function StudentManagementPage() {
       const formData = new FormData();
       formData.append('file', uploadFile);
       formData.append('department', uploadDept || selectedDept || 'IT');
-      formData.append('batch', uploadBatch || '2021-2025');
+      formData.append('batch', uploadBatch || '2023-2027');
       formData.append('regulation', uploadReg || 'R2021');
 
       const result = await api.bulkUploadStudents(formData);
@@ -265,7 +265,7 @@ export default function StudentManagementPage() {
               <button
                 onClick={() => {
                   setUploadDept(selectedDept || (departments[0]?.code || 'IT'));
-                  setUploadBatch(selectedBatch || '2021-2025');
+                  setUploadBatch(selectedBatch || '2023-2027');
                   setShowUploadModal(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 hover:text-white text-xs font-semibold rounded-xl transition-all cursor-pointer"
@@ -508,7 +508,7 @@ export default function StudentManagementPage() {
                     required
                     value={formBatch}
                     onChange={(e) => setFormBatch(e.target.value)}
-                    placeholder="e.g. 2021-2025"
+                    placeholder="e.g. 2023-2027"
                     className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                   />
                 </div>
@@ -596,7 +596,7 @@ export default function StudentManagementPage() {
                     required
                     value={uploadBatch}
                     onChange={(e) => setUploadBatch(e.target.value)}
-                    placeholder="e.g. 2021-2025"
+                    placeholder="e.g. 2023-2027"
                     className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                   />
                 </div>
