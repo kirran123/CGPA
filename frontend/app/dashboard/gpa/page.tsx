@@ -60,7 +60,34 @@ export default function InternalGpaCalculator() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // Student Roster state
+  const [studentRoster, setStudentRoster] = useState<any[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+
   const canEditRecords = canEditRecordsFn();
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const sts = await api.getStudents(selectedDept || undefined);
+        setStudentRoster(sts);
+      } catch (e) {
+        console.error('Error fetching students roster:', e);
+      }
+    };
+    fetchStudents();
+  }, [selectedDept]);
+
+  const handleSelectStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    if (!studentId) return;
+    const st = studentRoster.find((s) => s._id === studentId);
+    if (!st) return;
+    setStudentName(st.name);
+    setRegisterNo(st.registerNo);
+    if (st.department) setSelectedDept(st.department);
+    if (st.regulation) setRegulation(st.regulation);
+  };
 
   const downloadReport = async () => {
     setDownloadingPdf(true);
@@ -339,28 +366,56 @@ export default function InternalGpaCalculator() {
 
             <div className="section-divider !my-2" />
 
-            {/* Optional Student Info */}
+            {/* Student Info & Fetch */}
             <div className="bg-sky-500/[0.04] border border-sky-500/10 rounded-xl p-3 space-y-3">
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5 mb-1">
                 <Info className="h-3 w-3 text-sky-400/60" />
-                <span className="text-[10px] text-sky-300/50">Optional — leave blank to auto-assign (Student1, Student2…)</span>
+                <span className="text-[10px] text-sky-300/60">Select registered student or type Register No to auto-fill details</span>
               </div>
+
+              {/* Student Dropdown */}
+              <div className="form-group">
+                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Select Registered Student</label>
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => handleSelectStudent(e.target.value)}
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500/15 transition-all"
+                >
+                  <option value="">-- Choose Student from Roster --</option>
+                  {studentRoster.map((st) => (
+                    <option key={st._id} value={st._id}>
+                      {st.registerNo} - {st.name} ({st.department})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Student Name</label>
                 <input
                   type="text"
                   value={studentName}
                   onChange={e => setStudentName(e.target.value)}
-                  placeholder="e.g. Name"
+                  placeholder="e.g. Abinesh S"
                   className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder:text-sky-400/25 transition-all"
                 />
               </div>
+
               <div className="form-group">
                 <label className="form-label">Register No.</label>
                 <input
                   type="text"
                   value={registerNo}
-                  onChange={e => setRegisterNo(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setRegisterNo(val);
+                    const match = studentRoster.find(s => s.registerNo.toUpperCase() === val.trim().toUpperCase());
+                    if (match) {
+                      setStudentName(match.name);
+                      if (match.regulation) setRegulation(match.regulation);
+                      setSelectedStudentId(match._id);
+                    }
+                  }}
                   placeholder="e.g. 953621104012"
                   className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder:text-sky-400/25 transition-all"
                 />

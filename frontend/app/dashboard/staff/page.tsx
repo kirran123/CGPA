@@ -162,7 +162,7 @@ export default function StaffManagement() {
           <p className="text-xs text-sky-300">
             {currentUser?.role === 'super_admin' 
               ? 'Manage faculty lists, reset credentials, and assign administrative HOD boundaries.'
-              : `Manage staff rosters inside the Department of ${currentUser?.department}.`
+              : `Manage staff members inside the Department of ${currentUser?.department}.`
             }
           </p>
         </div>

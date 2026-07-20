@@ -370,14 +370,7 @@ export const api = {
   },
 
   getGpaRecords: async (department?: string, semester?: number): Promise<GpaRecord[]> => {
-    const user = getCurrentUserRaw();
-    // Dept-level users get only their own records
-    const userId =
-      user && (user.role === "dept_admin" || user.role === "staff")
-        ? (user._id as any)
-        : undefined;
-
-    const result = await convex.query(convexApi.gpa.getRecords, { department, semester, userId });
+    const result = await convex.query(convexApi.gpa.getRecords, { department, semester });
     return result.map((r: any) => ({
       ...r,
       _id: r._id,
@@ -425,6 +418,12 @@ export const api = {
     return convex.mutation(convexApi.gpa.deleteRecord, { id: id as any, userId: user._id as any });
   },
 
+  deleteCgpaRecord: async (id: string): Promise<any> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.mutation(convexApi.cgpa.deleteRecord, { id: id as any, userId: user._id as any });
+  },
+
   deleteBatch: async (batchId: string): Promise<any> => {
     const user = getCurrentUserRaw();
     if (!user) throw new Error("Not authenticated");
@@ -449,13 +448,7 @@ export const api = {
   },
 
   getCgpaRecords: async (department?: string): Promise<CgpaRecord[]> => {
-    const user = getCurrentUserRaw();
-    const userId =
-      user && (user.role === "dept_admin" || user.role === "staff")
-        ? (user._id as any)
-        : undefined;
-
-    const result = await convex.query(convexApi.cgpa.getRecords, { department, userId });
+    const result = await convex.query(convexApi.cgpa.getRecords, { department });
     return result.map((r: any) => ({
       ...r,
       _id: r._id,

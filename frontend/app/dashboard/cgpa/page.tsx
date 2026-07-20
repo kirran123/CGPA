@@ -364,7 +364,14 @@ export default function InternalCgpaCalculator() {
                 <input
                   type="text"
                   value={registerNo}
-                  onChange={e => setRegisterNo(e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setRegisterNo(val);
+                    const match = studentRoster.find(s => s.registerNo.toUpperCase() === val.trim().toUpperCase());
+                    if (match) {
+                      handleSelectStudent(match._id);
+                    }
+                  }}
                   placeholder="e.g. 953621104012"
                   className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder:text-sky-400/25 transition-all"
                 />

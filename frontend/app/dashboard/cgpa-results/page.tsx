@@ -105,10 +105,7 @@ export default function CgpaResultsPage() {
   const handleDeleteRow = async (id: string, name: string, regNo: string) => {
     if (!window.confirm(`Are you sure you want to delete the CGPA record for "${name}" (${regNo})?`)) return;
     try {
-      await api.deleteGpaRecord(id); // using standard record delete if needed or cgpa delete
-      // Actually let's use convex cgpa delete via API
-      await api.updateCgpaRecord(id, { cgpa: 0 }); // wait, let's call delete directly
-      // Let's call api.deleteGpaRecord or api endpoint
+      await api.deleteCgpaRecord(id);
       setSuccessMsg(`Deleted CGPA record for ${name}`);
       await loadData();
     } catch (err: any) {

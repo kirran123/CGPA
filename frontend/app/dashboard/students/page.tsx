@@ -236,7 +236,7 @@ export default function StudentManagementPage() {
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2 font-['Outfit']">
             <Users className="h-5 w-5 text-sky-400" />
-            Students Management (Batch-wise Roster)
+            Students Management
           </h1>
           <p className="text-xs text-sky-300/50 mt-1">
             Manage student register details by department and batch for GPA &amp; CGPA calculations.
