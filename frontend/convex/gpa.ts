@@ -156,6 +156,39 @@ export const getBatches = query({
   },
 });
 
+export const updateRecord = mutation({
+  args: {
+    id: v.id("gpaRecords"),
+    studentName: v.optional(v.string()),
+    registerNo: v.optional(v.string()),
+    gpa: v.optional(v.number()),
+    semester: v.optional(v.number()),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.id);
+    if (!record) throw new Error("GPA record not found");
+
+    const patch: any = {};
+    if (args.studentName !== undefined) patch.studentName = args.studentName.trim();
+    if (args.registerNo !== undefined) patch.registerNo = args.registerNo.trim().toUpperCase();
+    if (args.gpa !== undefined) patch.gpa = args.gpa;
+    if (args.semester !== undefined) patch.semester = args.semester;
+
+    await ctx.db.patch(args.id, patch);
+    const user = await ctx.db.get(args.userId);
+    await ctx.db.insert("historyLogs", {
+      action: "Update GPA Record",
+      details: `Updated GPA record for ${patch.studentName || record.studentName} (${patch.registerNo || record.registerNo})`,
+      performedBy: args.userId,
+      performedByName: user?.name || "Unknown",
+      department: record.department,
+      timestamp: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
 export const deleteRecord = mutation({
   args: { id: v.id("gpaRecords"), userId: v.id("users") },
   handler: async (ctx, args) => {

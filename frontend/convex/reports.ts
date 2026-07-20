@@ -425,3 +425,28 @@ export const generateBatchGpaPdf = action({
     return Buffer.from(bytes).toString("base64");
   },
 });
+
+// 8. Overall Semester GPA PDF
+export const generateOverallSemesterGpaPdf = action({
+  args: { department: v.optional(v.string()), semester: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const records = await ctx.runQuery(api.gpa.getRecords, { department: args.department, semester: args.semester });
+    if (records.length === 0) throw new Error("No GPA records found for the selected filter");
+    const sorted = [...records].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
+    const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", semester: args.semester || "All Semesters", type: "GPA" });
+    return Buffer.from(bytes).toString("base64");
+  },
+});
+
+// 9. Overall CGPA PDF
+export const generateOverallCgpaPdf = action({
+  args: { department: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const records = await ctx.runQuery(api.cgpa.getRecords, { department: args.department });
+    if (records.length === 0) throw new Error("No CGPA records found for the selected filter");
+    const sorted = [...records].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
+    const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", type: "CGPA" });
+    return Buffer.from(bytes).toString("base64");
+  },
+});
+

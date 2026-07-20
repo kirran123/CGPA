@@ -97,6 +97,17 @@ export interface GpaRecord {
   batchId?: string;
 }
 
+export interface Student {
+  _id: string;
+  name: string;
+  registerNo: string;
+  department: string;
+  batch: string;
+  regulation?: string;
+  createdAt: number;
+  updatedAt?: number;
+}
+
 export interface CgpaRecord {
   _id: string;
   studentName: string;
@@ -420,6 +431,12 @@ export const api = {
     return convex.mutation(convexApi.gpa.deleteBatch, { batchId, userId: user._id as any });
   },
 
+  updateGpaRecord: async (id: string, data: { studentName?: string; registerNo?: string; gpa?: number; semester?: number }): Promise<any> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.mutation(convexApi.gpa.updateRecord, { id: id as any, ...data, userId: user._id as any });
+  },
+
   // ── CGPA ────────────────────────────────────────────────────────────────
   calculateCgpa: async (data: any): Promise<CgpaRecord> => {
     const user = getCurrentUserRaw();
@@ -446,6 +463,16 @@ export const api = {
     }));
   },
 
+  updateCgpaRecord: async (id: string, data: { studentName?: string; registerNo?: string; cgpa?: number; semesters?: any[] }): Promise<any> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+    return convex.mutation(convexApi.cgpa.updateRecord, { id: id as any, ...data, userId: user._id as any });
+  },
+
+  getStudentGpaHistory: async (registerNo: string, department?: string): Promise<any[]> => {
+    return convex.query(convexApi.cgpa.getStudentGpaHistory, { registerNo, department });
+  },
+
   bulkUploadCgpa: async (formData: FormData): Promise<any> => {
     const user = getCurrentUserRaw();
     if (!user) throw new Error("Not authenticated");
@@ -463,6 +490,46 @@ export const api = {
     });
   },
 
+  // ── Students Management ──────────────────────────────────────────────────
+  getStudents: async (department?: string, batch?: string, search?: string): Promise<Student[]> => {
+    const result = await convex.query(convexApi.students.get, { department, batch, search });
+    return result.map((s: any) => ({ ...s, _id: s._id }));
+  },
+
+  getStudentBatches: async (department?: string): Promise<{ batch: string; count: number }[]> => {
+    return convex.query(convexApi.students.getBatches, { department });
+  },
+
+  createStudent: async (data: { name: string; registerNo: string; department: string; batch: string; regulation?: string }): Promise<any> => {
+    return convex.mutation(convexApi.students.create, data);
+  },
+
+  updateStudent: async (id: string, data: Partial<{ name: string; registerNo: string; department: string; batch: string; regulation: string }>): Promise<any> => {
+    return convex.mutation(convexApi.students.update, { id: id as any, ...data });
+  },
+
+  deleteStudent: async (id: string): Promise<any> => {
+    return convex.mutation(convexApi.students.remove, { id: id as any });
+  },
+
+  bulkUploadStudents: async (formData: FormData): Promise<any> => {
+    const user = getCurrentUserRaw();
+    if (!user) throw new Error("Not authenticated");
+
+    const file = formData.get("file") as File;
+    const department = (formData.get("department") as string) || user.department || "";
+    const batch = (formData.get("batch") as string) || "";
+    const regulation = (formData.get("regulation") as string) || "R2021";
+
+    const storageId = await uploadFileToConvex(file);
+    return convex.action(convexApi.studentsActions.bulkUpload, {
+      storageId,
+      department,
+      batch,
+      regulation,
+    });
+  },
+
   // ── PDF Reports ─────────────────────────────────────────────────────────
   downloadGpaReportPdf: async (recordId: string): Promise<Blob> => {
     const b64 = await convex.action(convexApi.reports.generateStoredGpaPdf, {
@@ -475,6 +542,16 @@ export const api = {
     const b64 = await convex.action(convexApi.reports.generateStoredCgpaPdf, {
       recordId: recordId as any,
     });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadOverallSemesterGpaPdf: async (department?: string, semester?: number): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateOverallSemesterGpaPdf, { department, semester });
+    return base64ToPdfBlob(b64);
+  },
+
+  downloadOverallCgpaPdf: async (department?: string): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateOverallCgpaPdf, { department });
     return base64ToPdfBlob(b64);
   },
 

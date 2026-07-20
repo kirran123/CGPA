@@ -68,6 +68,78 @@ export const getById = query({
   },
 });
 
+export const getStudentGpaHistory = query({
+  args: { registerNo: v.string(), department: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const regUpper = args.registerNo.trim().toUpperCase();
+    let gpaRecords = await ctx.db
+      .query("gpaRecords")
+      .collect();
+
+    gpaRecords = gpaRecords.filter((r) => r.registerNo.trim().toUpperCase() === regUpper);
+    if (args.department) {
+      const deptUpper = args.department.trim().toUpperCase();
+      gpaRecords = gpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
+    }
+
+    const semestersMap = new Map<number, any>();
+    for (const r of gpaRecords) {
+      const existing = semestersMap.get(r.semester);
+      if (!existing || r.createdAt > existing.createdAt) {
+        semestersMap.set(r.semester, r);
+      }
+    }
+
+    const result = Array.from(semestersMap.values())
+      .sort((a, b) => a.semester - b.semester)
+      .map((r) => ({
+        semester: r.semester,
+        gpa: r.gpa,
+        credits: r.totalCredits,
+        studentName: r.studentName,
+        regulation: r.regulation,
+        department: r.department,
+      }));
+
+    return result;
+  },
+});
+
+export const updateRecord = mutation({
+  args: {
+    id: v.id("cgpaRecords"),
+    studentName: v.optional(v.string()),
+    registerNo: v.optional(v.string()),
+    semesters: v.optional(v.array(v.object({ semester: v.number(), gpa: v.number(), credits: v.optional(v.number()) }))),
+    cgpa: v.optional(v.number()),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const record = await ctx.db.get(args.id);
+    if (!record) throw new Error("CGPA record not found");
+
+    const patch: any = {};
+    if (args.studentName !== undefined) patch.studentName = args.studentName.trim();
+    if (args.registerNo !== undefined) patch.registerNo = args.registerNo.trim().toUpperCase();
+    if (args.semesters !== undefined) {
+      patch.semesters = args.semesters.map((s) => ({ semester: s.semester, gpa: s.gpa, credits: s.credits || 0 }));
+    }
+    if (args.cgpa !== undefined) patch.cgpa = args.cgpa;
+
+    await ctx.db.patch(args.id, patch);
+    const user = await ctx.db.get(args.userId);
+    await ctx.db.insert("historyLogs", {
+      action: "Update CGPA Record",
+      details: `Updated CGPA record for ${patch.studentName || record.studentName} (${patch.registerNo || record.registerNo})`,
+      performedBy: args.userId,
+      performedByName: user?.name || "Unknown",
+      department: record.department,
+      timestamp: Date.now(),
+    });
+    return { success: true };
+  },
+});
+
 export const deleteRecord = mutation({
   args: { id: v.id("cgpaRecords"), userId: v.id("users") },
   handler: async (ctx, args) => {

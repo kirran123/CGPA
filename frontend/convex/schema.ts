@@ -123,4 +123,18 @@ export default defineSchema({
     name: v.string(),
     createdAt: v.number(),
   }).index("by_name", ["name"]),
+
+  // Students Table (Master Roster)
+  students: defineTable({
+    name: v.string(),
+    registerNo: v.string(),
+    department: v.string(),
+    batch: v.string(), // e.g. "2021-2025"
+    regulation: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_registerNo", ["registerNo"])
+    .index("by_department", ["department"])
+    .index("by_dept_batch", ["department", "batch"]),
 });

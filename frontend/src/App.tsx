@@ -25,6 +25,9 @@ import DashboardOcr from '@/app/dashboard/ocr/page';
 import DashboardBulkGpa from '@/app/dashboard/bulk/gpa/page';
 import DashboardBulkGpaBatches from '@/app/dashboard/bulk/gpa/batches/page';
 import DashboardBulkCgpa from '@/app/dashboard/bulk/cgpa/page';
+import DashboardStudents from '@/app/dashboard/students/page';
+import DashboardGpaResults from '@/app/dashboard/gpa-results/page';
+import DashboardCgpaResults from '@/app/dashboard/cgpa-results/page';
 
 export default function App() {
   React.useEffect(() => {
@@ -48,6 +51,9 @@ export default function App() {
             <Route index element={<DashboardHome />} />
             <Route path="gpa" element={<DashboardGpa />} />
             <Route path="cgpa" element={<DashboardCgpa />} />
+            <Route path="students" element={<DashboardStudents />} />
+            <Route path="gpa-results" element={<DashboardGpaResults />} />
+            <Route path="cgpa-results" element={<DashboardCgpaResults />} />
             <Route path="history" element={<DashboardHistory />} />
             <Route path="departments" element={<DashboardDepartments />} />
             <Route path="staff" element={<DashboardStaff />} />

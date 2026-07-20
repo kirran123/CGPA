@@ -36,6 +36,12 @@ export default function InternalCgpaCalculator() {
     { id: '2', semester: 2, gpa: 0 }
   ]);
 
+  // Student search & auto-fetch state
+  const [studentRoster, setStudentRoster] = useState<any[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [fetchingGpaHistory, setFetchingGpaHistory] = useState(false);
+  const [autoFetchNotice, setAutoFetchNotice] = useState<string | null>(null);
+
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [saving, setSaving] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -43,6 +49,53 @@ export default function InternalCgpaCalculator() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const canEditRecords = canEditRecordsFn();
+
+  // Load student roster when department changes
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const sts = await api.getStudents(selectedDept || undefined);
+        setStudentRoster(sts);
+      } catch (e) {
+        console.error('Error fetching students roster:', e);
+      }
+    };
+    fetchStudents();
+  }, [selectedDept]);
+
+  const handleSelectStudent = async (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setAutoFetchNotice(null);
+    if (!studentId) return;
+
+    const st = studentRoster.find((s) => s._id === studentId);
+    if (!st) return;
+
+    setStudentName(st.name);
+    setRegisterNo(st.registerNo);
+    if (st.department) setSelectedDept(st.department);
+    if (st.regulation) setRegulation(st.regulation);
+
+    setFetchingGpaHistory(true);
+    try {
+      const history = await api.getStudentGpaHistory(st.registerNo, st.department);
+      if (history && history.length > 0) {
+        const newRows: SemesterRow[] = history.map((h: any, idx: number) => ({
+          id: String(h.semester || idx + 1),
+          semester: h.semester || idx + 1,
+          gpa: h.gpa || 0,
+        }));
+        setRows(newRows);
+        setAutoFetchNotice(`Successfully auto-fetched ${history.length} calculated semester GPA records for ${st.name}!`);
+      } else {
+        setAutoFetchNotice(`No calculated GPA records found for ${st.name} (${st.registerNo}). You can enter GPAs manually below.`);
+      }
+    } catch (err) {
+      console.error('Error auto-fetching student GPA history:', err);
+    } finally {
+      setFetchingGpaHistory(false);
+    }
+  };
 
   const downloadReport = async () => {
     setDownloadingPdf(true);
@@ -224,6 +277,36 @@ export default function InternalCgpaCalculator() {
               <FileText className="h-4 w-4 text-emerald-400" />
               Academic Profile
             </h2>
+
+            {/* Quick Student Select Bar */}
+            <div className="form-group bg-emerald-500/[0.04] border border-emerald-500/20 rounded-xl p-3 space-y-2">
+              <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
+                Quick Student Lookup (Auto-Fetch GPA)
+              </label>
+              <select
+                value={selectedStudentId}
+                onChange={(e) => handleSelectStudent(e.target.value)}
+                className="w-full bg-[#071830] border border-emerald-500/30 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
+              >
+                <option value="">-- Select Student to Auto-Fetch GPAs --</option>
+                {studentRoster.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.registerNo} - {s.name} ({s.batch || 'Batch'})
+                  </option>
+                ))}
+              </select>
+              {fetchingGpaHistory && (
+                <div className="flex items-center gap-2 text-[10px] text-emerald-300">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Fetching semester GPAs...</span>
+                </div>
+              )}
+              {autoFetchNotice && (
+                <p className="text-[10px] text-emerald-300 font-medium leading-relaxed">
+                  {autoFetchNotice}
+                </p>
+              )}
+            </div>
 
             {/* Regulation */}
             <div className="form-group">
