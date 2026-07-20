@@ -221,8 +221,8 @@ export const updateRecord = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    let record = await ctx.db.get(args.id as any);
-    let student = null;
+    let record: any = await ctx.db.get(args.id as any);
+    let student: any = null;
 
     if (!record) {
       student = await ctx.db.get(args.id as any);
@@ -237,7 +237,7 @@ export const updateRecord = mutation({
     const dept = record?.department || student?.department || "CSE";
     const reg = record?.regulation || student?.regulation || "R2021";
 
-    const formattedSemesters = (args.semesters || record?.semesters || []).map((s) => ({
+    const formattedSemesters = (args.semesters || record?.semesters || []).map((s: any) => ({
       semester: s.semester,
       gpa: s.gpa,
       credits: s.credits || 0,
@@ -269,7 +269,7 @@ export const updateRecord = mutation({
         department: dept,
         regulation: reg,
         semesters: formattedSemesters,
-        totalCredits: formattedSemesters.reduce((acc, s) => acc + (s.credits || 0), 0),
+        totalCredits: formattedSemesters.reduce((acc: number, s: any) => acc + (s.credits || 0), 0),
         cgpa: finalCgpa,
         calculatedBy: args.userId,
         isBulk: false,
@@ -327,11 +327,11 @@ export const updateRecord = mutation({
 export const deleteRecord = mutation({
   args: { id: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {
-    let record = await ctx.db.get(args.id as any);
+    let record: any = await ctx.db.get(args.id as any);
     let studentReg = "";
 
     if (!record) {
-      const student = await ctx.db.get(args.id as any);
+      const student: any = await ctx.db.get(args.id as any);
       if (student) {
         studentReg = student.registerNo;
         const existing = await ctx.db.query("cgpaRecords").collect();
