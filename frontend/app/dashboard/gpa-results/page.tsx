@@ -23,6 +23,7 @@ export default function GpaResultsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [selectedSem, setSelectedSem] = useState<string>('');
+  const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
@@ -110,7 +111,9 @@ export default function GpaResultsPage() {
 
     let rowsList = Array.from(map.values());
 
-    if (searchQuery.trim()) {
+    if (selectedStudentReg) {
+      rowsList = rowsList.filter((r) => r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase());
+    } else if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       rowsList = rowsList.filter(
         (r) =>
@@ -125,7 +128,7 @@ export default function GpaResultsPage() {
     }
 
     return rowsList.sort((a, b) => a.registerNo.localeCompare(b.registerNo));
-  }, [students, records, searchQuery, selectedSem]);
+  }, [students, records, searchQuery, selectedSem, selectedStudentReg]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string, sem: number) => {
     setDownloadingRowId(recordId);
@@ -252,14 +255,17 @@ export default function GpaResultsPage() {
 
       {/* Filters Bar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Department
           </label>
           <select
             value={selectedDept}
             disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
-            onChange={(e) => setSelectedDept(e.target.value)}
+            onChange={(e) => {
+              setSelectedDept(e.target.value);
+              setSelectedStudentReg('');
+            }}
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all disabled:opacity-50"
           >
             <option value="">All Departments</option>
@@ -287,7 +293,28 @@ export default function GpaResultsPage() {
           </select>
         </div>
 
-        <div className="md:col-span-5">
+        <div className="md:col-span-3">
+          <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
+            Select Student
+          </label>
+          <select
+            value={selectedStudentReg}
+            onChange={(e) => {
+              setSelectedStudentReg(e.target.value);
+              if (e.target.value) setSearchQuery('');
+            }}
+            className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
+          >
+            <option value="">All Students ({students.length})</option>
+            {students.map((st) => (
+              <option key={st._id} value={st.registerNo}>
+                {st.registerNo} - {st.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Search Student
           </label>
@@ -295,8 +322,11 @@ export default function GpaResultsPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by student name or register number..."
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value) setSelectedStudentReg('');
+              }}
+              placeholder="Search name or reg no..."
               className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-sky-400/25 focus:outline-none transition-all"
             />
             <Search className="h-4 w-4 text-sky-400/40 absolute left-3 top-2.5 pointer-events-none" />

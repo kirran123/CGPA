@@ -19,8 +19,10 @@ import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
 
 export default function CgpaResultsPage() {
   const [records, setRecords] = useState<CgpaRecord[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
+  const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
@@ -54,8 +56,15 @@ export default function CgpaResultsPage() {
       const initialDept = u?.role !== 'super_admin' ? u?.department || '' : selectedDept;
       if (initialDept && !selectedDept) setSelectedDept(initialDept);
 
-      const fetched = await api.getCgpaRecords(initialDept || selectedDept || undefined);
-      setRecords(fetched);
+      const activeDept = initialDept || selectedDept || undefined;
+
+      const [fetchedRecords, fetchedStudents] = await Promise.all([
+        api.getCgpaRecords(activeDept),
+        api.getStudents(activeDept)
+      ]);
+
+      setRecords(fetchedRecords);
+      setStudents(fetchedStudents);
     } catch (err: any) {
       setError(err.message || 'Failed to load CGPA results.');
     } finally {
@@ -141,6 +150,9 @@ export default function CgpaResultsPage() {
   };
 
   const filteredRecords = records.filter((r) => {
+    if (selectedStudentReg) {
+      return r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase();
+    }
     if (!searchQuery.trim()) return true;
     const q = searchQuery.trim().toLowerCase();
     return (
@@ -206,14 +218,17 @@ export default function CgpaResultsPage() {
 
       {/* Filters Bar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
-        <div className="md:col-span-5">
+        <div className="md:col-span-4">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Department
           </label>
           <select
             value={selectedDept}
             disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
-            onChange={(e) => setSelectedDept(e.target.value)}
+            onChange={(e) => {
+              setSelectedDept(e.target.value);
+              setSelectedStudentReg('');
+            }}
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all disabled:opacity-50"
           >
             <option value="">All Departments</option>
@@ -225,7 +240,28 @@ export default function CgpaResultsPage() {
           </select>
         </div>
 
-        <div className="md:col-span-7">
+        <div className="md:col-span-4">
+          <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
+            Select Student
+          </label>
+          <select
+            value={selectedStudentReg}
+            onChange={(e) => {
+              setSelectedStudentReg(e.target.value);
+              if (e.target.value) setSearchQuery('');
+            }}
+            className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
+          >
+            <option value="">All Students ({students.length})</option>
+            {students.map((st) => (
+              <option key={st._id} value={st.registerNo}>
+                {st.registerNo} - {st.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-4">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Search Student
           </label>
@@ -233,7 +269,10 @@ export default function CgpaResultsPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value) setSelectedStudentReg('');
+              }}
               placeholder="Search by student name or register number..."
               className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-sky-400/25 focus:outline-none transition-all"
             />
@@ -351,6 +390,14 @@ export default function CgpaResultsPage() {
                                 title="Edit Record"
                               >
                                 <Edit className="h-3.5 w-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteRow(r._id, r.studentName, r.registerNo)}
+                                className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </>
                           )}

@@ -37,10 +37,10 @@ const allNavItems: NavItem[] = [
   { label: 'Staff Management', path: '/dashboard/staff', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin'], group: 'admin' },
   { label: 'Syllabus Catalog', path: '/dashboard/subjects', icon: <BookOpen className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
   { label: 'Grade Settings', path: '/dashboard/grade-settings', icon: <Settings className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
+  { label: 'GPA Results', path: '/dashboard/gpa-results', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'student_results' },
+  { label: 'CGPA Results', path: '/dashboard/cgpa-results', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'student_results' },
   { label: 'GPA Calculation', path: '/dashboard/gpa', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },
   { label: 'CGPA Calculation', path: '/dashboard/cgpa', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },
-  { label: 'GPA Results', path: '/dashboard/gpa-results', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
-  { label: 'CGPA Results', path: '/dashboard/cgpa-results', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
   { label: 'Bulk GPA Upload', path: '/dashboard/bulk/gpa', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
   { label: 'Batch Results', path: '/dashboard/bulk/gpa/batches', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
   { label: 'History & Logs', path: '/dashboard/history', icon: <History className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'logs' },
@@ -49,6 +49,7 @@ const allNavItems: NavItem[] = [
 const groupLabels: Record<string, string> = {
   core: 'Overview',
   admin: 'Administration',
+  student_results: 'Student Results',
   calc: 'Calculations',
   tools: 'Bulk Tools',
   logs: 'Activity Logs'
