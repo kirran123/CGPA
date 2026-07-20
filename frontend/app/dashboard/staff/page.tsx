@@ -283,9 +283,9 @@ export default function StaffManagement() {
 
       {/* Modal Dialog */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-          <div className="bg-[#071830] border border-sky-500/20 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl relative z-10 flex flex-col max-h-[92dvh] sm:max-h-[calc(100dvh-3rem)]">
+          <div className="bg-[#071830] border border-sky-500/20 w-full max-w-lg rounded-2xl relative z-10 flex flex-col" style={{ maxHeight: 'min(92vh, 680px)' }}>
 
             {/* Sticky Header */}
             <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-sky-500/10">
@@ -369,11 +369,11 @@ export default function StaffManagement() {
                       value={department}
                       disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                       onChange={e => setDepartment(e.target.value)}
-                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors"
+                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors truncate"
                     >
-                      <option value="">None (Super Admin)</option>
+                      <option value="">None</option>
                       {departments.map(d => (
-                        <option key={d._id} value={d.code}>{d.name}</option>
+                        <option key={d._id} value={d.code} title={d.name}>{d.code} — {d.name.length > 18 ? d.name.slice(0, 18) + '…' : d.name}</option>
                       ))}
                     </select>
                   </div>
