@@ -98,7 +98,8 @@ export default function CgpaResultsPage() {
     setDownloadingOverall(true);
     try {
       const deptCode = selectedDept || (currentUser?.role !== 'super_admin' ? currentUser?.department : undefined);
-      const blob = await api.downloadOverallCgpaPdf(deptCode);
+      const regNos = filteredRecords.map((r) => r.registerNo);
+      const blob = await api.downloadOverallCgpaPdf(deptCode, regNos);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

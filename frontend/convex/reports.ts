@@ -471,7 +471,11 @@ export const generateBatchGpaPdf = action({
 
 // 8. Overall Semester GPA PDF
 export const generateOverallSemesterGpaPdf = action({
-  args: { department: v.optional(v.string()), semester: v.optional(v.number()) },
+  args: {
+    department: v.optional(v.string()),
+    semester: v.optional(v.number()),
+    registerNos: v.optional(v.array(v.string())),
+  },
   handler: async (ctx, args) => {
     const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
@@ -479,15 +483,39 @@ export const generateOverallSemesterGpaPdf = action({
     students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
 
     const records = await ctx.runQuery(api.gpa.getRecords, { department: args.department, semester: args.semester });
-    const validRecords = records
-      .filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && r.gpa > 0)
-      .map((r: any) => ({
-        ...r,
-        studentName: studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName,
-      }));
 
-    if (validRecords.length === 0) throw new Error("No GPA records found for students registered in Student Management");
-    const sorted = [...validRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
+    let filterRegs: Set<string> | null = null;
+    if (args.registerNos && args.registerNos.length > 0) {
+      filterRegs = new Set(args.registerNos.map((r) => r.trim().toUpperCase()));
+    }
+
+    let validRecords = records.filter((r: any) => {
+      const regUpper = r.registerNo.trim().toUpperCase();
+      if (!studentRegs.has(regUpper)) return false;
+      if (filterRegs && !filterRegs.has(regUpper)) return false;
+      return r.gpa > 0;
+    });
+
+    // If semester is not specified (All Semesters), collapse to latest GPA per student so each student appears ONCE
+    if (args.semester === undefined) {
+      const studentGpaMap = new Map<string, any>();
+      for (const r of validRecords) {
+        const key = r.registerNo.trim().toUpperCase();
+        const existing = studentGpaMap.get(key);
+        if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
+          studentGpaMap.set(key, r);
+        }
+      }
+      validRecords = Array.from(studentGpaMap.values());
+    }
+
+    const outRecords = validRecords.map((r: any) => ({
+      ...r,
+      studentName: studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName,
+    }));
+
+    if (outRecords.length === 0) throw new Error("No GPA records found for the selected students.");
+    const sorted = [...outRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
     const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", semester: args.semester || "All Semesters", type: "GPA" });
     return Buffer.from(bytes).toString("base64");
   },
@@ -495,7 +523,10 @@ export const generateOverallSemesterGpaPdf = action({
 
 // 9. Overall CGPA PDF
 export const generateOverallCgpaPdf = action({
-  args: { department: v.optional(v.string()) },
+  args: {
+    department: v.optional(v.string()),
+    registerNos: v.optional(v.array(v.string())),
+  },
   handler: async (ctx, args) => {
     const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
@@ -503,14 +534,25 @@ export const generateOverallCgpaPdf = action({
     students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
 
     const records = await ctx.runQuery(api.cgpa.getRecords, { department: args.department });
+
+    let filterRegs: Set<string> | null = null;
+    if (args.registerNos && args.registerNos.length > 0) {
+      filterRegs = new Set(args.registerNos.map((r) => r.trim().toUpperCase()));
+    }
+
     const validRecords = records
-      .filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && (r.cgpa > 0 || (r.semesters && r.semesters.length > 0)))
+      .filter((r: any) => {
+        const regUpper = r.registerNo.trim().toUpperCase();
+        if (!studentRegs.has(regUpper)) return false;
+        if (filterRegs && !filterRegs.has(regUpper)) return false;
+        return r.cgpa > 0 || (r.semesters && r.semesters.length > 0);
+      })
       .map((r: any) => ({
         ...r,
         studentName: studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName,
       }));
 
-    if (validRecords.length === 0) throw new Error("No CGPA records found for students registered in Student Management");
+    if (validRecords.length === 0) throw new Error("No CGPA records found for the selected students.");
     const sorted = [...validRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
     const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", type: "CGPA" });
     return Buffer.from(bytes).toString("base64");

@@ -152,7 +152,8 @@ export default function GpaResultsPage() {
     try {
       const semNum = selectedSem ? parseInt(selectedSem) : undefined;
       const deptCode = selectedDept || (currentUser?.role !== 'super_admin' ? currentUser?.department : undefined);
-      const blob = await api.downloadOverallSemesterGpaPdf(deptCode, semNum);
+      const regNos = studentRows.map((r) => r.registerNo);
+      const blob = await api.downloadOverallSemesterGpaPdf(deptCode, semNum, regNos);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

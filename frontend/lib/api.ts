@@ -538,13 +538,13 @@ export const api = {
     return base64ToPdfBlob(b64);
   },
 
-  downloadOverallSemesterGpaPdf: async (department?: string, semester?: number): Promise<Blob> => {
-    const b64 = await convex.action(convexApi.reports.generateOverallSemesterGpaPdf, { department, semester });
+  downloadOverallSemesterGpaPdf: async (department?: string, semester?: number, registerNos?: string[]): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateOverallSemesterGpaPdf, { department, semester, registerNos });
     return base64ToPdfBlob(b64);
   },
 
-  downloadOverallCgpaPdf: async (department?: string): Promise<Blob> => {
-    const b64 = await convex.action(convexApi.reports.generateOverallCgpaPdf, { department });
+  downloadOverallCgpaPdf: async (department?: string, registerNos?: string[]): Promise<Blob> => {
+    const b64 = await convex.action(convexApi.reports.generateOverallCgpaPdf, { department, registerNos });
     return base64ToPdfBlob(b64);
   },
 
