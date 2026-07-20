@@ -101,6 +101,15 @@ export default function StaffManagement() {
     try {
       if (editingStaff) {
         await api.updateStaff(editingStaff._id, payload);
+
+        // If the logged-in user just updated their own profile, refresh the sidebar
+        if (currentUser && editingStaff._id === currentUser._id) {
+          const fresh = await api.refreshCurrentUser();
+          if (fresh) {
+            setCurrentUser(fresh);
+            window.dispatchEvent(new Event('auth-change'));
+          }
+        }
       } else {
         if (!password) {
           setError('Password is required for new accounts.');

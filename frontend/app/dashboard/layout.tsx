@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     // After showing cached user, silently refresh from DB to pick up any name changes
     api.refreshCurrentUser().then((fresh) => {
-      if (fresh) setUser(fresh);
+      if (fresh) setUser({ ...fresh });
     }).catch(() => {/* ignore */});
 
     window.addEventListener('auth-change', handleAuth);

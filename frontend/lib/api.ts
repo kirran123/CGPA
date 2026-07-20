@@ -233,11 +233,29 @@ export const api = {
     const userStr = sessionStorage.getItem("rit_user");
     if (!userStr) return null;
     try {
-      const cached = JSON.parse(userStr);
-      const fresh = await convex.query(convexApi.users.getById, { id: cached._id as any });
-      if (!fresh) return cached;
-      // Merge fresh data into sessionStorage
-      const merged = { ...cached, name: fresh.name, email: fresh.email, department: fresh.department };
+      const cached = JSON.parse(userStr) as { _id: string; name: string; email: string; role: string; department: string; permissions: string[] };
+      if (!cached._id) return cached as User;
+
+      // Try getById first
+      let fresh: any = null;
+      try {
+        fresh = await convex.query(convexApi.users.getById, { id: cached._id as any });
+      } catch {
+        // getById unavailable – fall back to searching getStaff by email
+        try {
+          const staff: any[] = await convex.query(convexApi.users.getStaff, {});
+          fresh = staff.find((u: any) => u._id === cached._id || u.email?.toLowerCase() === cached.email?.toLowerCase()) || null;
+        } catch { /* ignore */ }
+      }
+
+      if (!fresh) return cached as User;
+
+      const merged = {
+        ...cached,
+        name: fresh.name || cached.name,
+        email: fresh.email || cached.email,
+        department: fresh.department || cached.department,
+      };
       sessionStorage.setItem("rit_user", JSON.stringify(merged));
       return merged as User;
     } catch {
