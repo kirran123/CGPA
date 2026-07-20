@@ -12,20 +12,30 @@ import {
 } from 'lucide-react';
 import { api, Department } from '@/lib/api';
 import { canUseBulkCgpa as canUseBulkCgpaFn } from '@/lib/permissions';
+import * as XLSX from 'xlsx';
 
 /* ─── Template Download Helper ────────────────────────────────────────────── */
 function downloadTemplate() {
-  const header = 'RegisterNo,StudentName,Sem1_GPA,Sem2_GPA,Sem3_GPA,Sem4_GPA\n';
-  const sample = [
-    '953621104001,Abinesh S,8.4,9.1,8.7,8.9',
-    '953621104002,Bhuvanesh R,7.9,8.2,8.5,8.1',
-    '953621104003,Deepak Kumar K,6.5,7.1,5.8,6.2',
-  ].join('\n');
-  const blob = new Blob([header + sample], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'cgpa_bulk_template.csv';
-  a.click();
+  const rows = [
+    { RegisterNo: '953621104001', StudentName: 'Abinesh S',      Batch: '2023-2027', Sem1_GPA: 8.4, Sem2_GPA: 9.1, Sem3_GPA: 8.7, Sem4_GPA: 8.9 },
+    { RegisterNo: '953621104002', StudentName: 'Bhuvanesh R',    Batch: '2023-2027', Sem1_GPA: 7.9, Sem2_GPA: 8.2, Sem3_GPA: 8.5, Sem4_GPA: 8.1 },
+    { RegisterNo: '953621104003', StudentName: 'Deepak Kumar K', Batch: '2023-2027', Sem1_GPA: 6.5, Sem2_GPA: 7.1, Sem3_GPA: 5.8, Sem4_GPA: 6.2 },
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
+    if (cell) { cell.t = 's'; cell.z = '@'; }
+  }
+
+  ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'CGPA Template');
+
+  XLSX.writeFile(wb, 'cgpa_bulk_template.xlsx');
 }
 
 export default function BulkCgpaUpload() {

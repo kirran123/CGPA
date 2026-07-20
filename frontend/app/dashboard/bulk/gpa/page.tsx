@@ -23,9 +23,9 @@ const FROM_FILE = '__from_file__';
 function downloadTemplate() {
   // Build data rows — register numbers stored as text to prevent scientific notation
   const rows = [
-    { RegisterNo: '953621104001', StudentName: 'Abinesh S',      Semester: 1, Regulation: 'R2021', MA3151: 'O',  PH3151: 'A+', CY3151: 'A', GE3151: 'B+' },
-    { RegisterNo: '953621104002', StudentName: 'Bhuvanesh R',    Semester: 1, Regulation: 'R2021', MA3151: 'A',  PH3151: 'B+', CY3151: 'O', GE3151: 'B'  },
-    { RegisterNo: '953621104003', StudentName: 'Deepak Kumar K', Semester: 1, Regulation: 'R2021', MA3151: 'B',  PH3151: 'C',  CY3151: 'U', GE3151: 'A'  },
+    { RegisterNo: '953621104001', StudentName: 'Abinesh S',      Batch: '2023-2027', Semester: 1, Regulation: 'R2021', MA3151: 'O',  PH3151: 'A+', CY3151: 'A', GE3151: 'B+' },
+    { RegisterNo: '953621104002', StudentName: 'Bhuvanesh R',    Batch: '2023-2027', Semester: 1, Regulation: 'R2021', MA3151: 'A',  PH3151: 'B+', CY3151: 'O', GE3151: 'B'  },
+    { RegisterNo: '953621104003', StudentName: 'Deepak Kumar K', Batch: '2023-2027', Semester: 1, Regulation: 'R2021', MA3151: 'B',  PH3151: 'C',  CY3151: 'U', GE3151: 'A'  },
   ];
 
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -38,7 +38,7 @@ function downloadTemplate() {
   }
 
   // Set column widths for readability
-  ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
+  ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'GPA Template');
