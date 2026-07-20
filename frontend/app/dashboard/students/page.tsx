@@ -19,6 +19,31 @@ import {
 } from 'lucide-react';
 import { api, Department, Student } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
+import * as XLSX from 'xlsx';
+
+/* ─── Excel Template Generator for Student Roster ───────────────────────── */
+function downloadStudentTemplate() {
+  const rows = [
+    { RegNo: '953621104001', Name: 'Abinesh S', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
+    { RegNo: '953621104002', Name: 'Bhuvanesh R', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
+    { RegNo: '953621104003', Name: 'Deepak Kumar K', Department: 'IT', Batch: '2021-2025', Regulation: 'R2021' },
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Force RegNo column to text type so Excel doesn't format long numbers scientifically
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let r = range.s.r + 1; r <= range.e.r; r++) {
+    const cell = ws[XLSX.utils.encode_cell({ r, c: 0 })];
+    if (cell) { cell.t = 's'; cell.z = '@'; }
+  }
+
+  ws['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 12 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Student Roster');
+  XLSX.writeFile(wb, 'student_roster_template.xlsx');
+}
 
 export default function StudentManagementPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -229,6 +254,14 @@ export default function StudentManagementPage() {
 
           {canEdit && (
             <>
+              <button
+                onClick={downloadStudentTemplate}
+                className="flex items-center gap-1.5 px-3.5 py-2 border border-emerald-500/20 hover:border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10 text-xs font-semibold text-emerald-300 hover:text-white rounded-xl transition-all cursor-pointer"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+                Download Excel Template
+              </button>
+
               <button
                 onClick={() => {
                   setUploadDept(selectedDept || (departments[0]?.code || 'IT'));
@@ -525,9 +558,18 @@ export default function StudentManagementPage() {
                 <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
                 Bulk Student Excel Upload
               </h3>
-              <button onClick={() => setShowUploadModal(false)} className="text-sky-400/60 hover:text-white">
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={downloadStudentTemplate}
+                  className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+                >
+                  Download Template
+                </button>
+                <button onClick={() => setShowUploadModal(false)} className="text-sky-400/60 hover:text-white">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleBulkUploadSubmit} className="space-y-4">
