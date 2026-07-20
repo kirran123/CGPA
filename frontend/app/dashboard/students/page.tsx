@@ -23,6 +23,7 @@ import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
 export default function StudentManagementPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [regulations, setRegulations] = useState<string[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -65,17 +66,28 @@ export default function StudentManagementPage() {
       const depts = await api.getPublicDepartments();
       setDepartments(depts);
 
-      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : selectedDept;
-      if (initialDept && !selectedDept) setSelectedDept(initialDept);
+      const regs = await api.getRegulations();
+      const regNames = regs.map((r: any) => r.name);
+      setRegulations(regNames);
+      if (regNames.length > 0) {
+        setFormReg(regNames[0]);
+        setUploadReg(regNames[0]);
+      }
+
+      const userDept = u?.role !== 'super_admin' ? u?.department || '' : '';
+      const activeDept = userDept || selectedDept;
+      if (userDept && selectedDept !== userDept) {
+        setSelectedDept(userDept);
+      }
 
       const fetchedStudents = await api.getStudents(
-        initialDept || selectedDept || undefined,
+        activeDept || undefined,
         selectedBatch || undefined,
         searchQuery || undefined
       );
       setStudents(fetchedStudents);
 
-      const fetchedBatches = await api.getStudentBatches(initialDept || selectedDept || undefined);
+      const fetchedBatches = await api.getStudentBatches(activeDept || undefined);
       setBatches(fetchedBatches);
     } catch (err: any) {
       setError(err.message || 'Failed to load student roster.');
@@ -96,9 +108,12 @@ export default function StudentManagementPage() {
   const handleOpenAdd = () => {
     setFormName('');
     setFormRegNo('');
-    setFormDept(selectedDept || (departments.length > 0 ? departments[0].code : 'IT'));
+    const defaultDept = currentUser?.role !== 'super_admin'
+      ? currentUser?.department || 'IT'
+      : (selectedDept || (departments.length > 0 ? departments[0].code : 'IT'));
+    setFormDept(defaultDept);
     setFormBatch(selectedBatch || '2021-2025');
-    setFormReg('R2021');
+    if (regulations.length > 0) setFormReg(regulations[0]);
     setShowAddModal(true);
   };
 
@@ -441,12 +456,15 @@ export default function StudentManagementPage() {
                   <label className="form-label">Department</label>
                   <select
                     value={formDept}
+                    disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                     onChange={(e) => setFormDept(e.target.value)}
-                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50"
                   >
-                    {departments.map((d) => (
-                      <option key={d._id} value={d.code}>{d.code}</option>
-                    ))}
+                    {departments
+                      .filter((d) => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                      .map((d) => (
+                        <option key={d._id} value={d.code}>{d.code}</option>
+                      ))}
                   </select>
                 </div>
 
@@ -465,13 +483,15 @@ export default function StudentManagementPage() {
 
               <div className="form-group">
                 <label className="form-label">Regulation</label>
-                <input
-                  type="text"
+                <select
                   value={formReg}
                   onChange={(e) => setFormReg(e.target.value)}
-                  placeholder="e.g. R2021"
                   className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                />
+                >
+                  {regulations.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-2 border-t border-sky-500/15">
@@ -511,17 +531,20 @@ export default function StudentManagementPage() {
             </div>
 
             <form onSubmit={handleBulkUploadSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="form-label">Target Department</label>
+                  <label className="form-label">Target Dept</label>
                   <select
                     value={uploadDept}
+                    disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                     onChange={(e) => setUploadDept(e.target.value)}
-                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50"
                   >
-                    {departments.map((d) => (
-                      <option key={d._id} value={d.code}>{d.code}</option>
-                    ))}
+                    {departments
+                      .filter((d) => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                      .map((d) => (
+                        <option key={d._id} value={d.code}>{d.code}</option>
+                      ))}
                   </select>
                 </div>
                 <div>
@@ -534,6 +557,18 @@ export default function StudentManagementPage() {
                     placeholder="e.g. 2021-2025"
                     className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                   />
+                </div>
+                <div>
+                  <label className="form-label">Regulation</label>
+                  <select
+                    value={uploadReg}
+                    onChange={(e) => setUploadReg(e.target.value)}
+                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  >
+                    {regulations.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

@@ -217,9 +217,11 @@ export default function GpaResultsPage() {
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all disabled:opacity-50"
           >
             <option value="">All Departments</option>
-            {departments.map((d) => (
-              <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
-            ))}
+            {departments
+              .filter((d) => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+              .map((d) => (
+                <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
+              ))}
           </select>
         </div>
 
