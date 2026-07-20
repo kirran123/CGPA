@@ -61,44 +61,72 @@ async function initializeStudentResults(
   const deptUpper = department.trim().toUpperCase();
   const regUpperVal = (regulation || "R2021").trim().toUpperCase();
 
+  // 1. Fetch existing gpaRecords for this student and update studentName
+  const existingGpaRecords = await ctx.db
+    .query("gpaRecords")
+    .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
+    .collect();
+
+  let gpaSum = 0;
+  let totalCreds = 0;
+  let semCount = 0;
+  const semesterMap = new Map<number, any>();
+
+  for (const gRecord of existingGpaRecords) {
+    if (gRecord.studentName !== studentName.trim()) {
+      await ctx.db.patch(gRecord._id, { studentName: studentName.trim() });
+    }
+    const existing = semesterMap.get(gRecord.semester);
+    if (!existing || (gRecord.createdAt || 0) > (existing.createdAt || 0)) {
+      semesterMap.set(gRecord.semester, gRecord);
+    }
+  }
+
+  const semestersList = Array.from(semesterMap.values())
+    .sort((a, b) => a.semester - b.semester)
+    .map((r) => {
+      const gpa = r.gpa || 0;
+      const credits = r.totalCredits || 0;
+      if (gpa > 0) {
+        gpaSum += gpa;
+        totalCreds += credits;
+        semCount++;
+      }
+      return { semester: r.semester, gpa, credits };
+    });
+
+  const computedCgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0;
+
+  // 2. Create or patch cgpaRecords with calculated results
   const existingCgpa = await ctx.db
     .query("cgpaRecords")
     .withIndex("by_registerNo", (q: any) => q.eq("registerNo", regUpper))
     .filter((q: any) => q.eq(q.field("department"), deptUpper))
     .first();
 
+  const firstUser = await ctx.db.query("users").first();
+
   if (existingCgpa) {
     await ctx.db.patch(existingCgpa._id, {
       studentName: studentName.trim(),
       regulation: regUpperVal,
+      semesters: semestersList,
+      totalCredits: totalCreds,
+      cgpa: computedCgpa,
     });
-  } else {
-    const firstUser = await ctx.db.query("users").first();
-    if (firstUser) {
-      await ctx.db.insert("cgpaRecords", {
-        studentName: studentName.trim(),
-        registerNo: regUpper,
-        department: deptUpper,
-        regulation: regUpperVal,
-        semesters: [],
-        totalCredits: 0,
-        cgpa: 0,
-        calculatedBy: firstUser._id,
-        isBulk: false,
-        createdAt: Date.now(),
-      });
-    }
-  }
-
-  const existingGpaRecords = await ctx.db
-    .query("gpaRecords")
-    .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
-    .collect();
-
-  for (const gRecord of existingGpaRecords) {
-    if (gRecord.studentName !== studentName.trim()) {
-      await ctx.db.patch(gRecord._id, { studentName: studentName.trim() });
-    }
+  } else if (firstUser) {
+    await ctx.db.insert("cgpaRecords", {
+      studentName: studentName.trim(),
+      registerNo: regUpper,
+      department: deptUpper,
+      regulation: regUpperVal,
+      semesters: semestersList,
+      totalCredits: totalCreds,
+      cgpa: computedCgpa,
+      calculatedBy: firstUser._id,
+      isBulk: false,
+      createdAt: Date.now(),
+    });
   }
 }
 

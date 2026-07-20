@@ -196,10 +196,26 @@ export const getBatchRecords = query({
 export const getRecords = query({
   args: { department: v.optional(v.string()), semester: v.optional(v.number()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
+    let deptUpper = args.department ? args.department.toUpperCase() : undefined;
+
+    let students = await ctx.db.query("students").collect();
+    if (deptUpper) {
+      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
+    }
+    const studentRegs = new Set(students.map((s) => s.registerNo.trim().toUpperCase()));
+    const studentMap = new Map<string, string>();
+    for (const s of students) {
+      studentMap.set(s.registerNo.trim().toUpperCase(), s.name);
+    }
+
     let records = await ctx.db.query("gpaRecords").collect();
-    if (args.department) records = records.filter((r) => r.department === args.department!.toUpperCase());
+    if (deptUpper) records = records.filter((r) => r.department === deptUpper);
     if (args.semester !== undefined) records = records.filter((r) => r.semester === args.semester);
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
+
+    if (studentRegs.size > 0) {
+      records = records.filter((r) => studentRegs.has(r.registerNo.trim().toUpperCase()));
+    }
 
     const recordMap = new Map<string, any>();
     for (const r of records) {
@@ -208,12 +224,6 @@ export const getRecords = query({
       if (!prev || (r.createdAt || 0) > (prev.createdAt || 0)) {
         recordMap.set(key, r);
       }
-    }
-
-    const students = await ctx.db.query("students").collect();
-    const studentMap = new Map<string, string>();
-    for (const s of students) {
-      studentMap.set(s.registerNo.trim().toUpperCase(), s.name);
     }
 
     const out: any[] = [];
