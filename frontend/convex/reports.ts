@@ -208,25 +208,39 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
   txt(page, `Name: ${record.studentName}   |   Reg No: ${record.registerNo}   |   Dept: ${record.department}`, 50, 162, 9, reg);
 
   const semesters: any[] = record.semesters || [];
-  const hasCredits = semesters.some((s: any) => (s.credits || 0) > 0);
+  const sortedSems = [...semesters].sort((a: any, b: any) => a.semester - b.semester);
+
+  let cumulativeSum = 0;
+  let semCount = 0;
+  let totalCredits = 0;
+
+  const cgpaRows = sortedSems.map((s) => {
+    const gpa = Number(s.gpa) || 0;
+    const credits = Number(s.credits) || 0;
+    totalCredits += credits;
+    if (gpa > 0) {
+      cumulativeSum += gpa;
+      semCount++;
+    }
+    const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
+    return { semester: s.semester, credits, cumCgpa };
+  });
+
+  const hasCredits = totalCredits > 0;
   const tableTop = 205;
 
   fillRect(page, 40, tableTop, PW - 80, 20, C.navy);
   txt(page, "Semester", 80, tableTop + 5, 10, bold, C.white);
   if (hasCredits) txt(page, "Credits", 240, tableTop + 5, 10, bold, C.white);
-  txt(page, "GPA", 400, tableTop + 5, 10, bold, C.white);
+  txt(page, "Cumulative CGPA", 380, tableTop + 5, 10, bold, C.white);
 
   let y = tableTop + 20;
-  let totalCredits = 0;
-  semesters.forEach((s: any, idx: number) => {
+  cgpaRows.forEach((r, idx) => {
     const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
     fillRect(page, 40, y, PW - 80, 18, bg);
-    txt(page, String(s.semester), 80, y + 4, 10, reg);
-    if (hasCredits) {
-      txt(page, String(s.credits || 0), 240, y + 4, 10, reg);
-      totalCredits += Number(s.credits) || 0;
-    }
-    txt(page, (Number(s.gpa) || 0).toFixed(2), 400, y + 4, 10, reg);
+    txt(page, `Semester ${r.semester}`, 80, y + 4, 10, reg);
+    if (hasCredits) txt(page, r.credits ? String(r.credits) : "N/A", 240, y + 4, 10, reg);
+    txt(page, r.cumCgpa.toFixed(2), 380, y + 4, 10, bold);
     y += 18;
   });
 
@@ -237,12 +251,83 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
   }
   y += 15;
 
+  const finalCgpa = record.cgpa || (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0);
   const cx = PW / 2;
   fillRect(page, cx - 90, y, 180, 60, C.navy);
   txt(page, "Cumulative CGPA", cx - 90, y + 9, 11, reg, C.white, 180, "center");
-  txt(page, (Number(record.cgpa) || 0).toFixed(2), cx - 90, y + 26, 26, bold, C.teal, 180, "center");
+  txt(page, Number(finalCgpa).toFixed(2), cx - 90, y + 26, 26, bold, C.teal, 180, "center");
 
   drawFooter(page, reg);
+  return doc.save();
+}
+
+async function buildMultiStudentCgpaPdf(studentList: any[]): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const reg  = await doc.embedFont(StandardFonts.Helvetica);
+
+  for (const record of studentList) {
+    const page = doc.addPage([PW, PH]);
+
+    await drawHeader(page, bold, reg, record.department, "Cumulative CGPA Report");
+
+    fillRect(page, 40, 140, PW - 80, 45, C.lightBg);
+    txt(page, "Student Details", 50, 148, 11, bold);
+    txt(page, `Name: ${record.studentName}   |   Reg No: ${record.registerNo}   |   Dept: ${record.department}`, 50, 162, 9, reg);
+
+    const semesters: any[] = record.semesters || [];
+    const sortedSems = [...semesters].sort((a: any, b: any) => a.semester - b.semester);
+
+    let cumulativeSum = 0;
+    let semCount = 0;
+    let totalCredits = 0;
+
+    const cgpaRows = sortedSems.map((s) => {
+      const gpa = Number(s.gpa) || 0;
+      const credits = Number(s.credits) || 0;
+      totalCredits += credits;
+      if (gpa > 0) {
+        cumulativeSum += gpa;
+        semCount++;
+      }
+      const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
+      return { semester: s.semester, credits, cumCgpa };
+    });
+
+    const hasCredits = totalCredits > 0;
+    const tableTop = 205;
+
+    fillRect(page, 40, tableTop, PW - 80, 20, C.navy);
+    txt(page, "Semester", 80, tableTop + 5, 10, bold, C.white);
+    if (hasCredits) txt(page, "Credits", 240, tableTop + 5, 10, bold, C.white);
+    txt(page, "Cumulative CGPA", 380, tableTop + 5, 10, bold, C.white);
+
+    let y = tableTop + 20;
+    cgpaRows.forEach((r, idx) => {
+      const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
+      fillRect(page, 40, y, PW - 80, 18, bg);
+      txt(page, `Semester ${r.semester}`, 80, y + 4, 10, reg);
+      if (hasCredits) txt(page, r.credits ? String(r.credits) : "N/A", 240, y + 4, 10, reg);
+      txt(page, r.cumCgpa.toFixed(2), 380, y + 4, 10, bold);
+      y += 18;
+    });
+
+    if (hasCredits && totalCredits > 0) {
+      fillRect(page, 40, y, PW - 80, 20, C.purple);
+      txt(page, `Total Credits: ${totalCredits}`, 80, y + 5, 10, bold, C.navy);
+      y += 20;
+    }
+    y += 15;
+
+    const finalCgpa = record.cgpa || (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0);
+    const cx = PW / 2;
+    fillRect(page, cx - 90, y, 180, 60, C.navy);
+    txt(page, "Cumulative CGPA", cx - 90, y + 9, 11, reg, C.white, 180, "center");
+    txt(page, Number(finalCgpa).toFixed(2), cx - 90, y + 26, 26, bold, C.teal, 180, "center");
+
+    drawFooter(page, reg);
+  }
+
   return doc.save();
 }
 
@@ -606,7 +691,7 @@ export const generateOverallCgpaPdf = action({
 
     if (validRecords.length === 0) throw new Error("No CGPA records found for the selected students.");
     const sorted = [...validRecords].sort((a: any, b: any) => a.registerNo.localeCompare(b.registerNo));
-    const bytes = await buildRankListPdf(sorted, { department: args.department || "All Departments", type: "CGPA" });
+    const bytes = await buildMultiStudentCgpaPdf(sorted);
     return Buffer.from(bytes).toString("base64");
   },
 });

@@ -119,29 +119,89 @@ export const getRecords = query({
       cgpaRecords = cgpaRecords.filter((r) => r.calculatedBy === args.userId);
     }
 
-    const recordMap = new Map<string, any>();
+    let gpaRecords = await ctx.db.query("gpaRecords").collect();
+    if (deptUpper) {
+      gpaRecords = gpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
+    }
+
+    const cgpaRecordMap = new Map<string, any>();
     for (const r of cgpaRecords) {
       const key = r.registerNo.trim().toUpperCase();
-      const prev = recordMap.get(key);
+      const prev = cgpaRecordMap.get(key);
       if (!prev || (r.createdAt || 0) > (prev.createdAt || 0)) {
-        recordMap.set(key, r);
+        cgpaRecordMap.set(key, r);
       }
     }
 
     const out: any[] = [];
-    const processedRegs = new Set<string>();
 
     for (const st of students) {
       const regUpper = st.registerNo.trim().toUpperCase();
-      processedRegs.add(regUpper);
-      const rec = recordMap.get(regUpper);
+      const rec = cgpaRecordMap.get(regUpper);
+
+      // Gather all GPA records for this student
+      const stGpaRecs = gpaRecords.filter((r) => r.registerNo.trim().toUpperCase() === regUpper);
+      const semGpaMap = new Map<number, any>();
+
+      // Populate from stored cgpaRecord first if available
+      if (rec && rec.semesters) {
+        for (const s of rec.semesters) {
+          if (s.gpa > 0) {
+            semGpaMap.set(s.semester, { semester: s.semester, gpa: s.gpa, credits: s.credits || 0 });
+          }
+        }
+      }
+
+      // Override / append from gpaRecords if available and newer/present
+      for (const r of stGpaRecs) {
+        if (r.gpa > 0) {
+          const existing = semGpaMap.get(r.semester);
+          if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
+            semGpaMap.set(r.semester, { semester: r.semester, gpa: r.gpa, credits: r.totalCredits || 0 });
+          }
+        }
+      }
+
+      const mergedSemesters = Array.from(semGpaMap.values()).sort((a, b) => a.semester - b.semester);
+
+      let gpaSum = 0;
+      let semCount = 0;
+      let totalCredits = 0;
+
+      for (const s of mergedSemesters) {
+        if (s.gpa > 0) {
+          gpaSum += s.gpa;
+          semCount++;
+          totalCredits += s.credits || 0;
+        }
+      }
+
+      const computedCgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : (rec?.cgpa || 0);
+
       if (rec) {
         const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
         out.push({
           ...rec,
           studentName: st.name,
           regulation: rec.regulation || st.regulation || "R2021",
+          semesters: mergedSemesters,
+          totalCredits: totalCredits > 0 ? totalCredits : rec.totalCredits || 0,
+          cgpa: computedCgpa,
           calculatedBy: { name: user?.name || "System" },
+        });
+      } else if (mergedSemesters.length > 0) {
+        out.push({
+          _id: st._id,
+          studentName: st.name,
+          registerNo: regUpper,
+          department: st.department.toUpperCase(),
+          regulation: st.regulation || "R2021",
+          semesters: mergedSemesters,
+          totalCredits,
+          cgpa: computedCgpa,
+          isBulk: false,
+          createdAt: st.createdAt || Date.now(),
+          calculatedBy: { name: "System (Auto)" },
         });
       } else {
         out.push({

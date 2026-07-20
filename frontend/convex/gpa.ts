@@ -289,6 +289,12 @@ export const updateRecord = mutation({
     if (args.semester !== undefined) patch.semester = args.semester;
 
     await ctx.db.patch(args.id, patch);
+
+    const updated = await ctx.db.get(args.id);
+    if (updated) {
+      await syncStudentCgpa(ctx, updated.registerNo, updated.department, updated.regulation || "R2021", updated.studentName, args.userId);
+    }
+
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", {
       action: "Update GPA Record",
@@ -308,6 +314,7 @@ export const deleteRecord = mutation({
     const record = await ctx.db.get(args.id);
     if (!record) throw new Error("GPA record not found");
     await ctx.db.delete(args.id);
+    await syncStudentCgpa(ctx, record.registerNo, record.department, record.regulation || "R2021", record.studentName, args.userId);
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Delete GPA Record", details: `Deleted GPA record for ${record.studentName} (${record.registerNo}), Sem ${record.semester}`, performedBy: args.userId, performedByName: user?.name || "Unknown", department: record.department, timestamp: Date.now() });
     return { success: true };

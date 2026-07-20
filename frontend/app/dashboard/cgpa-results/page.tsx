@@ -192,10 +192,18 @@ export default function CgpaResultsPage() {
     );
   });
 
-  const getSemGpaMap = (semesters: { semester: number; gpa: number }[]) => {
+  const getSemCgpaMap = (semesters: { semester: number; gpa: number }[]) => {
     const map: Record<number, number> = {};
-    (semesters || []).forEach((s) => {
-      map[s.semester] = s.gpa;
+    if (!semesters || semesters.length === 0) return map;
+    const sorted = [...semesters].sort((a, b) => a.semester - b.semester);
+    let cumulativeSum = 0;
+    let count = 0;
+    sorted.forEach((s) => {
+      if (s.gpa > 0) {
+        cumulativeSum += s.gpa;
+        count++;
+        map[s.semester] = parseFloat((cumulativeSum / count).toFixed(2));
+      }
     });
     return map;
   };
@@ -360,7 +368,7 @@ export default function CgpaResultsPage() {
               </thead>
               <tbody>
                 {filteredRecords.map((r, idx) => {
-                  const semMap = getSemGpaMap(r.semesters);
+                  const semMap = getSemCgpaMap(r.semesters);
                   return (
                     <tr
                       key={r._id}
