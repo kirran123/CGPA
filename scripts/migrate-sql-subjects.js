@@ -217,6 +217,14 @@ function mapRegulation(regulationId) {
   return `R20${id < 10 ? '0' + id : id}`;
 }
 
+function normalizeDepartmentCode(code) {
+  const c = code.toUpperCase().trim();
+  if (c === "AD" || c === "AIDS") return ["AD", "AIDS"];
+  if (c === "AM" || c === "AIML" || c.includes("AIML")) return ["AM", "AIML"];
+  if (c === "CYBER" || c.includes("CYBER") || c === "A" || c === "CSE (CYBER SECURITY)") return ["CYBER", "CSE (CYBER SECURITY)", "A"];
+  return [c];
+}
+
 // ── Chunk helper ──────────────────────────────────────────────────────────
 function chunk(arr, size) {
   const chunks = [];
@@ -293,13 +301,16 @@ async function main() {
       const credits = courseCreditsMap[id] !== undefined ? courseCreditsMap[id] : 3;
 
       regulationsToCreate.add(regName);
-      subjects.push({
-        code,
-        name,
-        credits,
-        semester: isNaN(semester) ? 1 : semester,
-        department: deptCode,
-        regulation: regName,
+      const deptCodes = normalizeDepartmentCode(deptCode);
+      deptCodes.forEach((dCode) => {
+        subjects.push({
+          code,
+          name,
+          credits,
+          semester: isNaN(semester) ? 1 : semester,
+          department: dCode,
+          regulation: regName,
+        });
       });
     }
   });
