@@ -281,14 +281,21 @@ export default function StaffManagement() {
         ))}
       </div>
 
-      {/* Modal Dialog */}
+      {/* Modal Overlay */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-          <div className="bg-[#071830] border border-sky-500/20 w-full max-w-lg rounded-2xl relative z-10 flex flex-col" style={{ maxHeight: 'min(92vh, 680px)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
 
-            {/* Sticky Header */}
-            <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-sky-500/10">
+          {/* Modal Box */}
+          <div className="relative z-10 w-full mx-4 max-w-lg flex flex-col bg-[#071830] border border-sky-500/20 rounded-2xl shadow-2xl overflow-hidden"
+            style={{ maxHeight: '88vh' }}
+          >
+            {/* ── Header (always visible) ── */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-sky-500/10 bg-[#071830] shrink-0">
               <h2 className="text-sm font-black text-white">
                 {editingStaff ? 'Edit Staff Details' : 'Register Staff Member'}
               </h2>
@@ -301,10 +308,11 @@ export default function StaffManagement() {
               </button>
             </div>
 
+            {/* ── Scrollable Form Body ── */}
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-              {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
 
+                {/* Staff Full Name */}
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Staff Full Name</label>
                   <input
@@ -317,6 +325,7 @@ export default function StaffManagement() {
                   />
                 </div>
 
+                {/* Academic Email */}
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Academic Email</label>
                   <input
@@ -330,6 +339,7 @@ export default function StaffManagement() {
                   />
                 </div>
 
+                {/* Password */}
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">
                     {editingStaff ? 'Reset Password (blank = keep current)' : 'Account Password'}
@@ -350,6 +360,7 @@ export default function StaffManagement() {
                   </div>
                 </div>
 
+                {/* Role + Department side-by-side */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Role</label>
@@ -360,7 +371,7 @@ export default function StaffManagement() {
                       className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors"
                     >
                       <option value="staff">Lecturer / Staff</option>
-                      <option value="dept_admin">Department HOD</option>
+                      <option value="dept_admin">Dept HOD</option>
                     </select>
                   </div>
                   <div>
@@ -369,16 +380,17 @@ export default function StaffManagement() {
                       value={department}
                       disabled={currentUser?.role === 'dept_admin' || currentUser?.role === 'staff'}
                       onChange={e => setDepartment(e.target.value)}
-                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors truncate"
+                      className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors"
                     >
                       <option value="">None</option>
                       {departments.map(d => (
-                        <option key={d._id} value={d.code} title={d.name}>{d.code} — {d.name.length > 18 ? d.name.slice(0, 18) + '…' : d.name}</option>
+                        <option key={d._id} value={d.code}>{d.code}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
+                {/* Permissions */}
                 <div>
                   <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider mb-1.5">Assign Permission Role</label>
                   <div className="bg-white/[0.02] border border-sky-500/10 rounded-xl p-3 space-y-1">
@@ -389,9 +401,7 @@ export default function StaffManagement() {
                       { key: 'READ_ONLY', label: 'Read Only', desc: 'Can view records only — no edits or saves', color: 'text-amber-300' },
                       { key: 'EDIT_SUBJECT_CATALOGUE', label: 'Edit Subject Catalogue', desc: 'Can add/edit/delete subjects in the catalog', color: 'text-emerald-300' }
                     ].filter(p => {
-                      if (p.key === 'FULL_ACCESS') {
-                        return role !== 'dept_admin' && role !== 'staff';
-                      }
+                      if (p.key === 'FULL_ACCESS') return role !== 'dept_admin' && role !== 'staff';
                       return true;
                     }).map(p => {
                       const checked = permissions.includes(p.key);
@@ -402,7 +412,7 @@ export default function StaffManagement() {
                             checked={checked}
                             onChange={e => {
                               if (e.target.checked) {
-                               setPermissions([...permissions, p.key]);
+                                setPermissions([...permissions, p.key]);
                               } else {
                                 setPermissions(permissions.filter(x => x !== p.key));
                               }
@@ -426,8 +436,8 @@ export default function StaffManagement() {
                 )}
               </div>
 
-              {/* Sticky Footer Buttons */}
-              <div className="shrink-0 flex justify-end gap-3 px-5 py-4 border-t border-sky-500/10 bg-[#071830]">
+              {/* ── Footer (always visible) ── */}
+              <div className="flex justify-end gap-3 px-5 py-4 border-t border-sky-500/10 bg-[#071830] shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -440,7 +450,7 @@ export default function StaffManagement() {
                   disabled={submitting}
                   className="px-6 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-sm text-white font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {submitting ? 'Saving...' : 'Save Member'}
+                  {submitting ? 'Saving...' : (editingStaff ? 'Update Member' : 'Save Member')}
                 </button>
               </div>
             </form>
