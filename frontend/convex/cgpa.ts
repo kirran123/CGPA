@@ -213,7 +213,7 @@ export const getStudentGpaHistory = query({
 
 export const updateRecord = mutation({
   args: {
-    id: v.id("cgpaRecords"),
+    id: v.string(),
     studentName: v.optional(v.string()),
     registerNo: v.optional(v.string()),
     semesters: v.optional(v.array(v.object({ semester: v.number(), gpa: v.number(), credits: v.optional(v.number()) }))),
@@ -221,39 +221,148 @@ export const updateRecord = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.id);
-    if (!record) throw new Error("CGPA record not found");
+    let record = await ctx.db.get(args.id as any);
+    let student = null;
 
-    const patch: any = {};
-    if (args.studentName !== undefined) patch.studentName = args.studentName.trim();
-    if (args.registerNo !== undefined) patch.registerNo = args.registerNo.trim().toUpperCase();
-    if (args.semesters !== undefined) {
-      patch.semesters = args.semesters.map((s) => ({ semester: s.semester, gpa: s.gpa, credits: s.credits || 0 }));
+    if (!record) {
+      student = await ctx.db.get(args.id as any);
+      if (student) {
+        const existing = await ctx.db.query("cgpaRecords").collect();
+        record = existing.find((r) => r.registerNo.trim().toUpperCase() === student.registerNo.trim().toUpperCase());
+      }
     }
-    if (args.cgpa !== undefined) patch.cgpa = args.cgpa;
 
-    await ctx.db.patch(args.id, patch);
+    const name = args.studentName?.trim() || record?.studentName || student?.name || "Student";
+    const regNo = args.registerNo?.trim().toUpperCase() || record?.registerNo || student?.registerNo || "";
+    const dept = record?.department || student?.department || "CSE";
+    const reg = record?.regulation || student?.regulation || "R2021";
+
+    const formattedSemesters = (args.semesters || record?.semesters || []).map((s) => ({
+      semester: s.semester,
+      gpa: s.gpa,
+      credits: s.credits || 0,
+    }));
+
+    let finalCgpa = args.cgpa !== undefined ? args.cgpa : record?.cgpa || 0;
+    if (args.semesters !== undefined) {
+      let sum = 0, count = 0;
+      for (const s of formattedSemesters) {
+        if (s.gpa > 0) {
+          sum += s.gpa;
+          count++;
+        }
+      }
+      finalCgpa = count > 0 ? parseFloat((sum / count).toFixed(2)) : 0;
+    }
+
+    if (record) {
+      await ctx.db.patch(record._id, {
+        studentName: name,
+        registerNo: regNo,
+        semesters: formattedSemesters,
+        cgpa: finalCgpa,
+      });
+    } else {
+      await ctx.db.insert("cgpaRecords", {
+        studentName: name,
+        registerNo: regNo,
+        department: dept,
+        regulation: reg,
+        semesters: formattedSemesters,
+        totalCredits: formattedSemesters.reduce((acc, s) => acc + (s.credits || 0), 0),
+        cgpa: finalCgpa,
+        calculatedBy: args.userId,
+        isBulk: false,
+        createdAt: Date.now(),
+      });
+    }
+
+    if (args.semesters && regNo) {
+      const gpaRecs = await ctx.db.query("gpaRecords").collect();
+      for (const semObj of formattedSemesters) {
+        if (semObj.gpa > 0) {
+          const match = gpaRecs.find(
+            (g) => g.registerNo.trim().toUpperCase() === regNo && g.semester === semObj.semester
+          );
+          if (match) {
+            await ctx.db.patch(match._id, {
+              gpa: semObj.gpa,
+              studentName: name,
+              totalCredits: semObj.credits || match.totalCredits,
+            });
+          } else {
+            await ctx.db.insert("gpaRecords", {
+              studentName: name,
+              registerNo: regNo,
+              department: dept,
+              semester: semObj.semester,
+              regulation: reg,
+              subjects: [],
+              totalCredits: semObj.credits || 0,
+              totalPoints: 0,
+              gpa: semObj.gpa,
+              calculatedBy: args.userId,
+              isBulk: false,
+              createdAt: Date.now(),
+            });
+          }
+        }
+      }
+    }
+
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", {
       action: "Update CGPA Record",
-      details: `Updated CGPA record for ${patch.studentName || record.studentName} (${patch.registerNo || record.registerNo})`,
+      details: `Updated CGPA & Semester records for ${name} (${regNo})`,
       performedBy: args.userId,
       performedByName: user?.name || "Unknown",
-      department: record.department,
+      department: dept,
       timestamp: Date.now(),
     });
+
     return { success: true };
   },
 });
 
 export const deleteRecord = mutation({
-  args: { id: v.id("cgpaRecords"), userId: v.id("users") },
+  args: { id: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {
-    const record = await ctx.db.get(args.id);
-    if (!record) throw new Error("CGPA record not found");
-    await ctx.db.delete(args.id);
+    let record = await ctx.db.get(args.id as any);
+    let studentReg = "";
+
+    if (!record) {
+      const student = await ctx.db.get(args.id as any);
+      if (student) {
+        studentReg = student.registerNo;
+        const existing = await ctx.db.query("cgpaRecords").collect();
+        record = existing.find((r) => r.registerNo.trim().toUpperCase() === student.registerNo.trim().toUpperCase());
+      }
+    } else {
+      studentReg = record.registerNo;
+    }
+
+    if (record) {
+      await ctx.db.delete(record._id);
+    }
+
+    if (studentReg) {
+      const gpaRecs = await ctx.db.query("gpaRecords").collect();
+      const studentGpaRecs = gpaRecs.filter((r) => r.registerNo.trim().toUpperCase() === studentReg.trim().toUpperCase());
+      for (const gr of studentGpaRecs) {
+        await ctx.db.delete(gr._id);
+      }
+    }
+
     const user = await ctx.db.get(args.userId);
-    await ctx.db.insert("historyLogs", { action: "Delete CGPA Record", details: `Deleted CGPA record for ${record.studentName} (${record.registerNo})`, performedBy: args.userId, performedByName: user?.name || "Unknown", department: record.department, timestamp: Date.now() });
+    await ctx.db.insert("historyLogs", {
+      action: "Delete CGPA Record",
+      details: `Deleted CGPA & GPA records for ${record?.studentName || studentReg} (${studentReg})`,
+      performedBy: args.userId,
+      performedByName: user?.name || "Unknown",
+      department: record?.department || "N/A",
+      timestamp: Date.now(),
+    });
+
     return { success: true };
   },
 });

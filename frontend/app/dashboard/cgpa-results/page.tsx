@@ -38,6 +38,7 @@ export default function CgpaResultsPage() {
   const [editName, setEditName] = useState('');
   const [editRegNo, setEditRegNo] = useState('');
   const [editCgpa, setEditCgpa] = useState<number>(0);
+  const [editSemGpas, setEditSemGpas] = useState<{ [sem: number]: number }>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -127,6 +128,26 @@ export default function CgpaResultsPage() {
     setEditName(rec.studentName);
     setEditRegNo(rec.registerNo);
     setEditCgpa(rec.cgpa);
+
+    const semMap: { [sem: number]: number } = {};
+    (rec.semesters || []).forEach((s) => {
+      semMap[s.semester] = s.gpa;
+    });
+    setEditSemGpas(semMap);
+  };
+
+  const handleSemGpaChange = (sem: number, val: number) => {
+    const nextMap = { ...editSemGpas, [sem]: val };
+    setEditSemGpas(nextMap);
+
+    let sum = 0, count = 0;
+    Object.values(nextMap).forEach((g) => {
+      if (g > 0) {
+        sum += g;
+        count++;
+      }
+    });
+    setEditCgpa(count > 0 ? parseFloat((sum / count).toFixed(2)) : 0);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -134,12 +155,21 @@ export default function CgpaResultsPage() {
     if (!editingRecord) return;
     setSavingEdit(true);
     try {
+      const semestersArray = Object.entries(editSemGpas)
+        .map(([semStr, gpaVal]) => ({
+          semester: parseInt(semStr),
+          gpa: gpaVal,
+          credits: 0
+        }))
+        .filter((s) => s.gpa > 0);
+
       await api.updateCgpaRecord(editingRecord._id, {
         studentName: editName,
         registerNo: editRegNo,
+        semesters: semestersArray,
         cgpa: editCgpa
       });
-      setSuccessMsg(`Updated CGPA record for ${editName} (${editRegNo})`);
+      setSuccessMsg(`Updated academic record for ${editName} (${editRegNo})`);
       setEditingRecord(null);
       await loadData();
     } catch (err: any) {
@@ -414,42 +444,69 @@ export default function CgpaResultsPage() {
 
       {/* Edit Modal */}
       {editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#071830] border border-sky-500/20 rounded-2xl max-w-md w-full p-6 space-y-4 animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#071830] border border-sky-500/20 rounded-2xl max-w-lg w-full p-6 space-y-4 my-8 animate-scale-in">
             <div className="flex items-center justify-between pb-3 border-b border-sky-500/15">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Edit className="h-4 w-4 text-emerald-400" /> Edit CGPA Record
+                <Edit className="h-4 w-4 text-emerald-400" /> Edit Student Academic Record
               </h3>
               <button onClick={() => setEditingRecord(null)} className="text-sky-400/60 hover:text-white">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-3">
-              <div className="form-group">
-                <label className="form-label">Student Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                />
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="form-group">
+                  <label className="form-label text-[10px] uppercase font-bold text-sky-300/60 mb-1 block">Student Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label text-[10px] uppercase font-bold text-sky-300/60 mb-1 block">Register Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={editRegNo}
+                    onChange={(e) => setEditRegNo(e.target.value)}
+                    className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-bold text-sky-300/60 mb-2 block">
+                  Semester GPAs (Sem 1 to Sem 8)
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#040f24]/60 p-3 rounded-xl border border-sky-500/10">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sNum) => (
+                    <div key={sNum} className="space-y-1">
+                      <span className="text-[10px] font-semibold text-sky-300/60 block text-center">Sem {sNum}</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="10"
+                        placeholder="0.00"
+                        value={editSemGpas[sNum] || ''}
+                        onChange={(e) => handleSemGpaChange(sNum, parseFloat(e.target.value) || 0)}
+                        className="w-full bg-[#071830] border border-sky-500/20 rounded-lg px-2 py-1.5 text-xs text-white text-center font-semibold focus:outline-none focus:border-emerald-500/50"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Register Number</label>
-                <input
-                  type="text"
-                  required
-                  value={editRegNo}
-                  onChange={(e) => setEditRegNo(e.target.value)}
-                  className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Cumulative CGPA (0 - 10)</label>
+                <label className="form-label text-[10px] uppercase font-bold text-emerald-400/80 mb-1 block">
+                  Calculated Cumulative CGPA (0 - 10)
+                </label>
                 <input
                   type="number"
                   step="0.01"
@@ -458,7 +515,7 @@ export default function CgpaResultsPage() {
                   required
                   value={editCgpa}
                   onChange={(e) => setEditCgpa(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#040f24] border border-sky-500/20 rounded-xl px-3 py-2 text-xs text-white text-center font-bold focus:outline-none"
+                  className="w-full bg-[#040f24] border border-emerald-500/30 rounded-xl px-3 py-2 text-sm text-emerald-300 text-center font-bold focus:outline-none"
                 />
               </div>
 
@@ -473,10 +530,10 @@ export default function CgpaResultsPage() {
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-lg shadow-emerald-500/20"
                 >
                   {savingEdit && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  <span>Save CGPA</span>
+                  <span>Save Record</span>
                 </button>
               </div>
             </form>
