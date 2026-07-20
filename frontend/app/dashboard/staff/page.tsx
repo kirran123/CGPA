@@ -221,13 +221,8 @@ export default function StaffManagement() {
 
       {/* Staff Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStaff.length === 0 ? (
-          <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/40">
-            <Search className="h-8 w-8" />
-            <p className="text-sm">No staff found for <span className="font-semibold text-sky-300/60">&ldquo;{search}&rdquo;</span></p>
-          </div>
-        ) : filteredStaff.map((staff) => (
-          <div 
+        {filteredStaff.map((staff) => (
+          <div
             key={staff._id}
             className={`bg-white/[0.01] border rounded-3xl p-6 backdrop-blur-xl transition-all duration-300 flex flex-col justify-between ${
               staff.status === 'Active' ? 'border-sky-500/15 hover:border-sky-500/25' : 'border-red-500/15 opacity-60'
@@ -236,16 +231,16 @@ export default function StaffManagement() {
             <div>
               <div className="flex justify-between items-start mb-4">
                 <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider ${
-                  staff.role === 'dept_admin' 
-                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' 
+                  staff.role === 'dept_admin'
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
                     : 'bg-sky-500/10 border-sky-500/20 text-sky-300'
                 }`}>
                   {roleLabels[staff.role]}
                 </span>
-                
+
                 <div className="flex items-center gap-2">
                   {staff._id !== currentUser?._id && (
-                    <button 
+                    <button
                       onClick={() => openEditModal(staff)}
                       className="p-2 bg-sky-500/5 hover:bg-sky-500/20 border border-sky-500/10 hover:border-sky-500/30 rounded-xl text-sky-300 hover:text-white transition-all cursor-pointer"
                       title="Edit Member Details"
@@ -255,18 +250,18 @@ export default function StaffManagement() {
                   )}
                   {staff.role !== 'super_admin' && staff._id !== currentUser?._id && (
                     <>
-                      <button 
+                      <button
                         onClick={() => toggleStatus(staff)}
                         className={`p-2 border rounded-xl transition-all cursor-pointer ${
-                          staff.status === 'Active' 
-                            ? 'bg-red-500/5 hover:bg-red-500/25 border-red-500/10 hover:border-red-500/30 text-red-400' 
+                          staff.status === 'Active'
+                            ? 'bg-red-500/5 hover:bg-red-500/25 border-red-500/10 hover:border-red-500/30 text-red-400'
                             : 'bg-emerald-500/5 hover:bg-emerald-500/25 border-emerald-500/10 hover:border-emerald-500/30 text-emerald-400'
                         }`}
                         title={staff.status === 'Active' ? 'Deactivate Account' : 'Activate Account'}
                       >
                         {staff.status === 'Active' ? <X className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(staff._id)}
                         className="p-2 bg-red-500/5 hover:bg-red-500/25 border border-red-500/10 hover:border-red-500/30 rounded-xl text-red-400 hover:text-red-300 transition-all cursor-pointer"
                         title="Delete Account"
@@ -287,9 +282,7 @@ export default function StaffManagement() {
                 <div className="flex flex-wrap gap-1 mb-4">
                   {staff.permissions.map(p => {
                     const getFriendlyPermission = (perm: string) => {
-                      if (perm === 'DEPT_FULL_ACCESS' || perm === 'DEPARTMENT_FULL_ACCESS' || perm === 'DEPT_ACCESS') {
-                        return 'DEPT ACCESS';
-                      }
+                      if (perm === 'DEPT_FULL_ACCESS' || perm === 'DEPARTMENT_FULL_ACCESS' || perm === 'DEPT_ACCESS') return 'DEPT ACCESS';
                       return perm.replace(/_/g, ' ');
                     };
                     return (
@@ -314,6 +307,23 @@ export default function StaffManagement() {
             )}
           </div>
         ))}
+
+        {/* No results from search */}
+        {filteredStaff.length === 0 && search.trim() && (
+          <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/40">
+            <Search className="h-8 w-8" />
+            <p className="text-sm">No staff found for <span className="font-semibold text-sky-300/60">&ldquo;{search}&rdquo;</span></p>
+          </div>
+        )}
+
+        {/* No staff at all */}
+        {staffList.length === 0 && !search.trim() && (
+          <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/30">
+            <Users className="h-8 w-8" />
+            <p className="text-sm font-medium">No staff members found</p>
+            <p className="text-xs">Click &ldquo;+ Add Staff Member&rdquo; to get started.</p>
+          </div>
+        )}
       </div>
 
       {/* Modal Overlay */}
