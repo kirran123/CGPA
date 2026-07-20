@@ -179,7 +179,7 @@ export default function SubjectManagement() {
   const openBulkModal = () => {
     setBulkFile(null); setBulkResult(null); setBulkError(null);
     setBulkDept(currentUser?.department || (departments.length > 0 ? departments[0].code : ''));
-    setBulkReg(regulations[0] || '');
+    setBulkReg(regulations.includes('R2021') ? 'R2021' : (regulations[0] || ''));
     setBulkSem('');
     setBulkSkip(true);
     setShowBulkModal(true);

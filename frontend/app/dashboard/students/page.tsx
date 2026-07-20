@@ -95,8 +95,9 @@ export default function StudentManagementPage() {
       const regNames = regs.map((r: any) => r.name);
       setRegulations(regNames);
       if (regNames.length > 0) {
-        setFormReg(regNames[0]);
-        setUploadReg(regNames[0]);
+        const defaultReg = regNames.includes('R2021') ? 'R2021' : regNames[0];
+        setFormReg(defaultReg);
+        setUploadReg(defaultReg);
       }
 
       const userDept = u?.role !== 'super_admin' ? u?.department || '' : '';
@@ -138,7 +139,7 @@ export default function StudentManagementPage() {
       : (selectedDept || (departments.length > 0 ? departments[0].code : 'IT'));
     setFormDept(defaultDept);
     setFormBatch(selectedBatch || '2023-2027');
-    if (regulations.length > 0) setFormReg(regulations[0]);
+    if (regulations.length > 0) setFormReg(regulations.includes('R2021') ? 'R2021' : regulations[0]);
     setShowAddModal(true);
   };
 
