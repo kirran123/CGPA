@@ -19,7 +19,7 @@ const https = require("https");
 const http = require("http");
 
 // ── 1. Parse Convex URL ──────────────────────────────────────────────────
-let CONVEX_URL = process.env.CONVEX_URL;
+let CONVEX_URL = process.env.CONVEX_URL ? process.env.CONVEX_URL.trim() : undefined;
 
 if (!CONVEX_URL) {
   // Try loading from frontend/.env.local or frontend/.env
@@ -219,7 +219,7 @@ function mapRegulation(regulationId) {
 
 function normalizeDepartmentCode(code) {
   const c = code.toUpperCase().trim();
-  if (c === "AD" || c === "AIDS") return ["AD", "AIDS"];
+  if (c === "AD" || c === "AIDS" || c === "AI&DS" || c === "AI_DS") return ["AD", "AIDS", "AI&DS"];
   if (c === "AM" || c === "AIML" || c.includes("AIML")) return ["AM", "AIML"];
   if (c === "CYBER" || c.includes("CYBER") || c === "A" || c === "CSE (CYBER SECURITY)") return ["CYBER", "CSE (CYBER SECURITY)", "A"];
   return [c];
