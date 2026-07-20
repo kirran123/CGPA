@@ -98,7 +98,12 @@ export const getDashboardStats = query({
       }
     } else {
       // Department-level View
-      const activeDept = args.department!.toUpperCase();
+      const user = await ctx.db.get(args.userId);
+      const deptStr = args.department || user?.department;
+      if (!deptStr) {
+        throw new Error("Department must be specified either via parameters or user profile.");
+      }
+      const activeDept = deptStr.toUpperCase();
 
       let gpaRecs = await ctx.db
         .query("gpaRecords")
