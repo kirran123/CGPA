@@ -227,6 +227,24 @@ export const api = {
     }
   },
 
+  // Fetches the latest user data from the DB and updates sessionStorage
+  refreshCurrentUser: async (): Promise<User | null> => {
+    if (typeof window === "undefined") return null;
+    const userStr = sessionStorage.getItem("rit_user");
+    if (!userStr) return null;
+    try {
+      const cached = JSON.parse(userStr);
+      const fresh = await convex.query(convexApi.users.getById, { id: cached._id as any });
+      if (!fresh) return cached;
+      // Merge fresh data into sessionStorage
+      const merged = { ...cached, name: fresh.name, email: fresh.email, department: fresh.department };
+      sessionStorage.setItem("rit_user", JSON.stringify(merged));
+      return merged as User;
+    } catch {
+      return null;
+    }
+  },
+
   // ── Public APIs (no auth required) ─────────────────────────────────────
   getPublicDepartments: async (): Promise<Department[]> => {
     const result = await convex.query(convexApi.departments.getPublic, {});

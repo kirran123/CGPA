@@ -227,7 +227,24 @@ export const deleteStaff = mutation({
     if (user.department) {
       await syncHodForDept(ctx, user.department);
     }
-
     return { success: true };
+  },
+});
+
+// Get single user by ID (for refreshing profile after name change)
+export const getById = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.id);
+    if (!user) return null;
+    return {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department || "",
+      permissions: user.permissions || [],
+      status: user.status,
+    };
   },
 });
