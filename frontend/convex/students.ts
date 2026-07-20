@@ -50,6 +50,58 @@ export const getBatches = query({
   },
 });
 
+async function initializeStudentResults(
+  ctx: any,
+  studentName: string,
+  registerNo: string,
+  department: string,
+  regulation: string
+) {
+  const regUpper = registerNo.trim().toUpperCase();
+  const deptUpper = department.trim().toUpperCase();
+  const regUpperVal = (regulation || "R2021").trim().toUpperCase();
+
+  const existingCgpa = await ctx.db
+    .query("cgpaRecords")
+    .withIndex("by_registerNo", (q: any) => q.eq("registerNo", regUpper))
+    .filter((q: any) => q.eq(q.field("department"), deptUpper))
+    .first();
+
+  if (existingCgpa) {
+    await ctx.db.patch(existingCgpa._id, {
+      studentName: studentName.trim(),
+      regulation: regUpperVal,
+    });
+  } else {
+    const firstUser = await ctx.db.query("users").first();
+    if (firstUser) {
+      await ctx.db.insert("cgpaRecords", {
+        studentName: studentName.trim(),
+        registerNo: regUpper,
+        department: deptUpper,
+        regulation: regUpperVal,
+        semesters: [],
+        totalCredits: 0,
+        cgpa: 0,
+        calculatedBy: firstUser._id,
+        isBulk: false,
+        createdAt: Date.now(),
+      });
+    }
+  }
+
+  const existingGpaRecords = await ctx.db
+    .query("gpaRecords")
+    .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
+    .collect();
+
+  for (const gRecord of existingGpaRecords) {
+    if (gRecord.studentName !== studentName.trim()) {
+      await ctx.db.patch(gRecord._id, { studentName: studentName.trim() });
+    }
+  }
+}
+
 export const create = mutation({
   args: {
     name: v.string(),
@@ -61,6 +113,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const regNoUpper = args.registerNo.trim().toUpperCase();
     const deptUpper = args.department.trim().toUpperCase();
+    const regVal = args.regulation ? args.regulation.trim().toUpperCase() : "R2021";
     const existing = await ctx.db
       .query("students")
       .withIndex("by_registerNo", (q) => q.eq("registerNo", regNoUpper))
@@ -71,17 +124,21 @@ export const create = mutation({
       registerNo: regNoUpper,
       department: deptUpper,
       batch: args.batch.trim(),
-      regulation: args.regulation ? args.regulation.trim().toUpperCase() : "R2021",
+      regulation: regVal,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
 
+    let studentId;
     if (existing) {
       await ctx.db.patch(existing._id, data);
-      return existing._id;
+      studentId = existing._id;
     } else {
-      return await ctx.db.insert("students", data);
+      studentId = await ctx.db.insert("students", data);
     }
+
+    await initializeStudentResults(ctx, args.name, regNoUpper, deptUpper, regVal);
+    return studentId;
   },
 });
 
@@ -95,6 +152,7 @@ export const update = mutation({
     regulation: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const student = await ctx.db.get(args.id);
     const patch: any = { updatedAt: Date.now() };
     if (args.name !== undefined) patch.name = args.name.trim();
     if (args.registerNo !== undefined) patch.registerNo = args.registerNo.trim().toUpperCase();
@@ -103,6 +161,15 @@ export const update = mutation({
     if (args.regulation !== undefined) patch.regulation = args.regulation.trim().toUpperCase();
 
     await ctx.db.patch(args.id, patch);
+
+    const finalName = patch.name || student?.name || "";
+    const finalRegNo = patch.registerNo || student?.registerNo || "";
+    const finalDept = patch.department || student?.department || "";
+    const finalReg = patch.regulation || student?.regulation || "R2021";
+    if (finalRegNo && finalDept) {
+      await initializeStudentResults(ctx, finalName, finalRegNo, finalDept, finalReg);
+    }
+
     return args.id;
   },
 });
@@ -132,6 +199,7 @@ export const bulkInsert = mutation({
     for (const s of args.students) {
       const regNoUpper = s.registerNo.trim().toUpperCase();
       const deptUpper = s.department.trim().toUpperCase();
+      const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
       const existing = await ctx.db
         .query("students")
         .withIndex("by_registerNo", (q) => q.eq("registerNo", regNoUpper))
@@ -142,7 +210,7 @@ export const bulkInsert = mutation({
         registerNo: regNoUpper,
         department: deptUpper,
         batch: s.batch.trim(),
-        regulation: s.regulation ? s.regulation.trim().toUpperCase() : "R2021",
+        regulation: regVal,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -152,6 +220,8 @@ export const bulkInsert = mutation({
       } else {
         await ctx.db.insert("students", data);
       }
+
+      await initializeStudentResults(ctx, s.name, regNoUpper, deptUpper, regVal);
       count++;
     }
     return { count };
