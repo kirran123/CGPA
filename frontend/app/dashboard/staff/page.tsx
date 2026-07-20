@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -10,11 +10,10 @@ import {
   Loader2, 
   Mail, 
   Building, 
-  User, 
   KeyRound, 
-  ShieldCheck,
   Check,
-  X
+  X,
+  Search,
 } from 'lucide-react';
 import { api, User as UserType, Department } from '@/lib/api';
 
@@ -38,6 +37,7 @@ export default function StaffManagement() {
   const [permissions, setPermissions] = useState<string[]>([]);
   
   const [submitting, setSubmitting] = useState(false);
+  const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
   const loadData = async () => {
@@ -163,6 +163,17 @@ export default function StaffManagement() {
     staff: 'Lecturer'
   };
 
+  // Filter staff list (search only shown / active for super_admin)
+  const filteredStaff = useMemo(() => {
+    if (!search.trim() || currentUser?.role !== 'super_admin') return staffList;
+    const q = search.trim().toLowerCase();
+    return staffList.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q) ||
+      (s.department || '').toLowerCase().includes(q)
+    );
+  }, [staffList, search, currentUser?.role]);
+
   return (
     <div className="space-y-6">
       {/* Header Area */}
@@ -183,6 +194,25 @@ export default function StaffManagement() {
         </button>
       </div>
 
+      {/* Search bar — super_admin only */}
+      {currentUser?.role === 'super_admin' && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sky-400/50 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name, email or department…"
+            className="w-full bg-white/[0.03] border border-sky-500/15 focus:border-sky-500/40 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none placeholder:text-sky-300/25 transition-colors"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400/50 hover:text-sky-300 transition-colors">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-xs">
           {error}
@@ -191,7 +221,12 @@ export default function StaffManagement() {
 
       {/* Staff Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {staffList.map((staff) => (
+        {filteredStaff.length === 0 ? (
+          <div className="col-span-3 py-16 flex flex-col items-center gap-2 text-sky-300/40">
+            <Search className="h-8 w-8" />
+            <p className="text-sm">No staff found for <span className="font-semibold text-sky-300/60">&ldquo;{search}&rdquo;</span></p>
+          </div>
+        ) : filteredStaff.map((staff) => (
           <div 
             key={staff._id}
             className={`bg-white/[0.01] border rounded-3xl p-6 backdrop-blur-xl transition-all duration-300 flex flex-col justify-between ${
