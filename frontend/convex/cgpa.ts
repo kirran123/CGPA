@@ -1,6 +1,53 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+async function syncGpaFromSemesters(
+  ctx: any,
+  registerNo: string,
+  studentName: string,
+  department: string,
+  regulation: string,
+  semesters: Array<{ semester: number; gpa: number; credits?: number }>,
+  userId: any,
+  isBulk: boolean
+) {
+  const regUpper = registerNo.trim().toUpperCase();
+  const deptUpper = department.trim().toUpperCase();
+  const regName = (regulation || "R2021").toUpperCase();
+
+  for (const s of semesters) {
+    if (!s.gpa || s.gpa <= 0) continue;
+    const existingGpa = await ctx.db
+      .query("gpaRecords")
+      .withIndex("by_student", (q: any) =>
+        q.eq("registerNo", regUpper).eq("semester", s.semester).eq("department", deptUpper)
+      )
+      .first();
+
+    const gpaData = {
+      studentName: studentName || `Student_${regUpper}`,
+      registerNo: regUpper,
+      semester: s.semester,
+      regulation: regName,
+      department: deptUpper,
+      subjects: existingGpa?.subjects || [],
+      totalCredits: s.credits || existingGpa?.totalCredits || 0,
+      totalPoints: parseFloat(((s.gpa || 0) * (s.credits || existingGpa?.totalCredits || 0)).toFixed(2)),
+      gpa: s.gpa,
+      calculatedBy: userId,
+      isBulk,
+      batchId: existingGpa?.batchId || "",
+      createdAt: Date.now(),
+    };
+
+    if (existingGpa) {
+      await ctx.db.patch(existingGpa._id, gpaData);
+    } else {
+      await ctx.db.insert("gpaRecords", gpaData);
+    }
+  }
+}
+
 export const calculateSingle = mutation({
   args: {
     studentName: v.optional(v.string()),
@@ -14,7 +61,7 @@ export const calculateSingle = mutation({
     const activeDept = args.department.toUpperCase();
     const regUpper = args.regulation.toUpperCase();
     let studentName = args.studentName || "";
-    let registerNo = args.registerNo || "";
+    let registerNo = (args.registerNo || "").trim().toUpperCase();
     if (!studentName.trim()) {
       const records = await ctx.db.query("cgpaRecords").withIndex("by_department", (q) => q.eq("department", activeDept)).collect();
       studentName = `Student${records.length + 1}`;
@@ -37,6 +84,9 @@ export const calculateSingle = mutation({
     let recordId;
     if (existing) { await ctx.db.patch(existing._id, recordData); recordId = existing._id; }
     else { recordId = await ctx.db.insert("cgpaRecords", recordData); }
+
+    await syncGpaFromSemesters(ctx, registerNo, studentName, activeDept, regUpper, formattedSemesters, args.userId, false);
+
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Calculate CGPA", details: `Calculated CGPA (${cgpa}) for ${studentName} (${registerNo}) across ${formattedSemesters.length} semesters`, performedBy: args.userId, performedByName: user?.name || "Unknown", department: activeDept, timestamp: Date.now() });
     return { ...(await ctx.db.get(recordId)), calculatedBy: { name: user?.name || "Unknown" } };
@@ -164,13 +214,17 @@ export const bulkInsert = mutation({
   handler: async (ctx, args) => {
     const department = args.records[0].department;
     for (const rec of args.records) {
+      const regUpper = rec.registerNo.trim().toUpperCase();
+      const deptUpper = rec.department.toUpperCase();
       const existing = await ctx.db.query("cgpaRecords")
-        .withIndex("by_registerNo", (q) => q.eq("registerNo", rec.registerNo))
-        .filter((q) => q.eq(q.field("department"), rec.department))
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
+        .filter((q) => q.eq(q.field("department"), deptUpper))
         .first();
-      const data = { ...rec, createdAt: Date.now() };
+      const data = { ...rec, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
       if (existing) await ctx.db.patch(existing._id, data);
       else await ctx.db.insert("cgpaRecords", data);
+
+      await syncGpaFromSemesters(ctx, regUpper, rec.studentName, deptUpper, rec.regulation, rec.semesters, args.userId, true);
     }
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Bulk Calculate CGPA", details: `Bulk calculated CGPA for ${args.records.length} students`, performedBy: args.userId, performedByName: user?.name || "Unknown", department, timestamp: Date.now() });
