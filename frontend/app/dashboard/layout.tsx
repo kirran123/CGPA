@@ -33,7 +33,7 @@ interface NavItem {
 const allNavItems: NavItem[] = [
   { label: 'Overview', path: '/dashboard', icon: <BarChart3 className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'core' },
   { label: 'Departments', path: '/dashboard/departments', icon: <Building className="h-4 w-4" />, roles: ['super_admin'], group: 'admin' },
-  { label: 'Students Roster', path: '/dashboard/students', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
+  { label: 'Student Management', path: '/dashboard/students', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
   { label: 'Staff Management', path: '/dashboard/staff', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin'], group: 'admin' },
   { label: 'Syllabus Catalog', path: '/dashboard/subjects', icon: <BookOpen className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
   { label: 'Grade Settings', path: '/dashboard/grade-settings', icon: <Settings className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
