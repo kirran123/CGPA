@@ -60,8 +60,16 @@ export const calculateSingle = mutation({
   handler: async (ctx, args) => {
     const activeDept = args.department.toUpperCase();
     const regUpper = args.regulation.toUpperCase();
-    let studentName = args.studentName || "";
     let registerNo = (args.registerNo || "").trim().toUpperCase();
+
+    let officialStudent = registerNo
+      ? await ctx.db
+          .query("students")
+          .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
+          .first()
+      : null;
+
+    let studentName = officialStudent ? officialStudent.name : args.studentName?.trim() || "";
     if (!studentName.trim()) {
       const records = await ctx.db.query("cgpaRecords").withIndex("by_department", (q) => q.eq("department", activeDept)).collect();
       studentName = `Student${records.length + 1}`;
@@ -96,15 +104,73 @@ export const calculateSingle = mutation({
 export const getRecords = query({
   args: { department: v.optional(v.string()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    let records = await ctx.db.query("cgpaRecords").collect();
-    if (args.department) records = records.filter((r) => r.department === args.department!.toUpperCase());
-    if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
-    const out: any[] = [];
-    for (const r of records) {
-      const user = (await ctx.db.get(r.calculatedBy as any)) as any;
-      out.push({ ...(r as any), calculatedBy: { name: user?.name || "Unknown" } });
+    const deptUpper = args.department ? args.department.toUpperCase() : undefined;
+
+    let students = await ctx.db.query("students").collect();
+    if (deptUpper) {
+      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
     }
-    return out.sort((a, b) => b.cgpa !== a.cgpa ? b.cgpa - a.cgpa : a.registerNo.localeCompare(b.registerNo));
+
+    let cgpaRecords = await ctx.db.query("cgpaRecords").collect();
+    if (deptUpper) {
+      cgpaRecords = cgpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
+    }
+    if (args.userId) {
+      cgpaRecords = cgpaRecords.filter((r) => r.calculatedBy === args.userId);
+    }
+
+    const recordMap = new Map<string, any>();
+    for (const r of cgpaRecords) {
+      const key = r.registerNo.trim().toUpperCase();
+      const prev = recordMap.get(key);
+      if (!prev || (r.createdAt || 0) > (prev.createdAt || 0)) {
+        recordMap.set(key, r);
+      }
+    }
+
+    const out: any[] = [];
+    const processedRegs = new Set<string>();
+
+    for (const st of students) {
+      const regUpper = st.registerNo.trim().toUpperCase();
+      processedRegs.add(regUpper);
+      const rec = recordMap.get(regUpper);
+      if (rec) {
+        const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
+        out.push({
+          ...rec,
+          studentName: st.name,
+          regulation: rec.regulation || st.regulation || "R2021",
+          calculatedBy: { name: user?.name || "System" },
+        });
+      } else {
+        out.push({
+          _id: st._id,
+          studentName: st.name,
+          registerNo: regUpper,
+          department: st.department.toUpperCase(),
+          regulation: st.regulation || "R2021",
+          semesters: [],
+          totalCredits: 0,
+          cgpa: 0,
+          isBulk: false,
+          createdAt: st.createdAt || Date.now(),
+          calculatedBy: { name: "Pending" },
+        });
+      }
+    }
+
+    for (const [regUpper, rec] of recordMap.entries()) {
+      if (!processedRegs.has(regUpper)) {
+        const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
+        out.push({
+          ...rec,
+          calculatedBy: { name: user?.name || "Unknown" },
+        });
+      }
+    }
+
+    return out.sort((a, b) => (b.cgpa !== a.cgpa ? b.cgpa - a.cgpa : a.registerNo.localeCompare(b.registerNo)));
   },
 });
 
@@ -216,15 +282,23 @@ export const bulkInsert = mutation({
     for (const rec of args.records) {
       const regUpper = rec.registerNo.trim().toUpperCase();
       const deptUpper = rec.department.toUpperCase();
+
+      const officialStudent = await ctx.db
+        .query("students")
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
+        .first();
+
+      const resolvedName = officialStudent ? officialStudent.name : rec.studentName.trim();
+
       const existing = await ctx.db.query("cgpaRecords")
         .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
         .filter((q) => q.eq(q.field("department"), deptUpper))
         .first();
-      const data = { ...rec, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
+      const data = { ...rec, studentName: resolvedName, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
       if (existing) await ctx.db.patch(existing._id, data);
       else await ctx.db.insert("cgpaRecords", data);
 
-      await syncGpaFromSemesters(ctx, regUpper, rec.studentName, deptUpper, rec.regulation, rec.semesters, args.userId, true);
+      await syncGpaFromSemesters(ctx, regUpper, resolvedName, deptUpper, rec.regulation, rec.semesters, args.userId, true);
     }
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Bulk Calculate CGPA", details: `Bulk calculated CGPA for ${args.records.length} students`, performedBy: args.userId, performedByName: user?.name || "Unknown", department, timestamp: Date.now() });

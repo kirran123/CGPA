@@ -44,6 +44,8 @@ export default function GpaResultsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const canEdit = canEditRecordsFn();
 
+  const [students, setStudents] = useState<any[]>([]);
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -57,9 +59,16 @@ export default function GpaResultsPage() {
       const initialDept = u?.role !== 'super_admin' ? u?.department || '' : selectedDept;
       if (initialDept && !selectedDept) setSelectedDept(initialDept);
 
+      const activeDept = initialDept || selectedDept || undefined;
       const semNum = selectedSem ? parseInt(selectedSem) : undefined;
-      const fetched = await api.getGpaRecords(initialDept || selectedDept || undefined, semNum);
-      setRecords(fetched);
+
+      const [fetchedRecords, fetchedStudents] = await Promise.all([
+        api.getGpaRecords(activeDept, semNum),
+        api.getStudents(activeDept)
+      ]);
+
+      setRecords(fetchedRecords);
+      setStudents(fetchedStudents);
     } catch (err: any) {
       setError(err.message || 'Failed to load GPA results.');
     } finally {
@@ -70,6 +79,60 @@ export default function GpaResultsPage() {
   useEffect(() => {
     loadData();
   }, [selectedDept, selectedSem]);
+
+  const studentRows = React.useMemo(() => {
+    const map = new Map<string, {
+      registerNo: string;
+      studentName: string;
+      department: string;
+      semesters: { [sem: number]: { gpa: number; id: string; record: GpaRecord } };
+    }>();
+
+    // 1. Initialize with students from Student Management
+    for (const st of students) {
+      const key = st.registerNo.trim().toUpperCase();
+      map.set(key, {
+        registerNo: st.registerNo,
+        studentName: st.name,
+        department: st.department.toUpperCase(),
+        semesters: {}
+      });
+    }
+
+    // 2. Map calculated GPA records
+    for (const r of records) {
+      const key = r.registerNo.trim().toUpperCase();
+      let row = map.get(key);
+      if (!row) {
+        row = {
+          registerNo: r.registerNo,
+          studentName: r.studentName,
+          department: r.department.toUpperCase(),
+          semesters: {}
+        };
+        map.set(key, row);
+      }
+      row.semesters[r.semester] = { gpa: r.gpa, id: r._id, record: r };
+    }
+
+    let rowsList = Array.from(map.values());
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      rowsList = rowsList.filter(
+        (r) =>
+          r.studentName.toLowerCase().includes(q) ||
+          r.registerNo.toLowerCase().includes(q)
+      );
+    }
+
+    if (selectedSem) {
+      const sNum = parseInt(selectedSem);
+      rowsList = rowsList.filter((r) => r.semesters[sNum] !== undefined);
+    }
+
+    return rowsList.sort((a, b) => a.registerNo.localeCompare(b.registerNo));
+  }, [students, records, searchQuery, selectedSem]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string, sem: number) => {
     setDownloadingRowId(recordId);
@@ -147,16 +210,6 @@ export default function GpaResultsPage() {
     }
   };
 
-  const filteredRecords = records.filter((r) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.trim().toLowerCase();
-    return (
-      r.studentName.toLowerCase().includes(q) ||
-      r.registerNo.toLowerCase().includes(q) ||
-      (r.batchName && r.batchName.toLowerCase().includes(q))
-    );
-  });
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-fade-in">
 
@@ -183,7 +236,7 @@ export default function GpaResultsPage() {
 
           <button
             onClick={handleDownloadOverallPdf}
-            disabled={downloadingOverall || records.length === 0}
+            disabled={downloadingOverall || studentRows.length === 0}
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all cursor-pointer disabled:opacity-50"
           >
             {downloadingOverall ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
@@ -227,7 +280,7 @@ export default function GpaResultsPage() {
 
         <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
-            Semester
+            Semester Filter
           </label>
           <select
             value={selectedSem}
@@ -269,7 +322,7 @@ export default function GpaResultsPage() {
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
-      ) : filteredRecords.length === 0 ? (
+      ) : studentRows.length === 0 ? (
         <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-12 text-center">
           <GraduationCap className="h-10 w-10 text-sky-500/25 mx-auto mb-3" />
           <p className="text-sm font-semibold text-white">No GPA records found</p>
@@ -281,87 +334,84 @@ export default function GpaResultsPage() {
         <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl overflow-hidden backdrop-blur-xl">
           <div className="px-5 py-3 border-b border-sky-500/10 flex items-center justify-between">
             <span className="text-xs font-semibold text-sky-300">
-              Showing {filteredRecords.length} GPA Records
+              Showing {studentRows.length} Students
             </span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[900px]">
               <thead>
                 <tr className="border-b border-sky-500/10 text-sky-300/40 font-bold uppercase tracking-wider text-[9px] bg-sky-500/[0.02]">
                   <th className="py-3 px-4">Register No</th>
                   <th className="py-3 px-4">Student Name</th>
-                  <th className="py-3 px-4 text-center">Department</th>
-                  <th className="py-3 px-4 text-center">Semester</th>
-                  <th className="py-3 px-4 text-center">GPA</th>
-                  <th className="py-3 px-4 text-center">Batch / Type</th>
+                  <th className="py-3 px-3 text-center">Dept</th>
+                  <th className="py-3 px-2 text-center">Sem 1</th>
+                  <th className="py-3 px-2 text-center">Sem 2</th>
+                  <th className="py-3 px-2 text-center">Sem 3</th>
+                  <th className="py-3 px-2 text-center">Sem 4</th>
+                  <th className="py-3 px-2 text-center">Sem 5</th>
+                  <th className="py-3 px-2 text-center">Sem 6</th>
+                  <th className="py-3 px-2 text-center">Sem 7</th>
+                  <th className="py-3 px-2 text-center">Sem 8</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRecords.map((r, idx) => (
+                {studentRows.map((r, idx) => (
                   <tr
-                    key={r._id}
+                    key={r.registerNo}
                     className={`border-b border-sky-500/5 hover:bg-sky-500/[0.03] transition-colors ${
                       idx % 2 === 0 ? 'bg-white/[0.005]' : ''
                     }`}
                   >
                     <td className="py-3 px-4 font-mono font-bold text-sky-400">{r.registerNo}</td>
                     <td className="py-3 px-4 font-semibold text-white">{r.studentName}</td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3 px-3 text-center">
                       <span className="bg-sky-500/10 border border-sky-500/15 text-sky-300 px-2 py-0.5 rounded-md font-mono text-[10px] font-bold">
                         {r.department}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center font-bold text-sky-200/80">Sem {r.semester}</td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`font-bold px-2.5 py-1 rounded-lg ${
-                        r.gpa >= 8.5 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
-                        r.gpa >= 7.0 ? 'text-teal-400 bg-teal-500/10 border border-teal-500/20' :
-                        r.gpa >= 5.0 ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20' :
-                        'text-red-400 bg-red-500/10 border border-red-500/20'
-                      }`}>
-                        {r.gpa.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center text-[10px] text-sky-300/50">
-                      {r.isBulk ? (
-                        <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                          {r.batchName || 'Bulk Batch'}
-                        </span>
-                      ) : (
-                        <span className="bg-sky-500/10 text-sky-300 border border-sky-500/20 px-2 py-0.5 rounded-md">
-                          Individual
-                        </span>
-                      )}
-                    </td>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sNum) => {
+                      const semInfo = r.semesters[sNum];
+                      return (
+                        <td key={sNum} className="py-3 px-2 text-center font-mono text-[11px]">
+                          {semInfo ? (
+                            <span className="text-sky-200/90 font-semibold">{semInfo.gpa.toFixed(2)}</span>
+                          ) : (
+                            <span className="text-sky-400/20">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          disabled={downloadingRowId === r._id}
-                          onClick={() => handleDownloadRowPdf(r._id, r.registerNo, r.semester)}
-                          className="flex items-center gap-1 text-[10px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-40"
-                          title="Download Student GPA PDF"
-                        >
-                          {downloadingRowId === r._id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <FileText className="h-3 w-3" />
-                          )}
-                          <span>PDF</span>
-                        </button>
+                        {Object.values(r.semesters).length > 0 && (
+                          <button
+                            disabled={downloadingRowId === Object.values(r.semesters)[0].id}
+                            onClick={() => handleDownloadRowPdf(Object.values(r.semesters)[0].id, r.registerNo, Object.values(r.semesters)[0].record.semester)}
+                            className="flex items-center gap-1 text-[10px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-2 py-1 rounded-xl transition-all cursor-pointer disabled:opacity-40"
+                            title="Download GPA Report PDF"
+                          >
+                            {downloadingRowId === Object.values(r.semesters)[0].id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
+                            <span>PDF</span>
+                          </button>
+                        )}
 
-                        {canEdit && (
+                        {canEdit && Object.values(r.semesters).length > 0 && (
                           <>
                             <button
-                              onClick={() => handleOpenEdit(r)}
+                              onClick={() => handleOpenEdit(Object.values(r.semesters)[0].record)}
                               className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
-                              title="Edit Record"
+                              title="Edit GPA Record"
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteRow(r._id, r.studentName, r.registerNo)}
+                              onClick={() => handleDeleteRow(Object.values(r.semesters)[0].id, r.studentName, r.registerNo)}
                               className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
                               title="Delete Record"
                             >

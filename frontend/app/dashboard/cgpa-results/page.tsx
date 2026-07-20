@@ -276,14 +276,14 @@ export default function CgpaResultsPage() {
                   <th className="py-3 px-4">Register No</th>
                   <th className="py-3 px-4">Student Name</th>
                   <th className="py-3 px-3 text-center">Dept</th>
-                  <th className="py-3 px-2 text-center">S1</th>
-                  <th className="py-3 px-2 text-center">S2</th>
-                  <th className="py-3 px-2 text-center">S3</th>
-                  <th className="py-3 px-2 text-center">S4</th>
-                  <th className="py-3 px-2 text-center">S5</th>
-                  <th className="py-3 px-2 text-center">S6</th>
-                  <th className="py-3 px-2 text-center">S7</th>
-                  <th className="py-3 px-2 text-center">S8</th>
+                  <th className="py-3 px-2 text-center">Sem 1</th>
+                  <th className="py-3 px-2 text-center">Sem 2</th>
+                  <th className="py-3 px-2 text-center">Sem 3</th>
+                  <th className="py-3 px-2 text-center">Sem 4</th>
+                  <th className="py-3 px-2 text-center">Sem 5</th>
+                  <th className="py-3 px-2 text-center">Sem 6</th>
+                  <th className="py-3 px-2 text-center">Sem 7</th>
+                  <th className="py-3 px-2 text-center">Sem 8</th>
                   <th className="py-3 px-4 text-center">CGPA</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>

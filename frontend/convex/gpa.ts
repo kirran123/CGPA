@@ -146,8 +146,16 @@ export const calculateSingle = mutation({
   handler: async (ctx, args) => {
     const activeDept = args.department.toUpperCase();
     const regUpper = args.regulation.toUpperCase();
-    let studentName = args.studentName || "";
     let registerNo = (args.registerNo || "").trim().toUpperCase();
+
+    let officialStudent = registerNo
+      ? await ctx.db
+          .query("students")
+          .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
+          .first()
+      : null;
+
+    let studentName = officialStudent ? officialStudent.name : args.studentName?.trim() || "";
     if (!studentName.trim()) {
       const records = await ctx.db.query("gpaRecords").withIndex("by_department", (q) => q.eq("department", activeDept)).collect();
       studentName = `Student${records.length + 1}`;
@@ -192,10 +200,31 @@ export const getRecords = query({
     if (args.department) records = records.filter((r) => r.department === args.department!.toUpperCase());
     if (args.semester !== undefined) records = records.filter((r) => r.semester === args.semester);
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
-    const out: any[] = [];
+
+    const recordMap = new Map<string, any>();
     for (const r of records) {
+      const key = `${r.registerNo.trim().toUpperCase()}_SEM${r.semester}_${r.department.toUpperCase()}`;
+      const prev = recordMap.get(key);
+      if (!prev || (r.createdAt || 0) > (prev.createdAt || 0)) {
+        recordMap.set(key, r);
+      }
+    }
+
+    const students = await ctx.db.query("students").collect();
+    const studentMap = new Map<string, string>();
+    for (const s of students) {
+      studentMap.set(s.registerNo.trim().toUpperCase(), s.name);
+    }
+
+    const out: any[] = [];
+    for (const r of recordMap.values()) {
       const user = (await ctx.db.get(r.calculatedBy as any)) as any;
-      out.push({ ...(r as any), calculatedBy: { name: user?.name || "Unknown" } });
+      const officialName = studentMap.get(r.registerNo.trim().toUpperCase()) || r.studentName;
+      out.push({
+        ...r,
+        studentName: officialName,
+        calculatedBy: { name: user?.name || "Unknown" }
+      });
     }
     return out.sort((a, b) => b.createdAt - a.createdAt);
   },
@@ -308,14 +337,22 @@ export const bulkInsert = mutation({
     for (const rec of args.records) {
       const regUpper = rec.registerNo.trim().toUpperCase();
       const deptUpper = rec.department.toUpperCase();
+
+      const officialStudent = await ctx.db
+        .query("students")
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
+        .first();
+
+      const resolvedName = officialStudent ? officialStudent.name : rec.studentName.trim();
+
       const existing = await ctx.db.query("gpaRecords")
         .withIndex("by_student", (q) => q.eq("registerNo", regUpper).eq("semester", rec.semester).eq("department", deptUpper))
         .first();
-      const data = { ...rec, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
+      const data = { ...rec, studentName: resolvedName, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
       if (existing) await ctx.db.patch(existing._id, data);
       else await ctx.db.insert("gpaRecords", data);
 
-      await syncStudentCgpa(ctx, regUpper, deptUpper, rec.regulation, rec.studentName, args.userId);
+      await syncStudentCgpa(ctx, regUpper, deptUpper, rec.regulation, resolvedName, args.userId);
     }
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Bulk Calculate GPA", details: `Bulk calculated GPA for ${args.records.length} students (batch: ${batchName})`, performedBy: args.userId, performedByName: user?.name || "Unknown", department, timestamp: Date.now() });
