@@ -225,12 +225,43 @@ export const getRecords = query({
 });
 
 export const getById = query({
-  args: { id: v.id("cgpaRecords") },
+  args: { id: v.string() },
   handler: async (ctx, args) => {
-    const r = await ctx.db.get(args.id);
-    if (!r) return null;
-    const user = (await ctx.db.get(r.calculatedBy as any)) as any;
-    return { ...(r as any), calculatedBy: { name: user?.name || "Unknown" } };
+    // First try as a direct cgpaRecord
+    const raw = await ctx.db.get(args.id as any).catch(() => null);
+    const r = raw as any;
+    if (r && r.registerNo && r.cgpa !== undefined) {
+      const user = r.calculatedBy ? ((await ctx.db.get(r.calculatedBy as any).catch(() => null)) as any) : null;
+      return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+    }
+    // It might be a student ID — build CGPA from GPA records
+    const student = r as any;
+    if (!student || !student.registerNo) return null;
+    const regUpper = student.registerNo.trim().toUpperCase();
+    const allGpaRecs = await ctx.db.query("gpaRecords").collect();
+    const stGpa = allGpaRecs.filter((g) => g.registerNo.trim().toUpperCase() === regUpper);
+    const semMap = new Map<number, any>();
+    for (const g of stGpa) {
+      if (g.gpa > 0) {
+        const ex = semMap.get(g.semester);
+        if (!ex || (g.createdAt || 0) > (ex.createdAt || 0)) semMap.set(g.semester, g);
+      }
+    }
+    const semesters = Array.from(semMap.values()).sort((a, b) => a.semester - b.semester).map((g) => ({ semester: g.semester, gpa: g.gpa, credits: g.totalCredits || 0 }));
+    let gpaSum = 0, semCount = 0, totalCredits = 0;
+    for (const s of semesters) { if (s.gpa > 0) { gpaSum += s.gpa; semCount++; totalCredits += s.credits; } }
+    const cgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0;
+    return {
+      _id: args.id,
+      studentName: student.name,
+      registerNo: regUpper,
+      department: student.department,
+      regulation: student.regulation || "R2021",
+      semesters,
+      totalCredits,
+      cgpa,
+      calculatedBy: { name: "System (Auto)" },
+    };
   },
 });
 

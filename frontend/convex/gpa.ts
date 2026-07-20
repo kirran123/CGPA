@@ -240,12 +240,13 @@ export const getRecords = query({
 });
 
 export const getById = query({
-  args: { id: v.id("gpaRecords") },
+  args: { id: v.string() },
   handler: async (ctx, args) => {
-    const r = await ctx.db.get(args.id);
-    if (!r) return null;
-    const user = (await ctx.db.get(r.calculatedBy as any)) as any;
-    return { ...(r as any), calculatedBy: { name: user?.name || "Unknown" } };
+    const raw = await ctx.db.get(args.id as any).catch(() => null);
+    if (!raw) return null;
+    const r = raw as any;
+    const user = r.calculatedBy ? ((await ctx.db.get(r.calculatedBy as any).catch(() => null)) as any) : null;
+    return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
   },
 });
 

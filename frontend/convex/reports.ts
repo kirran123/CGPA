@@ -548,7 +548,7 @@ export const generateStoredGpaPdf = action({
 
 // 4. Stored CGPA record PDF
 export const generateStoredCgpaPdf = action({
-  args: { recordId: v.id("cgpaRecords") },
+  args: { recordId: v.string() },
   handler: async (ctx, args) => {
     const r = await ctx.runQuery(api.cgpa.getById, { id: args.recordId });
     if (!r) throw new Error("CGPA record not found");
