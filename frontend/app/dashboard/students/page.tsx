@@ -42,7 +42,7 @@ function downloadStudentTemplate() {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Student Roster');
-  XLSX.writeFile(wb, 'student_roster_template.xlsx');
+  XLSX.writeFile(wb, 'Student_Management_Template.xlsx');
 }
 
 export default function StudentManagementPage() {
