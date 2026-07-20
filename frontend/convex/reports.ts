@@ -429,7 +429,7 @@ export const generateStoredCgpaPdf = action({
 export const generateRankListGpaPdf = action({
   args: { department: v.string(), semester: v.number() },
   handler: async (ctx, args) => {
-    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const records = await ctx.runQuery(api.gpa.getRecords, { department: args.department, semester: args.semester });
     const valid = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()));
@@ -443,7 +443,7 @@ export const generateRankListGpaPdf = action({
 export const generateRankListCgpaPdf = action({
   args: { department: v.string() },
   handler: async (ctx, args) => {
-    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const records = await ctx.runQuery(api.cgpa.getRecords, { department: args.department });
     const valid = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()) && r.cgpa > 0);
@@ -459,7 +459,7 @@ export const generateBatchGpaPdf = action({
   handler: async (ctx, args) => {
     const records = await ctx.runQuery(api.gpa.getBatchRecords, { batchId: args.batchId });
     if (records.length === 0) throw new Error("Batch empty or not found");
-    const students = await ctx.runQuery(api.students.getStudents, {});
+    const students = await ctx.runQuery(api.students.get, {});
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const validRecords = records.filter((r: any) => studentRegs.has(r.registerNo.trim().toUpperCase()));
     const recordsToUse = validRecords.length > 0 ? validRecords : records;
@@ -473,7 +473,7 @@ export const generateBatchGpaPdf = action({
 export const generateOverallSemesterGpaPdf = action({
   args: { department: v.optional(v.string()), semester: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const studentMap = new Map<string, string>();
     students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
@@ -497,7 +497,7 @@ export const generateOverallSemesterGpaPdf = action({
 export const generateOverallCgpaPdf = action({
   args: { department: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const students = await ctx.runQuery(api.students.getStudents, { department: args.department });
+    const students = await ctx.runQuery(api.students.get, { department: args.department });
     const studentRegs = new Set(students.map((s: any) => s.registerNo.trim().toUpperCase()));
     const studentMap = new Map<string, string>();
     students.forEach((s: any) => studentMap.set(s.registerNo.trim().toUpperCase(), s.name));
