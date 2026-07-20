@@ -40,6 +40,17 @@ export default function StaffManagement() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
+  // Filter staff list (search only shown / active for super_admin)
+  const filteredStaff = useMemo(() => {
+    if (!search.trim() || currentUser?.role !== 'super_admin') return staffList;
+    const q = search.trim().toLowerCase();
+    return staffList.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q) ||
+      (s.department || '').toLowerCase().includes(q)
+    );
+  }, [staffList, search, currentUser?.role]);
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -163,16 +174,7 @@ export default function StaffManagement() {
     staff: 'Lecturer'
   };
 
-  // Filter staff list (search only shown / active for super_admin)
-  const filteredStaff = useMemo(() => {
-    if (!search.trim() || currentUser?.role !== 'super_admin') return staffList;
-    const q = search.trim().toLowerCase();
-    return staffList.filter(s =>
-      s.name.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q) ||
-      (s.department || '').toLowerCase().includes(q)
-    );
-  }, [staffList, search, currentUser?.role]);
+
 
   return (
     <div className="space-y-6">
