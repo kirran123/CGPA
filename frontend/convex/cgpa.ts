@@ -160,16 +160,6 @@ export const getRecords = query({
       }
     }
 
-    for (const [regUpper, rec] of recordMap.entries()) {
-      if (!processedRegs.has(regUpper)) {
-        const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
-        out.push({
-          ...rec,
-          calculatedBy: { name: user?.name || "Unknown" },
-        });
-      }
-    }
-
     return out.sort((a, b) => (b.cgpa !== a.cgpa ? b.cgpa - a.cgpa : a.registerNo.localeCompare(b.registerNo)));
   },
 });

@@ -213,9 +213,8 @@ export const getRecords = query({
     if (args.semester !== undefined) records = records.filter((r) => r.semester === args.semester);
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
 
-    if (studentRegs.size > 0) {
-      records = records.filter((r) => studentRegs.has(r.registerNo.trim().toUpperCase()));
-    }
+    // Strictly filter: ONLY records for students in Student Management
+    records = records.filter((r) => studentRegs.has(r.registerNo.trim().toUpperCase()));
 
     const recordMap = new Map<string, any>();
     for (const r of records) {

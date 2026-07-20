@@ -88,7 +88,7 @@ export default function GpaResultsPage() {
       semesters: { [sem: number]: { gpa: number; id: string; record: GpaRecord } };
     }>();
 
-    // 1. Initialize with students from Student Management
+    // 1. Initialize strictly with students from Student Management
     for (const st of students) {
       const key = st.registerNo.trim().toUpperCase();
       map.set(key, {
@@ -99,20 +99,13 @@ export default function GpaResultsPage() {
       });
     }
 
-    // 2. Map calculated GPA records
+    // 2. Map calculated GPA records ONLY to students present in Student Management
     for (const r of records) {
       const key = r.registerNo.trim().toUpperCase();
-      let row = map.get(key);
-      if (!row) {
-        row = {
-          registerNo: r.registerNo,
-          studentName: r.studentName,
-          department: r.department.toUpperCase(),
-          semesters: {}
-        };
-        map.set(key, row);
+      const row = map.get(key);
+      if (row) {
+        row.semesters[r.semester] = { gpa: r.gpa, id: r._id, record: r };
       }
-      row.semesters[r.semester] = { gpa: r.gpa, id: r._id, record: r };
     }
 
     let rowsList = Array.from(map.values());
