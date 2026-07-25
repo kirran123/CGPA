@@ -223,30 +223,44 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
       semCount++;
     }
     const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
-    return { semester: s.semester, credits, cumCgpa };
+    return { semester: s.semester, credits, gpa, cumCgpa };
   });
 
   const hasCredits = totalCredits > 0;
   const tableTop = 205;
 
   fillRect(page, 40, tableTop, PW - 80, 20, C.navy);
-  txt(page, "Semester", 80, tableTop + 5, 10, bold, C.white);
-  if (hasCredits) txt(page, "Credits", 240, tableTop + 5, 10, bold, C.white);
-  txt(page, "Cumulative CGPA", 380, tableTop + 5, 10, bold, C.white);
+  if (hasCredits) {
+    txt(page, "Semester", 55, tableTop + 5, 10, bold, C.white);
+    txt(page, "Credits", 160, tableTop + 5, 10, bold, C.white);
+    txt(page, "Semester GPA", 270, tableTop + 5, 10, bold, C.white);
+    txt(page, "Cumulative CGPA", 400, tableTop + 5, 10, bold, C.white);
+  } else {
+    txt(page, "Semester", 70, tableTop + 5, 10, bold, C.white);
+    txt(page, "Semester GPA", 240, tableTop + 5, 10, bold, C.white);
+    txt(page, "Cumulative CGPA", 400, tableTop + 5, 10, bold, C.white);
+  }
 
   let y = tableTop + 20;
   cgpaRows.forEach((r, idx) => {
     const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
     fillRect(page, 40, y, PW - 80, 18, bg);
-    txt(page, `Semester ${r.semester}`, 80, y + 4, 10, reg);
-    if (hasCredits) txt(page, r.credits ? String(r.credits) : "N/A", 240, y + 4, 10, reg);
-    txt(page, r.cumCgpa.toFixed(2), 380, y + 4, 10, bold);
+    if (hasCredits) {
+      txt(page, `Semester ${r.semester}`, 55, y + 4, 10, reg);
+      txt(page, r.credits ? String(r.credits) : "N/A", 160, y + 4, 10, reg);
+      txt(page, r.gpa.toFixed(2), 270, y + 4, 10, reg);
+      txt(page, r.cumCgpa.toFixed(2), 400, y + 4, 10, bold);
+    } else {
+      txt(page, `Semester ${r.semester}`, 70, y + 4, 10, reg);
+      txt(page, r.gpa.toFixed(2), 240, y + 4, 10, reg);
+      txt(page, r.cumCgpa.toFixed(2), 400, y + 4, 10, bold);
+    }
     y += 18;
   });
 
   if (hasCredits && totalCredits > 0) {
     fillRect(page, 40, y, PW - 80, 20, C.purple);
-    txt(page, `Total Credits: ${totalCredits}`, 80, y + 5, 10, bold, C.navy);
+    txt(page, `Total Credits: ${totalCredits}`, 55, y + 5, 10, bold, C.navy);
     y += 20;
   }
   y += 15;
@@ -291,30 +305,44 @@ async function buildMultiStudentCgpaPdf(studentList: any[]): Promise<Uint8Array>
         semCount++;
       }
       const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
-      return { semester: s.semester, credits, cumCgpa };
+      return { semester: s.semester, credits, gpa, cumCgpa };
     });
 
     const hasCredits = totalCredits > 0;
     const tableTop = 205;
 
     fillRect(page, 40, tableTop, PW - 80, 20, C.navy);
-    txt(page, "Semester", 80, tableTop + 5, 10, bold, C.white);
-    if (hasCredits) txt(page, "Credits", 240, tableTop + 5, 10, bold, C.white);
-    txt(page, "Cumulative CGPA", 380, tableTop + 5, 10, bold, C.white);
+    if (hasCredits) {
+      txt(page, "Semester", 55, tableTop + 5, 10, bold, C.white);
+      txt(page, "Credits", 160, tableTop + 5, 10, bold, C.white);
+      txt(page, "Semester GPA", 270, tableTop + 5, 10, bold, C.white);
+      txt(page, "Cumulative CGPA", 400, tableTop + 5, 10, bold, C.white);
+    } else {
+      txt(page, "Semester", 70, tableTop + 5, 10, bold, C.white);
+      txt(page, "Semester GPA", 240, tableTop + 5, 10, bold, C.white);
+      txt(page, "Cumulative CGPA", 400, tableTop + 5, 10, bold, C.white);
+    }
 
     let y = tableTop + 20;
     cgpaRows.forEach((r, idx) => {
       const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
       fillRect(page, 40, y, PW - 80, 18, bg);
-      txt(page, `Semester ${r.semester}`, 80, y + 4, 10, reg);
-      if (hasCredits) txt(page, r.credits ? String(r.credits) : "N/A", 240, y + 4, 10, reg);
-      txt(page, r.cumCgpa.toFixed(2), 380, y + 4, 10, bold);
+      if (hasCredits) {
+        txt(page, `Semester ${r.semester}`, 55, y + 4, 10, reg);
+        txt(page, r.credits ? String(r.credits) : "N/A", 160, y + 4, 10, reg);
+        txt(page, r.gpa.toFixed(2), 270, y + 4, 10, reg);
+        txt(page, r.cumCgpa.toFixed(2), 400, y + 4, 10, bold);
+      } else {
+        txt(page, `Semester ${r.semester}`, 70, y + 4, 10, reg);
+        txt(page, r.gpa.toFixed(2), 240, y + 4, 10, reg);
+        txt(page, r.cumCgpa.toFixed(2), 400, y + 4, 10, bold);
+      }
       y += 18;
     });
 
     if (hasCredits && totalCredits > 0) {
       fillRect(page, 40, y, PW - 80, 20, C.purple);
-      txt(page, `Total Credits: ${totalCredits}`, 80, y + 5, 10, bold, C.navy);
+      txt(page, `Total Credits: ${totalCredits}`, 55, y + 5, 10, bold, C.navy);
       y += 20;
     }
     y += 15;

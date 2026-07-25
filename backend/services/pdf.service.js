@@ -112,39 +112,55 @@ const buildCgpaPdf = (record) => {
        .text(`Name: ${record.studentName}   |   Register No: ${record.registerNo}   |   Department: ${record.department}`, 50, 162);
 
     const tableTop = 205;
+    const semesters = (record.semesters || []).slice().sort((a, b) => a.semester - b.semester);
     let hasCredits = false;
+    let cumulativeSum = 0;
+    let semCount = 0;
     let totalCredits = 0;
-    (record.semesters || []).forEach(s => {
-      if (s.credits > 0) {
+
+    const cgpaRows = semesters.map((s) => {
+      const gpa = Number(s.gpa) || 0;
+      const credits = Number(s.credits) || 0;
+      if (credits > 0) {
         hasCredits = true;
-        totalCredits += s.credits;
+        totalCredits += credits;
       }
+      if (gpa > 0) {
+        cumulativeSum += gpa;
+        semCount++;
+      }
+      const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
+      return { semester: s.semester, credits, gpa, cumCgpa };
     });
 
     doc.rect(40, tableTop, doc.page.width - 80, 20).fill('#1e1b4b');
     doc.fillColor('white').font('Helvetica-Bold').fontSize(10);
     
     if (hasCredits) {
-      doc.text('Semester', 80, tableTop + 5);
-      doc.text('Credits', 240, tableTop + 5);
-      doc.text('GPA', 400, tableTop + 5);
+      doc.text('Semester', 55, tableTop + 5);
+      doc.text('Credits', 160, tableTop + 5);
+      doc.text('Semester GPA', 270, tableTop + 5);
+      doc.text('Cumulative CGPA', 400, tableTop + 5);
     } else {
-      doc.text('Semester', 80, tableTop + 5);
-      doc.text('GPA', 400, tableTop + 5);
+      doc.text('Semester', 70, tableTop + 5);
+      doc.text('Semester GPA', 240, tableTop + 5);
+      doc.text('Cumulative CGPA', 400, tableTop + 5);
     }
 
     let y = tableTop + 20;
-    (record.semesters || []).forEach((s, idx) => {
+    cgpaRows.forEach((r, idx) => {
       doc.rect(40, y, doc.page.width - 80, 18).fill(idx % 2 === 0 ? '#f8fafc' : 'white');
       doc.fillColor('#1e293b').font('Helvetica').fontSize(10);
       
       if (hasCredits) {
-        doc.text(String(s.semester), 80, y + 4);
-        doc.text(String(s.credits || 0), 240, y + 4);
-        doc.text(s.gpa.toFixed(2), 400, y + 4);
+        doc.text(String(r.semester), 55, y + 4);
+        doc.text(String(r.credits || 0), 160, y + 4);
+        doc.text(r.gpa.toFixed(2), 270, y + 4);
+        doc.font('Helvetica-Bold').text(r.cumCgpa.toFixed(2), 400, y + 4);
       } else {
-        doc.text(String(s.semester), 80, y + 4);
-        doc.text(s.gpa.toFixed(2), 400, y + 4);
+        doc.text(String(r.semester), 70, y + 4);
+        doc.text(r.gpa.toFixed(2), 240, y + 4);
+        doc.font('Helvetica-Bold').text(r.cumCgpa.toFixed(2), 400, y + 4);
       }
       y += 18;
     });
@@ -152,7 +168,7 @@ const buildCgpaPdf = (record) => {
     if (hasCredits && totalCredits > 0) {
       doc.rect(40, y, doc.page.width - 80, 20).fill('#e0e7ff');
       doc.fillColor('#1e1b4b').font('Helvetica-Bold').fontSize(10)
-         .text(`Total Credits: ${totalCredits}`, 80, y + 5);
+         .text(`Total Credits: ${totalCredits}`, 55, y + 5);
       y += 20;
     }
 
