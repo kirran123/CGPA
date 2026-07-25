@@ -51,9 +51,7 @@ export default function DashboardGradeSettings() {
   
   // Active section tab
   const [activeTab, setActiveTab] = useState<'grades' | 'credits'>('grades');
-
-  // Authenticate user & load departments/regulations
-  useEffect(() => {
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);

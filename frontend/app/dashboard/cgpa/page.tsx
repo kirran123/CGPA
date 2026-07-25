@@ -267,15 +267,7 @@ export default function InternalCgpaCalculator() {
     }
   };
 
-  try {
-    await api.calculateCgpa(payload);
-    setSaveSuccess(`CGPA record computed & saved — ${nameToSave} (${regToSave}) — CGPA: ${cgpa.toFixed(2)}`);
-  } catch (err: any) {
-    alert(err.message || 'Failed to calculate & save CGPA record.');
-  } finally {
-    setSaving(false);
-  }
-};
+
 
 const getCgpaLabel = (c: number) => {
   if (c >= 9) return { text: 'Outstanding 🏆', color: 'text-emerald-400' };
