@@ -15,15 +15,33 @@ async function fetchSemesterCreditsFromDB(
   const deptUpper = department.trim().toUpperCase();
   const regUpper = regulation.trim().toUpperCase();
 
+  const semCreditsMap = new Map<number, number>();
+
+  // 1. Check authoritative semesterCredits table
+  const configuredCredits = await ctx.db
+    .query("semesterCredits")
+    .withIndex("by_dept_reg", (q: any) =>
+      q.eq("department", deptUpper).eq("regulation", regUpper)
+    )
+    .collect();
+
+  for (const c of configuredCredits) {
+    if (c.totalCredits > 0) {
+      semCreditsMap.set(c.semester, c.totalCredits);
+    }
+  }
+
+  // 2. Fall back to subjects table for any unconfigured semesters
   const subjects = await ctx.db
     .query("subjects")
     .withIndex("by_dept_sem_reg", (q: any) => q.eq("department", deptUpper))
     .filter((q: any) => q.eq(q.field("regulation"), regUpper))
     .collect();
 
-  const semCreditsMap = new Map<number, number>();
   for (const s of subjects) {
-    semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    if (!semCreditsMap.has(s.semester)) {
+      semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    }
   }
   return semCreditsMap;
 }
@@ -209,14 +227,27 @@ export const getRecords = query({
       gpaRecords = gpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
     }
 
-    // Pre-load all subjects to build credits maps per (dept, regulation)
+    // Pre-load all semesterCredits & subjects to build credits maps per (dept, regulation)
+    const allSemesterCredits = await ctx.db.query("semesterCredits").collect();
     const allSubjects = await ctx.db.query("subjects").collect();
     const subjectCreditCache = new Map<string, Map<number, number>>();
+
+    for (const c of allSemesterCredits) {
+      const cacheKey = `${c.department.toUpperCase()}__${c.regulation.toUpperCase()}`;
+      if (!subjectCreditCache.has(cacheKey)) subjectCreditCache.set(cacheKey, new Map());
+      const m = subjectCreditCache.get(cacheKey)!;
+      if (c.totalCredits > 0) {
+        m.set(c.semester, c.totalCredits);
+      }
+    }
+
     for (const s of allSubjects) {
       const cacheKey = `${s.department.toUpperCase()}__${s.regulation.toUpperCase()}`;
       if (!subjectCreditCache.has(cacheKey)) subjectCreditCache.set(cacheKey, new Map());
       const m = subjectCreditCache.get(cacheKey)!;
-      m.set(s.semester, (m.get(s.semester) || 0) + (s.credits || 0));
+      if (!m.has(s.semester)) {
+        m.set(s.semester, (m.get(s.semester) || 0) + (s.credits || 0));
+      }
     }
 
     const cgpaRecordMap = new Map<string, any>();

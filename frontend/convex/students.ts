@@ -67,16 +67,29 @@ async function initializeStudentResults(
     .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
     .collect();
 
-  // 2. Fetch semester credits from subjects database (single source of truth)
+  // 2. Fetch semester credits from DB (priority: semesterCredits -> subjects)
+  const configuredCredits = await ctx.db
+    .query("semesterCredits")
+    .withIndex("by_dept_reg", (q: any) =>
+      q.eq("department", deptUpper).eq("regulation", regUpperVal)
+    )
+    .collect();
+
+  const semCreditsMap = new Map<number, number>();
+  for (const c of configuredCredits) {
+    if (c.totalCredits > 0) semCreditsMap.set(c.semester, c.totalCredits);
+  }
+
   const subjects = await ctx.db
     .query("subjects")
     .withIndex("by_dept_sem_reg", (q: any) => q.eq("department", deptUpper))
     .filter((q: any) => q.eq(q.field("regulation"), regUpperVal))
     .collect();
 
-  const semCreditsMap = new Map<number, number>();
   for (const s of subjects) {
-    semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    if (!semCreditsMap.has(s.semester)) {
+      semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    }
   }
 
   // 3. Build deduped semester map (latest record per semester)

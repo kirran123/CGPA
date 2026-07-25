@@ -23,17 +23,31 @@ export const bulkCalculate = action({
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const xlsx = require("xlsx");
 
-    // ── Step 1: Fetch semester credits from the subjects database ────────────
-    // This is the single source of truth. Credits extracted from files are
-    // ignored; only GPA values are used from the uploaded documents.
+    // ── Step 1: Fetch total credits per semester from DB ────────────────────
+    // Priority: 1) semesterCredits configuration table, 2) subjects table
+    const semCreditsMap = new Map<number, number>();
+
+    const configuredCreditsMap: Record<number, number> = await ctx.runQuery(
+      api.semesterCredits.getByDeptReg,
+      { department: activeDept, regulation }
+    );
+
+    if (configuredCreditsMap) {
+      for (const [semStr, creds] of Object.entries(configuredCreditsMap)) {
+        const sem = Number(semStr);
+        if (creds > 0) semCreditsMap.set(sem, creds);
+      }
+    }
+
     const allSubjects: any[] = await ctx.runQuery(api.subjects.get, {
       department: activeDept,
       regulation: regulation,
     });
 
-    const semCreditsMap = new Map<number, number>();
     for (const s of allSubjects) {
-      semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+      if (!semCreditsMap.has(s.semester)) {
+        semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+      }
     }
 
     // ── Step 2: Parse uploaded file (PDF or Excel) — extract only GPA values ─

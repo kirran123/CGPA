@@ -87,6 +87,32 @@ async function syncStudentCgpa(
     }
   }
 
+  // Fetch semester credits from DB (priority: semesterCredits -> subjects)
+  const regUpperVal = (regulation || "R2021").trim().toUpperCase();
+  const configuredCredits = await ctx.db
+    .query("semesterCredits")
+    .withIndex("by_dept_reg", (q: any) =>
+      q.eq("department", deptUpper).eq("regulation", regUpperVal)
+    )
+    .collect();
+
+  const semCreditsMap = new Map<number, number>();
+  for (const c of configuredCredits) {
+    if (c.totalCredits > 0) semCreditsMap.set(c.semester, c.totalCredits);
+  }
+
+  const subjects = await ctx.db
+    .query("subjects")
+    .withIndex("by_dept_sem_reg", (q: any) => q.eq("department", deptUpper))
+    .filter((q: any) => q.eq(q.field("regulation"), regUpperVal))
+    .collect();
+
+  for (const s of subjects) {
+    if (!semCreditsMap.has(s.semester)) {
+      semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    }
+  }
+
   let gpaSum = 0;
   let totalCreds = 0;
   let totalPointsSum = 0;
@@ -96,8 +122,8 @@ async function syncStudentCgpa(
     .sort((a, b) => a.semester - b.semester)
     .map((r) => {
       const gpa = r.gpa || 0;
-      const credits = r.totalCredits || 0;
-      const points = r.totalPoints || (gpa * credits);
+      const credits = semCreditsMap.get(r.semester) || r.totalCredits || 0;
+      const points = gpa * credits;
       if (gpa > 0) {
         gpaSum += gpa;
         if (credits > 0) {

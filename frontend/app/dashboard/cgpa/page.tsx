@@ -71,13 +71,7 @@ export default function InternalCgpaCalculator() {
     if (!selectedDept) return;
     const fetchSemesterCredits = async () => {
       try {
-        const subjects = await api.getPublicSubjects(selectedDept, undefined, regulation || undefined);
-        const semCredsMap: Record<number, number> = {};
-        subjects.forEach((s: any) => {
-          if (s.semester && s.credits) {
-            semCredsMap[s.semester] = (semCredsMap[s.semester] || 0) + s.credits;
-          }
-        });
+        const semCredsMap = await api.getSemesterCreditsMap(selectedDept, regulation || 'R2021');
         setSemesterCreditsMap(semCredsMap);
 
         setRows((prevRows) =>
@@ -85,7 +79,7 @@ export default function InternalCgpaCalculator() {
             const fetched = semCredsMap[r.semester] || 0;
             return {
               ...r,
-              credits: r.credits > 0 ? r.credits : fetched,
+              credits: fetched,
             };
           })
         );

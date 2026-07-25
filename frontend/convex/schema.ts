@@ -108,6 +108,16 @@ export default defineSchema({
     ),
   }).index("by_dept_reg_sem", ["department", "regulation", "semester"]),
 
+  // Total Semester Credits Table (Authoritative Credit Points per Dept, Regulation, and Semester)
+  semesterCredits: defineTable({
+    department: v.string(),
+    regulation: v.string(),
+    semester: v.number(),
+    totalCredits: v.number(),
+  })
+    .index("by_dept_reg_sem", ["department", "regulation", "semester"])
+    .index("by_dept_reg", ["department", "regulation"]),
+
   // Audit Logs
   historyLogs: defineTable({
     action: v.string(),

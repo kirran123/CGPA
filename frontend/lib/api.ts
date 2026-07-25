@@ -665,4 +665,36 @@ export const api = {
     });
     return { _id: id };
   },
+
+  // ── Total Credits ──────────────────────────────────────────────────
+  getSemesterCreditsMap: async (department: string, regulation: string): Promise<Record<number, number>> => {
+    const configuredMap = await convex.query(convexApi.semesterCredits.getByDeptReg, { department, regulation });
+    const result: Record<number, number> = { ...configuredMap };
+
+    // Fall back to subjects table for any semesters not explicitly configured in semesterCredits table
+    const subjects = await convex.query(convexApi.subjects.getPublicSubjects, {
+      department,
+      regulation,
+    });
+
+    subjects.forEach((s: any) => {
+      if (s.semester && s.credits && !result[s.semester]) {
+        result[s.semester] = (result[s.semester] || 0) + s.credits;
+      }
+    });
+
+    return result;
+  },
+
+  saveSemesterCredits: async (
+    department: string,
+    regulation: string,
+    semesterCredits: { semester: number; totalCredits: number }[]
+  ): Promise<any> => {
+    return convex.mutation(convexApi.semesterCredits.saveBulk, {
+      department,
+      regulation,
+      semesterCredits,
+    });
+  },
 };
