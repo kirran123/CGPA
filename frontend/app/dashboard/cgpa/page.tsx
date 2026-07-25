@@ -531,13 +531,11 @@ return (
                   <div className="col-span-3">
                     <input
                       type="number"
-                      placeholder="e.g. 24"
-                      value={row.credits || ''}
-                      min="0"
-                      max="50"
-                      step="1"
-                      onChange={e => updateCredits(row.id, parseFloat(e.target.value) || 0)}
-                      className="w-full bg-[#071830] border border-sky-500/10 focus:border-emerald-500/40 rounded-xl px-3 py-2 text-center text-xs font-bold text-emerald-300 focus:outline-none transition-all"
+                      placeholder="0"
+                      value={row.credits || 0}
+                      disabled
+                      readOnly
+                      className="w-full bg-[#071830]/50 border border-sky-500/10 rounded-xl px-3 py-2 text-center text-xs font-bold text-emerald-300/60 cursor-not-allowed"
                     />
                   </div>
 

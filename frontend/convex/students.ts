@@ -61,17 +61,26 @@ async function initializeStudentResults(
   const deptUpper = department.trim().toUpperCase();
   const regUpperVal = (regulation || "R2021").trim().toUpperCase();
 
-  // 1. Fetch existing gpaRecords for this student and update studentName
+  // 1. Fetch existing gpaRecords for this student
   const existingGpaRecords = await ctx.db
     .query("gpaRecords")
     .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
     .collect();
 
-  let gpaSum = 0;
-  let totalCreds = 0;
-  let semCount = 0;
-  const semesterMap = new Map<number, any>();
+  // 2. Fetch semester credits from subjects database (single source of truth)
+  const subjects = await ctx.db
+    .query("subjects")
+    .withIndex("by_dept_sem_reg", (q: any) => q.eq("department", deptUpper))
+    .filter((q: any) => q.eq(q.field("regulation"), regUpperVal))
+    .collect();
 
+  const semCreditsMap = new Map<number, number>();
+  for (const s of subjects) {
+    semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+  }
+
+  // 3. Build deduped semester map (latest record per semester)
+  const semesterMap = new Map<number, any>();
   for (const gRecord of existingGpaRecords) {
     if (gRecord.studentName !== studentName.trim()) {
       await ctx.db.patch(gRecord._id, { studentName: studentName.trim() });
@@ -82,22 +91,35 @@ async function initializeStudentResults(
     }
   }
 
+  // 4. Compute credit-weighted CGPA using DB credits
+  //    Formula: CGPA = Σ(GPA_i × Credits_i) / Σ(Credits_i)
+  //    Fallback: arithmetic mean if no subjects defined for this regulation yet
+  let gpaSum = 0;
+  let totalCreds = 0;
+  let totalWeightedPoints = 0;
+  let semCount = 0;
+
   const semestersList = Array.from(semesterMap.values())
     .sort((a, b) => a.semester - b.semester)
     .map((r) => {
       const gpa = r.gpa || 0;
-      const credits = r.totalCredits || 0;
+      const credits = semCreditsMap.get(r.semester) || 0;  // always from DB
       if (gpa > 0) {
         gpaSum += gpa;
-        totalCreds += credits;
         semCount++;
+        if (credits > 0) {
+          totalCreds += credits;
+          totalWeightedPoints += gpa * credits;
+        }
       }
       return { semester: r.semester, gpa, credits };
     });
 
-  const computedCgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0;
+  const computedCgpa = totalCreds > 0
+    ? parseFloat((totalWeightedPoints / totalCreds).toFixed(2))   // weighted (primary)
+    : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0); // mean (fallback)
 
-  // 2. Create or patch cgpaRecords with calculated results
+  // 5. Create or patch cgpaRecords
   const existingCgpa = await ctx.db
     .query("cgpaRecords")
     .withIndex("by_registerNo", (q: any) => q.eq("registerNo", regUpper))
