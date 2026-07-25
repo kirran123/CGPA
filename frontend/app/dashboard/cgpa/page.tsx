@@ -21,6 +21,7 @@ interface SemesterRow {
   id: string;
   semester: number;
   gpa: number;
+  credits: number;
 }
 
 export default function InternalCgpaCalculator() {
@@ -32,8 +33,8 @@ export default function InternalCgpaCalculator() {
   const [regulations, setRegulations] = useState<string[]>([]);
   
   const [rows, setRows] = useState<SemesterRow[]>([
-    { id: '1', semester: 1, gpa: 0 },
-    { id: '2', semester: 2, gpa: 0 }
+    { id: '1', semester: 1, gpa: 0, credits: 0 },
+    { id: '2', semester: 2, gpa: 0, credits: 0 }
   ]);
 
   // Student search & auto-fetch state
@@ -50,6 +51,8 @@ export default function InternalCgpaCalculator() {
 
   const canEditRecords = canEditRecordsFn();
 
+  const [semesterCreditsMap, setSemesterCreditsMap] = useState<Record<number, number>>({});
+
   // Load student roster when department changes
   useEffect(() => {
     const fetchStudents = async () => {
@@ -62,6 +65,36 @@ export default function InternalCgpaCalculator() {
     };
     fetchStudents();
   }, [selectedDept]);
+
+  // Auto-fetch total semester credits from subject curriculum
+  useEffect(() => {
+    if (!selectedDept) return;
+    const fetchSemesterCredits = async () => {
+      try {
+        const subjects = await api.getPublicSubjects(selectedDept, undefined, regulation || undefined);
+        const semCredsMap: Record<number, number> = {};
+        subjects.forEach((s: any) => {
+          if (s.semester && s.credits) {
+            semCredsMap[s.semester] = (semCredsMap[s.semester] || 0) + s.credits;
+          }
+        });
+        setSemesterCreditsMap(semCredsMap);
+
+        setRows((prevRows) =>
+          prevRows.map((r) => {
+            const fetched = semCredsMap[r.semester] || 0;
+            return {
+              ...r,
+              credits: r.credits > 0 ? r.credits : fetched,
+            };
+          })
+        );
+      } catch (err) {
+        console.error('Error fetching subject credits:', err);
+      }
+    };
+    fetchSemesterCredits();
+  }, [selectedDept, regulation]);
 
   const handleSelectStudent = async (studentId: string) => {
     setSelectedStudentId(studentId);
@@ -84,6 +117,7 @@ export default function InternalCgpaCalculator() {
           id: String(h.semester || idx + 1),
           semester: h.semester || idx + 1,
           gpa: h.gpa || 0,
+          credits: h.credits || 0,
         }));
         setRows(newRows);
         setAutoFetchNotice(`Successfully auto-fetched ${history.length} calculated semester GPA records for ${st.name}!`);
@@ -109,7 +143,7 @@ export default function InternalCgpaCalculator() {
         semesters: rows.map(r => ({
           semester: Number(r.semester),
           gpa: parseFloat(String(r.gpa)) || 0,
-          credits: 0
+          credits: parseFloat(String(r.credits)) || 0
         }))
       };
       const blob = await api.downloadPublicCgpaPdf(payload);
@@ -162,21 +196,29 @@ export default function InternalCgpaCalculator() {
     init();
   }, []);
 
-  // Compute CGPA (simple average)
-  let filledRows = 0, gpaSum = 0;
+  // Compute CGPA (weighted average by credits if present, fallback to simple average)
+  let filledRows = 0, gpaSum = 0, totalCredits = 0, totalWeightedPoints = 0;
   rows.forEach(r => {
     const semGpa = parseFloat(String(r.gpa)) || 0;
+    const semCreds = parseFloat(String(r.credits)) || 0;
     if (semGpa > 0) {
       gpaSum += semGpa;
       filledRows++;
+      if (semCreds > 0) {
+        totalCredits += semCreds;
+        totalWeightedPoints += semGpa * semCreds;
+      }
     }
   });
-  const cgpa = filledRows > 0 ? parseFloat((gpaSum / filledRows).toFixed(2)) : 0;
+  const cgpa = totalCredits > 0
+    ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+    : (filledRows > 0 ? parseFloat((gpaSum / filledRows).toFixed(2)) : 0);
 
   const addRow = () => {
     const nextSem = rows.length + 1;
     if (nextSem > 8) return;
-    setRows([...rows, { id: String(nextSem), semester: nextSem, gpa: 0 }]);
+    const autoCreds = semesterCreditsMap[nextSem] || 0;
+    setRows([...rows, { id: String(nextSem), semester: nextSem, gpa: 0, credits: autoCreds }]);
   };
 
   const removeRow = (id: string) => {
@@ -189,10 +231,14 @@ export default function InternalCgpaCalculator() {
     setRows(rows.map(r => r.id === id ? { ...r, gpa } : r));
   };
 
+  const updateCredits = (id: string, credits: number) => {
+    setRows(rows.map(r => r.id === id ? { ...r, credits } : r));
+  };
+
   const resetCalculator = () => {
     setRows([
-      { id: '1', semester: 1, gpa: 0 },
-      { id: '2', semester: 2, gpa: 0 }
+      { id: '1', semester: 1, gpa: 0, credits: 0 },
+      { id: '2', semester: 2, gpa: 0, credits: 0 }
     ]);
     setStudentName('');
     setRegisterNo('');
@@ -213,9 +259,19 @@ export default function InternalCgpaCalculator() {
       semesters: rows.map(r => ({
         semester: Number(r.semester),
         gpa: parseFloat(String(r.gpa)) || 0,
-        credits: 0
+        credits: parseFloat(String(r.credits)) || 0
       }))
     };
+
+    try {
+      await api.calculateCgpa(payload);
+      setSaveSuccess(`CGPA record computed & saved — ${nameToSave} (${regToSave}) — CGPA: ${cgpa.toFixed(2)}`);
+    } catch (err: any) {
+      alert(err.message || 'Failed to calculate & save CGPA record.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
     try {
       await api.calculateCgpa(payload);
@@ -423,16 +479,23 @@ export default function InternalCgpaCalculator() {
         {/* ── Right: Semesters Table ── */}
         <div className="lg:col-span-2 animate-slide-right">
           <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-5 backdrop-blur-xl">
-            <h2 className="text-sm font-bold text-white mb-5 pb-3 border-b border-sky-500/10 flex items-center justify-between">
-              <span>Semester Breakdown</span>
-              <span className="text-[10px] text-sky-300/40 font-normal">{rows.length} / 8 semesters</span>
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-sky-500/10">
+              <div>
+                <h2 className="text-sm font-bold text-white">Semester Breakdown</h2>
+                <p className="text-[10px] text-emerald-300/80 mt-0.5 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 shrink-0 text-emerald-400" />
+                  Semester total credits auto-fetched from subject curriculum ({selectedDept} • {regulation})
+                </p>
+              </div>
+              <span className="text-[10px] text-sky-300/40 font-normal shrink-0">{rows.length} / 8 semesters</span>
+            </div>
 
             {/* Column Headers */}
             <div className="grid grid-cols-12 gap-3 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-3 pb-3 border-b border-sky-500/5 mb-3">
-              <div className="col-span-4">Semester</div>
-              <div className="col-span-6 text-center">GPA (0 – 10)</div>
-              <div className="col-span-2 text-center">Remove</div>
+              <div className="col-span-3">Semester</div>
+              <div className="col-span-4 text-center">GPA (0 – 10)</div>
+              <div className="col-span-3 text-center">Credits (Opt)</div>
+              <div className="col-span-2 text-center">Del</div>
             </div>
 
             <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
@@ -445,14 +508,14 @@ export default function InternalCgpaCalculator() {
                     style={{animationDelay: `${idx * 40}ms`}}
                     className="grid grid-cols-12 gap-3 bg-[#0a052a]/50 border border-sky-500/[0.07] hover:border-sky-500/15 p-3 rounded-xl items-center transition-all animate-fade-in-up"
                   >
-                    <div className="col-span-4 flex items-center gap-2">
+                    <div className="col-span-3 flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg bg-sky-500/10 border border-sky-500/15 flex items-center justify-center text-[10px] font-black text-sky-400">
                         {row.semester}
                       </div>
-                      <span className="text-xs font-semibold text-white/80">Semester {row.semester}</span>
+                      <span className="text-xs font-semibold text-white/80">Sem {row.semester}</span>
                     </div>
 
-                    <div className="col-span-6">
+                    <div className="col-span-4">
                       <input
                         type="number"
                         placeholder="0.00"
@@ -462,6 +525,19 @@ export default function InternalCgpaCalculator() {
                         step="0.01"
                         onChange={e => updateGpa(row.id, parseFloat(e.target.value) || 0)}
                         className={`w-full bg-[#071830] border border-sky-500/10 focus:border-sky-500/40 rounded-xl px-3 py-2 text-center text-xs font-bold focus:outline-none transition-all ${gpaColor}`}
+                      />
+                    </div>
+
+                    <div className="col-span-3">
+                      <input
+                        type="number"
+                        placeholder="e.g. 24"
+                        value={row.credits || ''}
+                        min="0"
+                        max="50"
+                        step="1"
+                        onChange={e => updateCredits(row.id, parseFloat(e.target.value) || 0)}
+                        className="w-full bg-[#071830] border border-sky-500/10 focus:border-emerald-500/40 rounded-xl px-3 py-2 text-center text-xs font-bold text-emerald-300 focus:outline-none transition-all"
                       />
                     </div>
 

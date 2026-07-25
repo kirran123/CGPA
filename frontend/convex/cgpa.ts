@@ -76,13 +76,23 @@ export const calculateSingle = mutation({
     }
     if (!registerNo.trim()) registerNo = `AUTO-${activeDept}-${Date.now()}`;
 
-    let gpaSum = 0, countedSems = 0, totalCredits = 0;
+    let gpaSum = 0, countedSems = 0, totalCredits = 0, totalWeightedPoints = 0;
     const formattedSemesters = args.semesters.map((s) => {
       const credits = s.credits || 0;
-      if (s.gpa > 0) { gpaSum += s.gpa; countedSems++; totalCredits += credits; }
-      return { semester: s.semester, gpa: s.gpa, credits };
+      const gpa = s.gpa || 0;
+      if (gpa > 0) {
+        gpaSum += gpa;
+        countedSems++;
+        if (credits > 0) {
+          totalCredits += credits;
+          totalWeightedPoints += gpa * credits;
+        }
+      }
+      return { semester: s.semester, gpa, credits };
     });
-    const cgpa = countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0;
+    const cgpa = totalCredits > 0
+      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+      : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
 
     const existing = await ctx.db.query("cgpaRecords")
       .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
@@ -167,16 +177,23 @@ export const getRecords = query({
       let gpaSum = 0;
       let semCount = 0;
       let totalCredits = 0;
+      let totalWeightedPoints = 0;
 
       for (const s of mergedSemesters) {
         if (s.gpa > 0) {
+          const creds = s.credits || 0;
           gpaSum += s.gpa;
           semCount++;
-          totalCredits += s.credits || 0;
+          if (creds > 0) {
+            totalCredits += creds;
+            totalWeightedPoints += s.gpa * creds;
+          }
         }
       }
 
-      const computedCgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : (rec?.cgpa || 0);
+      const computedCgpa = totalCredits > 0
+        ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+        : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : (rec?.cgpa || 0));
 
       if (rec) {
         const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
@@ -248,9 +265,21 @@ export const getById = query({
       }
     }
     const semesters = Array.from(semMap.values()).sort((a, b) => a.semester - b.semester).map((g) => ({ semester: g.semester, gpa: g.gpa, credits: g.totalCredits || 0 }));
-    let gpaSum = 0, semCount = 0, totalCredits = 0;
-    for (const s of semesters) { if (s.gpa > 0) { gpaSum += s.gpa; semCount++; totalCredits += s.credits; } }
-    const cgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0;
+    let gpaSum = 0, semCount = 0, totalCredits = 0, totalWeightedPoints = 0;
+    for (const s of semesters) {
+      if (s.gpa > 0) {
+        const creds = s.credits || 0;
+        gpaSum += s.gpa;
+        semCount++;
+        if (creds > 0) {
+          totalCredits += creds;
+          totalWeightedPoints += s.gpa * creds;
+        }
+      }
+    }
+    const cgpa = totalCredits > 0
+      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+      : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0);
     return {
       _id: args.id,
       studentName: student.name,
@@ -350,14 +379,21 @@ export const updateRecord = mutation({
 
     let finalCgpa = args.cgpa !== undefined ? args.cgpa : record?.cgpa || 0;
     if (args.semesters !== undefined) {
-      let sum = 0, count = 0;
+      let sum = 0, count = 0, totalCreds = 0, totalWeightedPoints = 0;
       for (const s of formattedSemesters) {
         if (s.gpa > 0) {
+          const creds = s.credits || 0;
           sum += s.gpa;
           count++;
+          if (creds > 0) {
+            totalCreds += creds;
+            totalWeightedPoints += s.gpa * creds;
+          }
         }
       }
-      finalCgpa = count > 0 ? parseFloat((sum / count).toFixed(2)) : 0;
+      finalCgpa = totalCreds > 0
+        ? parseFloat((totalWeightedPoints / totalCreds).toFixed(2))
+        : (count > 0 ? parseFloat((sum / count).toFixed(2)) : 0);
     }
 
     if (record) {

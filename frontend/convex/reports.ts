@@ -211,6 +211,8 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
   const sortedSems = [...semesters].sort((a: any, b: any) => a.semester - b.semester);
 
   let cumulativeSum = 0;
+  let cumulativePoints = 0;
+  let cumulativeCredits = 0;
   let semCount = 0;
   let totalCredits = 0;
 
@@ -221,8 +223,14 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
     if (gpa > 0) {
       cumulativeSum += gpa;
       semCount++;
+      if (credits > 0) {
+        cumulativeCredits += credits;
+        cumulativePoints += gpa * credits;
+      }
     }
-    const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
+    const cumCgpa = cumulativeCredits > 0
+      ? parseFloat((cumulativePoints / cumulativeCredits).toFixed(2))
+      : (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0);
     return { semester: s.semester, credits, gpa, cumCgpa };
   });
 
@@ -265,7 +273,9 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
   }
   y += 15;
 
-  const finalCgpa = record.cgpa || (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0);
+  const finalCgpa = record.cgpa || (cumulativeCredits > 0
+    ? parseFloat((cumulativePoints / cumulativeCredits).toFixed(2))
+    : (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0));
   const cx = PW / 2;
   fillRect(page, cx - 90, y, 180, 60, C.navy);
   txt(page, "Cumulative CGPA", cx - 90, y + 9, 11, reg, C.white, 180, "center");
@@ -293,6 +303,8 @@ async function buildMultiStudentCgpaPdf(studentList: any[]): Promise<Uint8Array>
     const sortedSems = [...semesters].sort((a: any, b: any) => a.semester - b.semester);
 
     let cumulativeSum = 0;
+    let cumulativePoints = 0;
+    let cumulativeCredits = 0;
     let semCount = 0;
     let totalCredits = 0;
 
@@ -303,8 +315,14 @@ async function buildMultiStudentCgpaPdf(studentList: any[]): Promise<Uint8Array>
       if (gpa > 0) {
         cumulativeSum += gpa;
         semCount++;
+        if (credits > 0) {
+          cumulativeCredits += credits;
+          cumulativePoints += gpa * credits;
+        }
       }
-      const cumCgpa = semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0;
+      const cumCgpa = cumulativeCredits > 0
+        ? parseFloat((cumulativePoints / cumulativeCredits).toFixed(2))
+        : (semCount > 0 ? parseFloat((cumulativeSum / semCount).toFixed(2)) : 0);
       return { semester: s.semester, credits, gpa, cumCgpa };
     });
 
@@ -536,9 +554,20 @@ export const generateCgpaPdf = action({
   },
   handler: async (_ctx, args) => {
     const semesters = args.semesters.map((s) => ({ ...s, credits: s.credits ?? 0 }));
-    let sum = 0, n = 0;
-    for (const s of semesters) { if (s.gpa > 0) { sum += s.gpa; n++; } }
-    const cgpa = args.cgpa ?? (n > 0 ? parseFloat((sum / n).toFixed(2)) : 0);
+    let sum = 0, n = 0, totalCreds = 0, totalPoints = 0;
+    for (const s of semesters) {
+      if (s.gpa > 0) {
+        sum += s.gpa;
+        n++;
+        if (s.credits > 0) {
+          totalCreds += s.credits;
+          totalPoints += s.gpa * s.credits;
+        }
+      }
+    }
+    const cgpa = args.cgpa ?? (totalCreds > 0
+      ? parseFloat((totalPoints / totalCreds).toFixed(2))
+      : (n > 0 ? parseFloat((sum / n).toFixed(2)) : 0));
     const bytes = await buildCgpaPdf({
       studentName: args.studentName || "ANONYMOUS",
       registerNo:  args.registerNo  || "N/A",

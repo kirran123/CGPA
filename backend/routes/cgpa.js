@@ -33,22 +33,30 @@ router.post('/calculate', protect, hasPermission('DEPT_FULL_ACCESS'), async (req
   try {
     let gpaSum = 0;
     let countedSems = 0;
+    let totalCredits = 0;
+    let totalWeightedPoints = 0;
 
     const formattedSemesters = semesters.map(s => {
-      const gpa = parseFloat(s.gpa);
+      const gpa = parseFloat(s.gpa) || 0;
+      const credits = parseFloat(s.credits) || 0;
       if (gpa > 0) {
         gpaSum += gpa;
         countedSems++;
+        if (credits > 0) {
+          totalCredits += credits;
+          totalWeightedPoints += gpa * credits;
+        }
       }
       return {
         semester: parseInt(s.semester),
         gpa,
-        credits: 0
+        credits
       };
     });
 
-    const cgpa = countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0;
-    const totalCredits = 0;
+    const cgpa = totalCredits > 0
+      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+      : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
 
     const record = await CgpaRecord.findOneAndUpdate(
       { registerNo, department: activeDept },
@@ -160,15 +168,24 @@ router.post('/bulk-calculate', protect, hasPermission('DEPT_FULL_ACCESS'), uploa
       try {
         let gpaSum = 0;
         let countedSems = 0;
+        let totalCredits = 0;
+        let totalWeightedPoints = 0;
         semesters.forEach(s => {
-          if (s.gpa > 0) {
-            gpaSum += s.gpa;
+          const gpa = parseFloat(s.gpa) || 0;
+          const credits = parseFloat(s.credits) || 0;
+          if (gpa > 0) {
+            gpaSum += gpa;
             countedSems++;
+            if (credits > 0) {
+              totalCredits += credits;
+              totalWeightedPoints += gpa * credits;
+            }
           }
         });
 
-        const cgpa = countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0;
-        const totalCredits = 0;
+        const cgpa = totalCredits > 0
+          ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+          : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
 
         const record = await CgpaRecord.findOneAndUpdate(
           { registerNo, department: activeDept },

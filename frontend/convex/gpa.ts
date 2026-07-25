@@ -89,6 +89,7 @@ async function syncStudentCgpa(
 
   let gpaSum = 0;
   let totalCreds = 0;
+  let totalPointsSum = 0;
   let semCount = 0;
 
   const semestersList = Array.from(semesterMap.values())
@@ -96,15 +97,21 @@ async function syncStudentCgpa(
     .map((r) => {
       const gpa = r.gpa || 0;
       const credits = r.totalCredits || 0;
+      const points = r.totalPoints || (gpa * credits);
       if (gpa > 0) {
         gpaSum += gpa;
-        totalCreds += credits;
+        if (credits > 0) {
+          totalCreds += credits;
+          totalPointsSum += points;
+        }
         semCount++;
       }
       return { semester: r.semester, gpa, credits };
     });
 
-  const computedCgpa = semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0;
+  const computedCgpa = totalCreds > 0
+    ? parseFloat((totalPointsSum / totalCreds).toFixed(2))
+    : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0);
   const resolvedName = studentName || deptRecords[0]?.studentName || `Student_${regUpper}`;
 
   const existingCgpa = await ctx.db
