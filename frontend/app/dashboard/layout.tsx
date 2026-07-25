@@ -37,6 +37,7 @@ const allNavItems: NavItem[] = [
   { label: 'Staff Management', path: '/dashboard/staff', icon: <Users className="h-4 w-4" />, roles: ['super_admin', 'dept_admin'], group: 'admin' },
   { label: 'Syllabus Catalog', path: '/dashboard/subjects', icon: <BookOpen className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
   { label: 'Grade Settings', path: '/dashboard/grade-settings', icon: <Settings className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
+  { label: 'Total Credits', path: '/dashboard/total-credits', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'admin' },
   { label: 'GPA Results', path: '/dashboard/gpa-results', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'student_results' },
   { label: 'CGPA Results', path: '/dashboard/cgpa-results', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'student_results' },
   { label: 'GPA Calculation', path: '/dashboard/gpa', icon: <GraduationCap className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },

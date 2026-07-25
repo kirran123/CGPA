@@ -21,6 +21,7 @@ import DashboardDepartments from '@/app/dashboard/departments/page';
 import DashboardStaff from '@/app/dashboard/staff/page';
 import DashboardSubjects from '@/app/dashboard/subjects/page';
 import DashboardGradeSettings from '@/app/dashboard/grade-settings/page';
+import DashboardTotalCredits from '@/app/dashboard/total-credits/page';
 import DashboardOcr from '@/app/dashboard/ocr/page';
 import DashboardBulkGpa from '@/app/dashboard/bulk/gpa/page';
 import DashboardBulkGpaBatches from '@/app/dashboard/bulk/gpa/batches/page';
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="staff" element={<DashboardStaff />} />
             <Route path="subjects" element={<DashboardSubjects />} />
             <Route path="grade-settings" element={<DashboardGradeSettings />} />
+            <Route path="total-credits" element={<DashboardTotalCredits />} />
             <Route path="ocr" element={<DashboardOcr />} />
             <Route path="bulk/gpa" element={<DashboardBulkGpa />} />
             <Route path="bulk/gpa/batches" element={<DashboardBulkGpaBatches />} />
