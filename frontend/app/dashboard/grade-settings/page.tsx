@@ -564,26 +564,8 @@ export default function DashboardGradeSettings() {
                     <div className="p-8 text-center text-xs text-sky-300/35">
                       No grades defined. Click "Add Grade" to configure mapping.
                     </div>
-                          step="0.5"
-                          placeholder="Points (e.g. 10)"
-                          value={g.points}
-                          onChange={(e) => handlePointsChange(idx, e.target.value)}
-                          className="w-full bg-[#030a1a] border border-sky-500/25 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20 rounded-xl px-3 py-2 text-xs font-black text-sky-300 focus:outline-none placeholder:text-sky-300/30 transition-all shadow-inner"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeGradeRow(idx)}
-                      disabled={grades.length <= 1}
-                      className="p-2 rounded-xl text-sky-300/40 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-sky-300/40 transition-all cursor-pointer"
-                      title="Remove grade row"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}
