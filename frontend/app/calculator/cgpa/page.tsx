@@ -133,8 +133,8 @@ export default function CgpaCalculator() {
 
   const resetCalculator = () => {
     setRows([
-      { id: '1', semester: 1, gpa: 0, credits: 0 },
-      { id: '2', semester: 2, gpa: 0, credits: 0 }
+      { id: '1', semester: 1, gpa: 0, credits: semesterCreditsMap[1] || 0 },
+      { id: '2', semester: 2, gpa: 0, credits: semesterCreditsMap[2] || 0 }
     ]);
   };
 
