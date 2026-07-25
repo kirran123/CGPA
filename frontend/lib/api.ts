@@ -668,40 +668,40 @@ export const api = {
 
   // ── Total Credits ──────────────────────────────────────────────────
   getSemesterCreditsMap: async (department: string, regulation: string): Promise<Record<number, number>> => {
-    // Fetch configured credits from DB (stored by dept+reg+semester)
+    const deptUp = department.toUpperCase();
+    const regUp  = regulation.toUpperCase();
+
+    // 1. Fetch explicitly-configured credits from DB
     const configuredMap = await convex.query(convexApi.semesterCredits.getByDeptReg, {
-      department: department.toUpperCase(),
-      regulation: regulation.toUpperCase(),
+      department: deptUp,
+      regulation: regUp,
     });
 
-    // Convex HTTP returns JSON where object keys are always strings.
-    // Coerce all string keys back to numbers so map[1] works correctly.
+    // Convex returns JSON with string keys — coerce to numbers
     const result: Record<number, number> = {};
-    for (const [key, val] of Object.entries(configuredMap)) {
+    for (const [key, val] of Object.entries(configuredMap as Record<string, number>)) {
       const sem = Number(key);
-      if (!isNaN(sem) && val > 0) {
-        result[sem] = val as number;
-      }
+      if (!isNaN(sem)) result[sem] = val;
     }
 
-    // Fallback: for any semester NOT yet configured, sum subject credits
-    const subjects = await convex.query(convexApi.subjects.getPublicSubjects, {
-      department: department.toUpperCase(),
-      regulation: regulation.toUpperCase(),
-    });
-
-    // Group subject credits per semester for semesters that have no DB config
-    const subjectSums: Record<number, number> = {};
-    subjects.forEach((s: any) => {
-      if (s.semester && s.credits) {
-        subjectSums[s.semester] = (subjectSums[s.semester] || 0) + s.credits;
+    // 2. Fallback: sum subject credits per semester for any unconfigured semester
+    try {
+      const subjects = await convex.query(convexApi.subjects.get, {
+        department: deptUp,
+        regulation: regUp,
+      });
+      const subjectSums: Record<number, number> = {};
+      subjects.forEach((s: any) => {
+        if (s.semester && s.credits) {
+          subjectSums[s.semester] = (subjectSums[s.semester] || 0) + s.credits;
+        }
+      });
+      for (const [sem, total] of Object.entries(subjectSums)) {
+        const semNum = Number(sem);
+        if (!result[semNum]) result[semNum] = total;
       }
-    });
-    for (const [sem, total] of Object.entries(subjectSums)) {
-      const semNum = Number(sem);
-      if (!result[semNum]) {
-        result[semNum] = total;
-      }
+    } catch {
+      // fallback failure is non-fatal
     }
 
     return result;
