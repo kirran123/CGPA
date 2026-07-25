@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { 
+import {
   TrendingUp,
   Download,
   RefreshCw,
@@ -179,7 +179,7 @@ export default function CgpaCalculator() {
     if (c >= 7) return { text: 'Very Good 👍', color: 'text-teal-400' };
     if (c >= 6) return { text: 'Good', color: 'text-blue-400' };
     if (c >= 5) return { text: 'Average', color: 'text-amber-400' };
-    if (c > 0)  return { text: 'Below Average', color: 'text-orange-400' };
+    if (c > 0) return { text: 'Below Average', color: 'text-orange-400' };
     return { text: 'Enter semester GPAs', color: 'text-sky-300/35' };
   };
   const cgpaLabel = getCgpaLabel(cgpa);
@@ -194,8 +194,8 @@ export default function CgpaCalculator() {
 
         {/* Back Link */}
         <div className="mb-6 animate-fade-in-down">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/15 hover:border-emerald-500/35 px-3.5 py-2 rounded-xl transition-all duration-300 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -319,7 +319,7 @@ export default function CgpaCalculator() {
                   return (
                     <div
                       key={row.id}
-                      style={{animationDelay: `${idx * 40}ms`}}
+                      style={{ animationDelay: `${idx * 40}ms` }}
                       className="grid grid-cols-12 gap-3 bg-[#0a052a]/50 border border-sky-500/[0.07] hover:border-emerald-500/12 p-3 rounded-xl items-center transition-all animate-fade-in-up"
                     >
                       <div className="col-span-3 flex items-center gap-2">

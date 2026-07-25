@@ -1,13 +1,78 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE HELPER: Fetch total credits per semester from the subjects curriculum.
+// This is the single source of truth for semester credits.
+// If new subjects are added/updated for a regulation, this automatically
+// reflects the latest totals — no stored credits are ever trusted.
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchSemesterCreditsFromDB(
+  ctx: any,
+  department: string,
+  regulation: string
+): Promise<Map<number, number>> {
+  const deptUpper = department.trim().toUpperCase();
+  const regUpper = regulation.trim().toUpperCase();
+
+  const subjects = await ctx.db
+    .query("subjects")
+    .withIndex("by_dept_sem_reg", (q: any) => q.eq("department", deptUpper))
+    .filter((q: any) => q.eq(q.field("regulation"), regUpper))
+    .collect();
+
+  const semCreditsMap = new Map<number, number>();
+  for (const s of subjects) {
+    semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+  }
+  return semCreditsMap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE HELPER: Given GPA entries and a semCreditsMap from DB,
+// compute weighted CGPA = Σ(GPA_i × Credits_i) / Σ(Credits_i)
+// Falls back to simple average if no credits exist in the DB.
+// ─────────────────────────────────────────────────────────────────────────────
+function computeWeightedCGPA(
+  semesterGpas: Array<{ semester: number; gpa: number }>,
+  semCreditsMap: Map<number, number>
+): { cgpa: number; totalCredits: number; semesters: Array<{ semester: number; gpa: number; credits: number }> } {
+  let gpaSum = 0;
+  let totalWeightedPoints = 0;
+  let totalCredits = 0;
+  let semCount = 0;
+
+  const semesters = semesterGpas.map(({ semester, gpa }) => {
+    const credits = semCreditsMap.get(semester) || 0;
+    if (gpa > 0) {
+      gpaSum += gpa;
+      semCount++;
+      if (credits > 0) {
+        totalCredits += credits;
+        totalWeightedPoints += gpa * credits;
+      }
+    }
+    return { semester, gpa, credits };
+  });
+
+  const cgpa = totalCredits > 0
+    ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+    : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0);
+
+  return { cgpa, totalCredits, semesters };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: sync/create gpaRecords rows from semester list.
+// Credits stored in gpaRecords are always the DB-fetched semester totals.
+// ─────────────────────────────────────────────────────────────────────────────
 async function syncGpaFromSemesters(
   ctx: any,
   registerNo: string,
   studentName: string,
   department: string,
   regulation: string,
-  semesters: Array<{ semester: number; gpa: number; credits?: number }>,
+  semesters: Array<{ semester: number; gpa: number; credits: number }>,
   userId: any,
   isBulk: boolean
 ) {
@@ -31,8 +96,8 @@ async function syncGpaFromSemesters(
       regulation: regName,
       department: deptUpper,
       subjects: existingGpa?.subjects || [],
-      totalCredits: s.credits || existingGpa?.totalCredits || 0,
-      totalPoints: parseFloat(((s.gpa || 0) * (s.credits || existingGpa?.totalCredits || 0)).toFixed(2)),
+      totalCredits: s.credits,                       // DB-fetched credits
+      totalPoints: parseFloat(((s.gpa) * (s.credits)).toFixed(2)),
       gpa: s.gpa,
       calculatedBy: userId,
       isBulk,
@@ -48,6 +113,11 @@ async function syncGpaFromSemesters(
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// calculateSingle — CGPA mutation from manual GPA entry per semester.
+// Credits are ALWAYS read from the subjects database; values passed by
+// the frontend are ignored.
+// ─────────────────────────────────────────────────────────────────────────────
 export const calculateSingle = mutation({
   args: {
     studentName: v.optional(v.string()),
@@ -62,7 +132,7 @@ export const calculateSingle = mutation({
     const regUpper = args.regulation.toUpperCase();
     let registerNo = (args.registerNo || "").trim().toUpperCase();
 
-    let officialStudent = registerNo
+    const officialStudent = registerNo
       ? await ctx.db
           .query("students")
           .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
@@ -76,29 +146,23 @@ export const calculateSingle = mutation({
     }
     if (!registerNo.trim()) registerNo = `AUTO-${activeDept}-${Date.now()}`;
 
-    let gpaSum = 0, countedSems = 0, totalCredits = 0, totalWeightedPoints = 0;
-    const formattedSemesters = args.semesters.map((s) => {
-      const credits = s.credits || 0;
-      const gpa = s.gpa || 0;
-      if (gpa > 0) {
-        gpaSum += gpa;
-        countedSems++;
-        if (credits > 0) {
-          totalCredits += credits;
-          totalWeightedPoints += gpa * credits;
-        }
-      }
-      return { semester: s.semester, gpa, credits };
-    });
-    const cgpa = totalCredits > 0
-      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
-      : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
+    // Always fetch credits from the subjects curriculum
+    const semCreditsMap = await fetchSemesterCreditsFromDB(ctx, activeDept, regUpper);
+
+    const semesterGpas = args.semesters.map((s) => ({ semester: s.semester, gpa: s.gpa || 0 }));
+    const { cgpa, totalCredits, semesters: formattedSemesters } = computeWeightedCGPA(semesterGpas, semCreditsMap);
 
     const existing = await ctx.db.query("cgpaRecords")
       .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
       .filter((q) => q.eq(q.field("department"), activeDept))
       .first();
-    const recordData = { studentName, registerNo, department: activeDept, regulation: regUpper, semesters: formattedSemesters, totalCredits, cgpa, calculatedBy: args.userId, isBulk: false, createdAt: Date.now() };
+
+    const recordData = {
+      studentName, registerNo, department: activeDept, regulation: regUpper,
+      semesters: formattedSemesters, totalCredits, cgpa,
+      calculatedBy: args.userId, isBulk: false, createdAt: Date.now(),
+    };
+
     let recordId;
     if (existing) { await ctx.db.patch(existing._id, recordData); recordId = existing._id; }
     else { recordId = await ctx.db.insert("cgpaRecords", recordData); }
@@ -106,11 +170,22 @@ export const calculateSingle = mutation({
     await syncGpaFromSemesters(ctx, registerNo, studentName, activeDept, regUpper, formattedSemesters, args.userId, false);
 
     const user = await ctx.db.get(args.userId);
-    await ctx.db.insert("historyLogs", { action: "Calculate CGPA", details: `Calculated CGPA (${cgpa}) for ${studentName} (${registerNo}) across ${formattedSemesters.length} semesters`, performedBy: args.userId, performedByName: user?.name || "Unknown", department: activeDept, timestamp: Date.now() });
+    await ctx.db.insert("historyLogs", {
+      action: "Calculate CGPA",
+      details: `Calculated CGPA (${cgpa}) for ${studentName} (${registerNo}) across ${formattedSemesters.length} semesters`,
+      performedBy: args.userId,
+      performedByName: user?.name || "Unknown",
+      department: activeDept,
+      timestamp: Date.now(),
+    });
     return { ...(await ctx.db.get(recordId)), calculatedBy: { name: user?.name || "Unknown" } };
   },
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// getRecords — Query all students and compute CGPA dynamically using
+// database-fixed semester credits. Credits stored in records are overridden.
+// ─────────────────────────────────────────────────────────────────────────────
 export const getRecords = query({
   args: { department: v.optional(v.string()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
@@ -134,6 +209,16 @@ export const getRecords = query({
       gpaRecords = gpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
     }
 
+    // Pre-load all subjects to build credits maps per (dept, regulation)
+    const allSubjects = await ctx.db.query("subjects").collect();
+    const subjectCreditCache = new Map<string, Map<number, number>>();
+    for (const s of allSubjects) {
+      const cacheKey = `${s.department.toUpperCase()}__${s.regulation.toUpperCase()}`;
+      if (!subjectCreditCache.has(cacheKey)) subjectCreditCache.set(cacheKey, new Map());
+      const m = subjectCreditCache.get(cacheKey)!;
+      m.set(s.semester, (m.get(s.semester) || 0) + (s.credits || 0));
+    }
+
     const cgpaRecordMap = new Map<string, any>();
     for (const r of cgpaRecords) {
       const key = r.registerNo.trim().toUpperCase();
@@ -148,61 +233,49 @@ export const getRecords = query({
     for (const st of students) {
       const regUpper = st.registerNo.trim().toUpperCase();
       const rec = cgpaRecordMap.get(regUpper);
+      const stReg = (rec?.regulation || st.regulation || "R2021").toUpperCase();
+      const stDept = (rec?.department || st.department || "").toUpperCase();
+      const cacheKey = `${stDept}__${stReg}`;
+      const semCreditsMap = subjectCreditCache.get(cacheKey) || new Map<number, number>();
 
       // Gather all GPA records for this student
       const stGpaRecs = gpaRecords.filter((r) => r.registerNo.trim().toUpperCase() === regUpper);
       const semGpaMap = new Map<number, any>();
 
-      // Populate from stored cgpaRecord first if available
-      if (rec && rec.semesters) {
+      // Populate from stored cgpaRecord first
+      if (rec?.semesters) {
         for (const s of rec.semesters) {
           if (s.gpa > 0) {
-            semGpaMap.set(s.semester, { semester: s.semester, gpa: s.gpa, credits: s.credits || 0 });
+            semGpaMap.set(s.semester, { semester: s.semester, gpa: s.gpa });
           }
         }
       }
 
-      // Override / append from gpaRecords if available and newer/present
+      // Override/append from gpaRecords if newer
       for (const r of stGpaRecs) {
         if (r.gpa > 0) {
           const existing = semGpaMap.get(r.semester);
           if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
-            semGpaMap.set(r.semester, { semester: r.semester, gpa: r.gpa, credits: r.totalCredits || 0 });
+            semGpaMap.set(r.semester, { semester: r.semester, gpa: r.gpa, createdAt: r.createdAt || 0 });
           }
         }
       }
 
-      const mergedSemesters = Array.from(semGpaMap.values()).sort((a, b) => a.semester - b.semester);
+      const mergedGpas = Array.from(semGpaMap.values())
+        .sort((a, b) => a.semester - b.semester)
+        .map((s) => ({ semester: s.semester, gpa: s.gpa }));
 
-      let gpaSum = 0;
-      let semCount = 0;
-      let totalCredits = 0;
-      let totalWeightedPoints = 0;
-
-      for (const s of mergedSemesters) {
-        if (s.gpa > 0) {
-          const creds = s.credits || 0;
-          gpaSum += s.gpa;
-          semCount++;
-          if (creds > 0) {
-            totalCredits += creds;
-            totalWeightedPoints += s.gpa * creds;
-          }
-        }
-      }
-
-      const computedCgpa = totalCredits > 0
-        ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
-        : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : (rec?.cgpa || 0));
+      // Compute CGPA using database-fixed semester credits
+      const { cgpa: computedCgpa, totalCredits, semesters: mergedSemesters } = computeWeightedCGPA(mergedGpas, semCreditsMap);
 
       if (rec) {
         const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
         out.push({
           ...rec,
           studentName: st.name,
-          regulation: rec.regulation || st.regulation || "R2021",
+          regulation: stReg,
           semesters: mergedSemesters,
-          totalCredits: totalCredits > 0 ? totalCredits : rec.totalCredits || 0,
+          totalCredits,
           cgpa: computedCgpa,
           calculatedBy: { name: user?.name || "System" },
         });
@@ -211,8 +284,8 @@ export const getRecords = query({
           _id: st._id,
           studentName: st.name,
           registerNo: regUpper,
-          department: st.department.toUpperCase(),
-          regulation: st.regulation || "R2021",
+          department: stDept,
+          regulation: stReg,
           semesters: mergedSemesters,
           totalCredits,
           cgpa: computedCgpa,
@@ -225,8 +298,8 @@ export const getRecords = query({
           _id: st._id,
           studentName: st.name,
           registerNo: regUpper,
-          department: st.department.toUpperCase(),
-          regulation: st.regulation || "R2021",
+          department: stDept,
+          regulation: stReg,
           semesters: [],
           totalCredits: 0,
           cgpa: 0,
@@ -241,20 +314,33 @@ export const getRecords = query({
   },
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// getById — fetch a single CGPA record, recompute with DB credits.
+// ─────────────────────────────────────────────────────────────────────────────
 export const getById = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
-    // First try as a direct cgpaRecord
     const raw = await ctx.db.get(args.id as any).catch(() => null);
     const r = raw as any;
+
     if (r && r.registerNo && r.cgpa !== undefined) {
+      // It's a direct cgpaRecord — recompute with DB credits
+      const dept = r.department || "CSE";
+      const reg = r.regulation || "R2021";
+      const semCreditsMap = await fetchSemesterCreditsFromDB(ctx, dept, reg);
+      const semGpas = (r.semesters || []).map((s: any) => ({ semester: s.semester, gpa: s.gpa }));
+      const { cgpa, totalCredits, semesters } = computeWeightedCGPA(semGpas, semCreditsMap);
       const user = r.calculatedBy ? ((await ctx.db.get(r.calculatedBy as any).catch(() => null)) as any) : null;
-      return { ...r, calculatedBy: { name: user?.name || "Unknown" } };
+      return { ...r, semesters, totalCredits, cgpa, calculatedBy: { name: user?.name || "Unknown" } };
     }
-    // It might be a student ID — build CGPA from GPA records
+
+    // Might be a student ID — build CGPA from GPA records
     const student = r as any;
     if (!student || !student.registerNo) return null;
     const regUpper = student.registerNo.trim().toUpperCase();
+    const dept = student.department || "CSE";
+    const reg = student.regulation || "R2021";
+
     const allGpaRecs = await ctx.db.query("gpaRecords").collect();
     const stGpa = allGpaRecs.filter((g) => g.registerNo.trim().toUpperCase() === regUpper);
     const semMap = new Map<number, any>();
@@ -264,28 +350,20 @@ export const getById = query({
         if (!ex || (g.createdAt || 0) > (ex.createdAt || 0)) semMap.set(g.semester, g);
       }
     }
-    const semesters = Array.from(semMap.values()).sort((a, b) => a.semester - b.semester).map((g) => ({ semester: g.semester, gpa: g.gpa, credits: g.totalCredits || 0 }));
-    let gpaSum = 0, semCount = 0, totalCredits = 0, totalWeightedPoints = 0;
-    for (const s of semesters) {
-      if (s.gpa > 0) {
-        const creds = s.credits || 0;
-        gpaSum += s.gpa;
-        semCount++;
-        if (creds > 0) {
-          totalCredits += creds;
-          totalWeightedPoints += s.gpa * creds;
-        }
-      }
-    }
-    const cgpa = totalCredits > 0
-      ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
-      : (semCount > 0 ? parseFloat((gpaSum / semCount).toFixed(2)) : 0);
+
+    const semGpas = Array.from(semMap.values())
+      .sort((a, b) => a.semester - b.semester)
+      .map((g) => ({ semester: g.semester, gpa: g.gpa }));
+
+    const semCreditsMap = await fetchSemesterCreditsFromDB(ctx, dept, reg);
+    const { cgpa, totalCredits, semesters } = computeWeightedCGPA(semGpas, semCreditsMap);
+
     return {
       _id: args.id,
       studentName: student.name,
       registerNo: regUpper,
-      department: student.department,
-      regulation: student.regulation || "R2021",
+      department: dept,
+      regulation: reg,
       semesters,
       totalCredits,
       cgpa,
@@ -345,6 +423,9 @@ export const getByRegNo = query({
   },
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// updateRecord — recompute CGPA using DB credits, ignore any credits in input.
+// ─────────────────────────────────────────────────────────────────────────────
 export const updateRecord = mutation({
   args: {
     id: v.string(),
@@ -371,36 +452,19 @@ export const updateRecord = mutation({
     const dept = record?.department || student?.department || "CSE";
     const reg = record?.regulation || student?.regulation || "R2021";
 
-    const formattedSemesters = (args.semesters || record?.semesters || []).map((s: any) => ({
-      semester: s.semester,
-      gpa: s.gpa,
-      credits: s.credits || 0,
-    }));
+    // Fetch DB credits for recomputation
+    const semCreditsMap = await fetchSemesterCreditsFromDB(ctx, dept, reg);
 
-    let finalCgpa = args.cgpa !== undefined ? args.cgpa : record?.cgpa || 0;
-    if (args.semesters !== undefined) {
-      let sum = 0, count = 0, totalCreds = 0, totalWeightedPoints = 0;
-      for (const s of formattedSemesters) {
-        if (s.gpa > 0) {
-          const creds = s.credits || 0;
-          sum += s.gpa;
-          count++;
-          if (creds > 0) {
-            totalCreds += creds;
-            totalWeightedPoints += s.gpa * creds;
-          }
-        }
-      }
-      finalCgpa = totalCreds > 0
-        ? parseFloat((totalWeightedPoints / totalCreds).toFixed(2))
-        : (count > 0 ? parseFloat((sum / count).toFixed(2)) : 0);
-    }
+    const rawSemesters = (args.semesters || record?.semesters || []);
+    const semGpas = rawSemesters.map((s: any) => ({ semester: s.semester, gpa: s.gpa || 0 }));
+    const { cgpa: finalCgpa, totalCredits, semesters: formattedSemesters } = computeWeightedCGPA(semGpas, semCreditsMap);
 
     if (record) {
       await ctx.db.patch(record._id, {
         studentName: name,
         registerNo: regNo,
         semesters: formattedSemesters,
+        totalCredits,
         cgpa: finalCgpa,
       });
     } else {
@@ -410,7 +474,7 @@ export const updateRecord = mutation({
         department: dept,
         regulation: reg,
         semesters: formattedSemesters,
-        totalCredits: formattedSemesters.reduce((acc: number, s: any) => acc + (s.credits || 0), 0),
+        totalCredits,
         cgpa: finalCgpa,
         calculatedBy: args.userId,
         isBulk: false,
@@ -429,7 +493,8 @@ export const updateRecord = mutation({
             await ctx.db.patch(match._id, {
               gpa: semObj.gpa,
               studentName: name,
-              totalCredits: semObj.credits || match.totalCredits,
+              totalCredits: semObj.credits,          // DB-fetched credits
+              totalPoints: parseFloat((semObj.gpa * semObj.credits).toFixed(2)),
             });
           } else {
             await ctx.db.insert("gpaRecords", {
@@ -439,8 +504,8 @@ export const updateRecord = mutation({
               semester: semObj.semester,
               regulation: reg,
               subjects: [],
-              totalCredits: semObj.credits || 0,
-              totalPoints: 0,
+              totalCredits: semObj.credits,           // DB-fetched credits
+              totalPoints: parseFloat((semObj.gpa * semObj.credits).toFixed(2)),
               gpa: semObj.gpa,
               calculatedBy: args.userId,
               isBulk: false,
@@ -508,6 +573,10 @@ export const deleteRecord = mutation({
   },
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// bulkInsert — Called by cgpaActions after bulk processing.
+// Credits are already fetched from DB at this stage (done in the action).
+// ─────────────────────────────────────────────────────────────────────────────
 export const bulkInsert = mutation({
   args: {
     records: v.array(v.object({
@@ -534,6 +603,7 @@ export const bulkInsert = mutation({
         .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
         .filter((q) => q.eq(q.field("department"), deptUpper))
         .first();
+
       const data = { ...rec, studentName: resolvedName, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
       if (existing) await ctx.db.patch(existing._id, data);
       else await ctx.db.insert("cgpaRecords", data);
@@ -541,7 +611,14 @@ export const bulkInsert = mutation({
       await syncGpaFromSemesters(ctx, regUpper, resolvedName, deptUpper, rec.regulation, rec.semesters, args.userId, true);
     }
     const user = await ctx.db.get(args.userId);
-    await ctx.db.insert("historyLogs", { action: "Bulk Calculate CGPA", details: `Bulk calculated CGPA for ${args.records.length} students`, performedBy: args.userId, performedByName: user?.name || "Unknown", department, timestamp: Date.now() });
+    await ctx.db.insert("historyLogs", {
+      action: "Bulk Calculate CGPA",
+      details: `Bulk calculated CGPA for ${args.records.length} students`,
+      performedBy: args.userId,
+      performedByName: user?.name || "Unknown",
+      department,
+      timestamp: Date.now(),
+    });
     return { count: args.records.length };
   },
 });

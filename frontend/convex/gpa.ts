@@ -10,8 +10,8 @@ async function getGradePointsMap(ctx: any, department: string, regulation: strin
     .query("gradeSettings")
     .withIndex("by_dept_reg_sem", (q: any) =>
       q.eq("department", department.toUpperCase())
-       .eq("regulation", regulation.toUpperCase())
-       .eq("semester", semester)
+        .eq("regulation", regulation.toUpperCase())
+        .eq("semester", semester)
     )
     .unique();
   if (setting?.grades?.length > 0) {
@@ -157,9 +157,9 @@ export const calculateSingle = mutation({
 
     let officialStudent = registerNo
       ? await ctx.db
-          .query("students")
-          .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
-          .first()
+        .query("students")
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", registerNo))
+        .first()
       : null;
 
     let studentName = officialStudent ? officialStudent.name : args.studentName?.trim() || "";

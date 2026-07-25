@@ -23,6 +23,20 @@ export const bulkCalculate = action({
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const xlsx = require("xlsx");
 
+    // ── Step 1: Fetch semester credits from the subjects database ────────────
+    // This is the single source of truth. Credits extracted from files are
+    // ignored; only GPA values are used from the uploaded documents.
+    const allSubjects: any[] = await ctx.runQuery(api.subjects.get, {
+      department: activeDept,
+      regulation: regulation,
+    });
+
+    const semCreditsMap = new Map<number, number>();
+    for (const s of allSubjects) {
+      semCreditsMap.set(s.semester, (semCreditsMap.get(s.semester) || 0) + (s.credits || 0));
+    }
+
+    // ── Step 2: Parse uploaded file (PDF or Excel) — extract only GPA values ─
     let parsedStudents: any[] = [];
     const bytes = new Uint8Array(arrayBuffer.slice(0, 4));
     const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
@@ -52,11 +66,11 @@ export const bulkCalculate = action({
         const block = lines.slice(cur.lineIdx, nxt ? nxt.lineIdx : lines.length).join(" ");
         const semesters: any[] = [];
         for (let sem = 1; sem <= 8; sem++) {
+          // Only extract the GPA value; credits will come from the database
           const combined = block.match(new RegExp(`Sem(?:ester)?\\s*${sem}\\s*[:\\-\\s]?\\s*\\b(\\d+(?:\\.\\d+)?)\\b\\s*(?:GPA)?\\s*\\b(\\d+)\\b`, "i"));
-          if (combined) { semesters.push({ semester: sem, gpa: parseFloat(combined[1]), credits: parseInt(combined[2]) }); continue; }
+          if (combined) { semesters.push({ semester: sem, gpa: parseFloat(combined[1]) }); continue; }
           const gpaM = block.match(new RegExp(`Sem(?:ester)?\\s*${sem}\\s*(?:GPA)?\\s*[:\\-\\s]?\\s*\\b(\\d+(?:\\.\\d+)?)\\b`, "i"));
-          const credM = block.match(new RegExp(`Sem(?:ester)?\\s*${sem}\\s*(?:Credits|Cred|C)?\\s*[:\\-\\s]?\\s*\\b(\\d+)\\b`, "i"));
-          if (gpaM && parseFloat(gpaM[1]) > 0) semesters.push({ semester: sem, gpa: parseFloat(gpaM[1]), credits: credM ? parseInt(credM[1]) : 0 });
+          if (gpaM && parseFloat(gpaM[1]) > 0) semesters.push({ semester: sem, gpa: parseFloat(gpaM[1]) });
         }
         if (semesters.length) parsedStudents.push({ registerNo: cur.regNo, studentName: cur.name, semesters });
       }
@@ -73,7 +87,7 @@ export const bulkCalculate = action({
           for (const k of [`Sem${sem}_GPA`, `Sem ${sem} GPA`, `Sem_${sem}_GPA`]) {
             if (row[k] !== undefined) {
               const gpa = parseFloat(row[k]);
-              if (!isNaN(gpa) && gpa > 0) { semesters.push({ semester: sem, gpa, credits: 0 }); break; }
+              if (!isNaN(gpa) && gpa > 0) { semesters.push({ semester: sem, gpa }); break; }
             }
           }
         }
@@ -83,21 +97,54 @@ export const bulkCalculate = action({
 
     if (!parsedStudents.length) throw new Error("No valid student records found.");
 
+    // ── Step 3: Compute credit-weighted CGPA using DB-fetched semester credits ─
     const recordsToWrite: any[] = [];
     const errors: string[] = [];
+
     for (let i = 0; i < parsedStudents.length; i++) {
       const { registerNo, studentName, semesters } = parsedStudents[i];
       try {
-        let gpaSum = 0, countedSems = 0, totalCredits = 0;
-        semesters.forEach((s: any) => { if (s.gpa > 0) { gpaSum += s.gpa; countedSems++; totalCredits += s.credits || 0; } });
-        const cgpa = countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0;
-        recordsToWrite.push({ studentName, registerNo, department: activeDept, regulation, semesters, totalCredits, cgpa, calculatedBy: args.userId, isBulk: true });
+        let gpaSum = 0;
+        let countedSems = 0;
+        let totalCredits = 0;
+        let totalWeightedPoints = 0;
+
+        const formattedSemesters = semesters.map((s: any) => {
+          const credits = semCreditsMap.get(s.semester) || 0;   // always from DB
+          if (s.gpa > 0) {
+            gpaSum += s.gpa;
+            countedSems++;
+            if (credits > 0) {
+              totalCredits += credits;
+              totalWeightedPoints += s.gpa * credits;
+            }
+          }
+          return { semester: s.semester, gpa: s.gpa, credits };
+        });
+
+        // Weighted CGPA: Σ(GPA × Credits) / Σ(Credits)
+        const cgpa = totalCredits > 0
+          ? parseFloat((totalWeightedPoints / totalCredits).toFixed(2))
+          : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
+
+        recordsToWrite.push({
+          studentName,
+          registerNo,
+          department: activeDept,
+          regulation,
+          semesters: formattedSemesters,
+          totalCredits,
+          cgpa,
+          calculatedBy: args.userId,
+          isBulk: true,
+        });
       } catch (err: any) {
         errors.push(`Record ${i + 1} (${studentName || registerNo}): ${err.message}`);
       }
     }
 
     if (!recordsToWrite.length) throw new Error("All calculations failed:\n" + errors.join("\n"));
+
     const result = (await ctx.runMutation(api.cgpa.bulkInsert, { records: recordsToWrite, userId: args.userId })) as any;
     await ctx.storage.delete(args.storageId);
     return { message: `Successfully calculated ${result.count} CGPA records.`, recordsCount: result.count, errors };
