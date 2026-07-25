@@ -50,10 +50,10 @@ export default function DashboardTotalCredits() {
         setDepartments(depts);
 
         // Initialize department selection
-        if (user.role === 'super_admin') {
+        if (user.role === 'super_admin' || !user.department) {
           setSelectedDept(depts.length > 0 ? depts[0].code : '');
         } else {
-          setSelectedDept(user.department || '');
+          setSelectedDept(user.department.toUpperCase());
         }
 
         // Fetch regulations
