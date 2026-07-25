@@ -137,41 +137,41 @@ export default function DashboardTotalCredits() {
   const totalDegreeCredits = semCredits.reduce((acc, curr) => acc + (curr.totalCredits || 0), 0);
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
+    <div className="space-y-6 animate-fade-in max-w-5xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sky-500/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sky-500/15">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2 font-['Outfit']">
-            <TrendingUp className="h-5 w-5 text-emerald-400" />
+          <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-['Outfit'] tracking-tight">
+            <TrendingUp className="h-6 w-6 text-emerald-400 shrink-0" />
             Total Credits Manager
           </h1>
-          <p className="text-xs text-sky-300/50 mt-1">
+          <p className="text-xs sm:text-sm text-sky-300/70 mt-1 font-medium">
             Define official total registered credit points for each semester per department and regulation for CGPA calculations.
           </p>
         </div>
 
-        <div className="px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center gap-2 self-start sm:self-auto">
-          <span>Total Degree Credits:</span>
-          <span className="text-white text-base font-black">{totalDegreeCredits}</span>
+        <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2.5 self-start sm:self-auto shadow-sm backdrop-blur-md">
+          <span className="opacity-90">Total Degree Credits:</span>
+          <span className="text-white text-base font-black font-mono bg-emerald-500/20 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">{totalDegreeCredits}</span>
         </div>
       </div>
 
       {/* Filter Selection Panel */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-2 text-xs font-semibold text-sky-300/60 uppercase tracking-wider">
-          <Building className="h-4 w-4" />
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4 bg-[#071830]/80 border border-sky-500/20 p-4 sm:p-5 rounded-2xl backdrop-blur-xl shadow-lg">
+        <div className="flex items-center gap-2 text-xs font-bold text-sky-300/80 uppercase tracking-wider">
+          <Building className="h-4 w-4 text-sky-400" />
           <span>Select Curriculum:</span>
         </div>
 
-        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-5 w-full sm:w-auto">
           {/* Department Selection */}
           <div className="flex flex-col gap-1 w-full sm:w-auto">
-            <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Department</span>
+            <span className="text-[10px] text-sky-300/60 uppercase font-bold tracking-wider">Department</span>
             <select
               value={selectedDept}
               disabled={currentUser?.role !== 'super_admin'}
               onChange={(e) => setSelectedDept(e.target.value)}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[160px] truncate"
+              className="bg-[#050d21] border border-sky-500/25 focus:border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs font-bold text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[200px] truncate shadow-inner transition-all"
             >
               {departments.map((d) => (
                 <option key={d._id} value={d.code}>
@@ -183,11 +183,11 @@ export default function DashboardTotalCredits() {
 
           {/* Regulation */}
           <div className="flex flex-col gap-1 w-full sm:w-auto">
-            <span className="text-[10px] text-sky-300/40 uppercase font-semibold">Regulation</span>
+            <span className="text-[10px] text-sky-300/60 uppercase font-bold tracking-wider">Regulation</span>
             <select
               value={regulation}
               onChange={(e) => setRegulation(e.target.value)}
-              className="bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none w-full sm:w-auto"
+              className="bg-[#050d21] border border-sky-500/25 focus:border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs font-bold text-white focus:outline-none w-full sm:w-auto shadow-inner transition-all"
             >
               {regulations.map((r) => (
                 <option key={r} value={r}>
@@ -202,10 +202,10 @@ export default function DashboardTotalCredits() {
       {/* Status Messages */}
       {statusMsg && (
         <div
-          className={`p-4 rounded-2xl flex items-start gap-3 border transition-all duration-300 ${
+          className={`p-4 rounded-2xl flex items-start gap-3 border transition-all duration-300 shadow-md ${
             statusMsg.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
-              : 'bg-red-500/10 border-red-500/25 text-red-300'
+              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+              : 'bg-red-500/15 border-red-500/30 text-red-300'
           }`}
         >
           {statusMsg.type === 'success' ? (
@@ -213,23 +213,23 @@ export default function DashboardTotalCredits() {
           ) : (
             <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
           )}
-          <div className="text-xs font-medium">{statusMsg.text}</div>
+          <div className="text-xs font-bold">{statusMsg.text}</div>
         </div>
       )}
 
       {/* Main Grid Content */}
-      <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-6 relative overflow-hidden backdrop-blur-xl space-y-6">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-[#071830]/80 border border-sky-500/20 rounded-2xl p-5 sm:p-6 relative overflow-hidden backdrop-blur-xl space-y-6 shadow-xl">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {loadingCredits ? (
-          <div className="h-48 flex flex-col items-center justify-center text-sky-300 gap-2">
-            <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
-            <p className="text-xs text-sky-300/50">Fetching configured semester credits...</p>
+          <div className="h-48 flex flex-col items-center justify-center text-sky-300 gap-3">
+            <Loader2 className="h-7 w-7 animate-spin text-emerald-400" />
+            <p className="text-xs text-sky-300/70 font-semibold">Fetching configured semester credits...</p>
           </div>
         ) : (
           <form onSubmit={saveTotalCredits} className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-sky-500/10 pb-3">
+              <h2 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 font-['Outfit']">
                 <GraduationCap className="h-4 w-4 text-emerald-400" />
                 Semester Credit Allocation ({selectedDept} — {regulation})
               </h2>
@@ -239,14 +239,14 @@ export default function DashboardTotalCredits() {
               {semCredits.map((item, idx) => (
                 <div
                   key={item.semester}
-                  className="bg-[#071830]/50 border border-sky-500/10 hover:border-emerald-500/25 p-3.5 rounded-xl flex flex-col gap-2 transition-all"
+                  className="bg-[#050d21]/90 border border-sky-500/20 hover:border-emerald-500/40 p-4 rounded-2xl flex flex-col gap-3 transition-all duration-200 shadow-md hover:shadow-emerald-500/5 group"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">Semester {item.semester}</span>
-                    <span className="text-[10px] text-emerald-400/70 font-mono">Sem {item.semester}</span>
+                    <span className="text-xs font-extrabold text-white group-hover:text-emerald-300 transition-colors">Semester {item.semester}</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Sem {item.semester}</span>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <input
                       type="number"
                       min="0"
@@ -255,9 +255,9 @@ export default function DashboardTotalCredits() {
                       placeholder="e.g. 24"
                       value={item.totalCredits || ''}
                       onChange={(e) => handleSemesterCreditChange(idx, parseFloat(e.target.value) || 0)}
-                      className="w-full bg-[#071830] border border-sky-500/15 focus:border-emerald-500/40 rounded-lg px-3 py-2 text-sm font-bold text-emerald-300 text-center focus:outline-none transition-all placeholder:text-sky-300/20"
+                      className="w-full bg-[#030a1a] border border-sky-500/25 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 rounded-xl pl-3.5 pr-14 py-2.5 text-sm font-black text-emerald-300 focus:outline-none transition-all placeholder:text-sky-300/30 shadow-inner"
                     />
-                    <span className="absolute right-2.5 top-2.5 text-[10px] text-sky-300/30 font-semibold pointer-events-none">
+                    <span className="absolute right-3 text-[10px] text-emerald-400/60 font-bold uppercase tracking-wider pointer-events-none">
                       credits
                     </span>
                   </div>
@@ -265,15 +265,15 @@ export default function DashboardTotalCredits() {
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
-              <p className="text-[11px] text-sky-300/40">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-3 border-t border-sky-500/10">
+              <p className="text-[11px] text-sky-300/60 font-medium">
                 * Note: Configured semester total credits override subject sum values for all CGPA calculations.
               </p>
 
               <button
                 type="submit"
                 disabled={savingCredits}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-emerald-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
               >
                 {savingCredits ? (
                   <>

@@ -564,16 +564,43 @@ export default function DashboardGradeSettings() {
                     <div className="p-8 text-center text-xs text-sky-300/35">
                       No grades defined. Click "Add Grade" to configure mapping.
                     </div>
-                  )}
-                </div>
+                          step="0.5"
+                          placeholder="Points (e.g. 10)"
+                          value={g.points}
+                          onChange={(e) => handlePointsChange(idx, e.target.value)}
+                          className="w-full bg-[#030a1a] border border-sky-500/25 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20 rounded-xl px-3 py-2 text-xs font-black text-sky-300 focus:outline-none placeholder:text-sky-300/30 transition-all shadow-inner"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeGradeRow(idx)}
+                      disabled={grades.length <= 1}
+                      className="p-2 rounded-xl text-sky-300/40 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-sky-300/40 transition-all cursor-pointer"
+                      title="Remove grade row"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
 
-              {/* Save Button */}
-              <div className="flex justify-end pt-2">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-sky-500/10">
+                <button
+                  type="button"
+                  onClick={addGradeRow}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 text-sky-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Grade Row
+                </button>
+
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-sky-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                 >
                   {saving ? (
                     <>
@@ -595,8 +622,8 @@ export default function DashboardGradeSettings() {
 
       {/* Always render Total Credits below Grade Settings if activeTab === 'grades' */}
       {activeTab === 'grades' && (
-        <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-6 relative overflow-hidden backdrop-blur-xl space-y-6">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-[#071830]/80 border border-sky-500/20 rounded-2xl p-5 sm:p-6 relative overflow-hidden backdrop-blur-xl space-y-6 shadow-xl">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-sky-500/10">
             <div>
@@ -604,14 +631,14 @@ export default function DashboardGradeSettings() {
                 <TrendingUp className="h-5 w-5 text-emerald-400" />
                 Total Credits
               </h2>
-              <p className="text-xs text-sky-300/50 mt-1">
-                Set authoritative semester total credit values for <span className="text-emerald-300 font-semibold">{selectedDept}</span> under regulation <span className="text-emerald-300 font-semibold">{regulation}</span> for system-wide CGPA calculations.
+              <p className="text-xs text-sky-300/70 mt-1 font-medium">
+                Set authoritative semester total credit values for <span className="text-emerald-300 font-bold">{selectedDept}</span> under regulation <span className="text-emerald-300 font-bold">{regulation}</span> for system-wide CGPA calculations.
               </p>
             </div>
 
-            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center gap-2 self-start sm:self-auto">
+            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2.5 self-start sm:self-auto backdrop-blur-md">
               <span>Total Degree Credits:</span>
-              <span className="text-white text-sm font-black">
+              <span className="text-white text-sm font-black font-mono bg-emerald-500/20 px-2 py-0.5 rounded-lg border border-emerald-500/30">
                 {semCredits.reduce((acc, curr) => acc + (curr.totalCredits || 0), 0)}
               </span>
             </div>
@@ -619,24 +646,24 @@ export default function DashboardGradeSettings() {
 
           {/* Status Toast */}
           {creditsStatusMsg && (
-            <div className={`p-4 rounded-2xl flex items-start gap-3 border transition-all duration-300 ${
+            <div className={`p-4 rounded-2xl flex items-start gap-3 border transition-all duration-300 shadow-md ${
               creditsStatusMsg.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300' 
-                : 'bg-red-500/10 border-red-500/25 text-red-300'
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' 
+                : 'bg-red-500/15 border-red-500/30 text-red-300'
             }`}>
               {creditsStatusMsg.type === 'success' ? (
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
               ) : (
                 <AlertCircle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
               )}
-              <div className="text-xs font-medium">{creditsStatusMsg.text}</div>
+              <div className="text-xs font-bold">{creditsStatusMsg.text}</div>
             </div>
           )}
 
           {loadingCredits ? (
             <div className="h-40 flex flex-col items-center justify-center text-sky-300 gap-2">
               <Loader2 className="h-6 w-6 animate-spin text-emerald-400" />
-              <p className="text-xs text-sky-300/50">Fetching total semester credits...</p>
+              <p className="text-xs text-sky-300/70 font-semibold">Fetching total semester credits...</p>
             </div>
           ) : (
             <form onSubmit={saveTotalCredits} className="space-y-6">
@@ -644,14 +671,14 @@ export default function DashboardGradeSettings() {
                 {semCredits.map((item, idx) => (
                   <div
                     key={item.semester}
-                    className="bg-[#071830]/50 border border-sky-500/10 hover:border-emerald-500/25 p-3.5 rounded-xl flex flex-col gap-2 transition-all"
+                    className="bg-[#050d21]/90 border border-sky-500/20 hover:border-emerald-500/40 p-4 rounded-2xl flex flex-col gap-3 transition-all duration-200 shadow-md hover:shadow-emerald-500/5 group"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">Semester {item.semester}</span>
-                      <span className="text-[10px] text-emerald-400/70 font-mono">Sem {item.semester}</span>
+                      <span className="text-xs font-extrabold text-white group-hover:text-emerald-300 transition-colors">Semester {item.semester}</span>
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Sem {item.semester}</span>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
                         type="number"
                         min="0"
@@ -660,9 +687,9 @@ export default function DashboardGradeSettings() {
                         placeholder="e.g. 24"
                         value={item.totalCredits || ''}
                         onChange={(e) => handleSemesterCreditChange(idx, parseFloat(e.target.value) || 0)}
-                        className="w-full bg-[#071830] border border-sky-500/15 focus:border-emerald-500/40 rounded-lg px-3 py-2 text-sm font-bold text-emerald-300 text-center focus:outline-none transition-all placeholder:text-sky-300/20"
+                        className="w-full bg-[#030a1a] border border-sky-500/25 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 rounded-xl pl-3.5 pr-14 py-2.5 text-sm font-black text-emerald-300 focus:outline-none transition-all placeholder:text-sky-300/30 shadow-inner"
                       />
-                      <span className="absolute right-2.5 top-2.5 text-[10px] text-sky-300/30 font-semibold pointer-events-none">
+                      <span className="absolute right-3 text-[10px] text-emerald-400/60 font-bold uppercase tracking-wider pointer-events-none">
                         credits
                       </span>
                     </div>
@@ -670,15 +697,15 @@ export default function DashboardGradeSettings() {
                 ))}
               </div>
 
-              <div className="flex justify-between items-center pt-2">
-                <p className="text-[11px] text-sky-300/40">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-3 border-t border-sky-500/10">
+                <p className="text-[11px] text-sky-300/60 font-medium">
                   * Configured semester total credits override subject sum values for all CGPA calculations.
                 </p>
 
                 <button
                   type="submit"
                   disabled={savingCredits}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-emerald-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
                 >
                   {savingCredits ? (
                     <>
