@@ -42,9 +42,8 @@ export const getByDeptReg = query({
 
     const result: Record<number, number> = {};
     for (const r of records) {
-      if (r.totalCredits > 0) {
-        result[r.semester] = r.totalCredits;
-      }
+      // Include ALL records (even 0) so the frontend knows the entry exists
+      result[r.semester] = r.totalCredits;
     }
     return result;
   },

@@ -668,20 +668,41 @@ export const api = {
 
   // ── Total Credits ──────────────────────────────────────────────────
   getSemesterCreditsMap: async (department: string, regulation: string): Promise<Record<number, number>> => {
-    const configuredMap = await convex.query(convexApi.semesterCredits.getByDeptReg, { department, regulation });
-    const result: Record<number, number> = { ...configuredMap };
-
-    // Fall back to subjects table for any semesters not explicitly configured in semesterCredits table
-    const subjects = await convex.query(convexApi.subjects.getPublicSubjects, {
-      department,
-      regulation,
+    // Fetch configured credits from DB (stored by dept+reg+semester)
+    const configuredMap = await convex.query(convexApi.semesterCredits.getByDeptReg, {
+      department: department.toUpperCase(),
+      regulation: regulation.toUpperCase(),
     });
 
+    // Convex HTTP returns JSON where object keys are always strings.
+    // Coerce all string keys back to numbers so map[1] works correctly.
+    const result: Record<number, number> = {};
+    for (const [key, val] of Object.entries(configuredMap)) {
+      const sem = Number(key);
+      if (!isNaN(sem) && val > 0) {
+        result[sem] = val as number;
+      }
+    }
+
+    // Fallback: for any semester NOT yet configured, sum subject credits
+    const subjects = await convex.query(convexApi.subjects.getPublicSubjects, {
+      department: department.toUpperCase(),
+      regulation: regulation.toUpperCase(),
+    });
+
+    // Group subject credits per semester for semesters that have no DB config
+    const subjectSums: Record<number, number> = {};
     subjects.forEach((s: any) => {
-      if (s.semester && s.credits && !result[s.semester]) {
-        result[s.semester] = (result[s.semester] || 0) + s.credits;
+      if (s.semester && s.credits) {
+        subjectSums[s.semester] = (subjectSums[s.semester] || 0) + s.credits;
       }
     });
+    for (const [sem, total] of Object.entries(subjectSums)) {
+      const semNum = Number(sem);
+      if (!result[semNum]) {
+        result[semNum] = total;
+      }
+    }
 
     return result;
   },
@@ -692,8 +713,8 @@ export const api = {
     semesterCredits: { semester: number; totalCredits: number }[]
   ): Promise<any> => {
     return convex.mutation(convexApi.semesterCredits.saveBulk, {
-      department,
-      regulation,
+      department: department.toUpperCase(),
+      regulation: regulation.toUpperCase(),
       semesterCredits,
     });
   },
