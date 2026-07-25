@@ -12,7 +12,8 @@ import {
   Plus,
   Trash2,
   Info,
-  Download
+  Download,
+  Sparkles
 } from 'lucide-react';
 import { api, Department } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
