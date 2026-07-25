@@ -19,6 +19,7 @@ import type * as gradeSettings from "../gradeSettings.js";
 import type * as migrations from "../migrations.js";
 import type * as regulations from "../regulations.js";
 import type * as reports from "../reports.js";
+import type * as semesterCredits from "../semesterCredits.js";
 import type * as students from "../students.js";
 import type * as studentsActions from "../studentsActions.js";
 import type * as subjects from "../subjects.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   regulations: typeof regulations;
   reports: typeof reports;
+  semesterCredits: typeof semesterCredits;
   students: typeof students;
   studentsActions: typeof studentsActions;
   subjects: typeof subjects;
