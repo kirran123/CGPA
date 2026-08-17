@@ -17,6 +17,7 @@ import {
   TrendingUp,
   ChevronRight,
   Settings,
+  RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -44,6 +45,7 @@ const allNavItems: NavItem[] = [
   { label: 'CGPA Calculation', path: '/dashboard/cgpa', icon: <TrendingUp className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'calc' },
   { label: 'Bulk GPA Upload', path: '/dashboard/bulk/gpa', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
   { label: 'Batch Results', path: '/dashboard/bulk/gpa/batches', icon: <FileSpreadsheet className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'tools' },
+  { label: 'ERP Sync Manager', path: '/dashboard/erp-sync', icon: <RefreshCw className="h-4 w-4" />, roles: ['super_admin'], group: 'tools' },
   { label: 'History & Logs', path: '/dashboard/history', icon: <History className="h-4 w-4" />, roles: ['super_admin', 'dept_admin', 'staff'], group: 'logs' },
 ];
 

@@ -29,6 +29,7 @@ import DashboardBulkCgpa from '@/app/dashboard/bulk/cgpa/page';
 import DashboardStudents from '@/app/dashboard/students/page';
 import DashboardGpaResults from '@/app/dashboard/gpa-results/page';
 import DashboardCgpaResults from '@/app/dashboard/cgpa-results/page';
+import DashboardErpSync from '@/app/dashboard/erp-sync/page';
 
 export default function App() {
   React.useEffect(() => {
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="bulk/gpa" element={<DashboardBulkGpa />} />
             <Route path="bulk/gpa/batches" element={<DashboardBulkGpaBatches />} />
             <Route path="bulk/cgpa" element={<DashboardBulkCgpa />} />
+            <Route path="erp-sync" element={<DashboardErpSync />} />
           </Route>
         </Routes>
       </PublicLayoutWrapper>

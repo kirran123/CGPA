@@ -11,7 +11,9 @@
 import type * as analytics from "../analytics.js";
 import type * as cgpa from "../cgpa.js";
 import type * as cgpaActions from "../cgpaActions.js";
+import type * as crons from "../crons.js";
 import type * as departments from "../departments.js";
+import type * as erpSync from "../erpSync.js";
 import type * as files from "../files.js";
 import type * as gpa from "../gpa.js";
 import type * as gpaActions from "../gpaActions.js";
@@ -36,7 +38,9 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   cgpa: typeof cgpa;
   cgpaActions: typeof cgpaActions;
+  crons: typeof crons;
   departments: typeof departments;
+  erpSync: typeof erpSync;
   files: typeof files;
   gpa: typeof gpa;
   gpaActions: typeof gpaActions;

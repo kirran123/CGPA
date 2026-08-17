@@ -718,4 +718,20 @@ export const api = {
       semesterCredits,
     });
   },
+
+  // ── ERP Integration ────────────────────────────────────────────────
+  syncErpData: async (
+    token: string,
+    options: {
+      syncDepartments: boolean;
+      syncRegulations: boolean;
+      syncSubjects: boolean;
+      syncStudents: boolean;
+    }
+  ): Promise<any> => {
+    return convex.action(convexApi.erpSync.syncData, {
+      token,
+      ...options,
+    });
+  },
 };
