@@ -261,7 +261,11 @@ export const bulkInsert = mutation({
     let count = 0;
     for (const s of args.students) {
       const regNoUpper = s.registerNo.trim().toUpperCase();
-      const deptUpper = s.department.trim().toUpperCase();
+      let deptUpper = s.department.trim().toUpperCase();
+      if (!deptUpper || deptUpper === "GEN") {
+        const resolved = getDeptFromReg(regNoUpper);
+        if (resolved) deptUpper = resolved;
+      }
       const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
       const existing = await ctx.db
         .query("students")
