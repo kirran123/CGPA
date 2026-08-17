@@ -18,12 +18,15 @@ import {
 } from 'lucide-react';
 import { api, Department, GpaRecord } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
+import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 
 export default function GpaResultsPage() {
   const [records, setRecords] = useState<GpaRecord[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [selectedSem, setSelectedSem] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
   const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -77,13 +80,15 @@ export default function GpaResultsPage() {
       const activeDept = initialDept || selectedDept || undefined;
       const semNum = selectedSem ? parseInt(selectedSem) : undefined;
 
-      const [fetchedRecords, fetchedStudents] = await Promise.all([
+      const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
         api.getGpaRecords(activeDept, semNum),
-        api.getStudents(activeDept)
+        api.getStudents(activeDept, selectedBatch || undefined),
+        api.getStudentBatches(activeDept)
       ]);
 
       setRecords(fetchedRecords);
       setStudents(fetchedStudents);
+      setBatches(fetchedBatches);
     } catch (err: any) {
       setError(err.message || 'Failed to load GPA results.');
     } finally {
@@ -93,13 +98,14 @@ export default function GpaResultsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedDept, selectedSem]);
+  }, [selectedDept, selectedSem, selectedBatch]);
 
   const studentRows = React.useMemo(() => {
     const map = new Map<string, {
       registerNo: string;
       studentName: string;
       department: string;
+      batch?: string;
       semesters: { [sem: number]: { gpa: number; id: string; record: GpaRecord } };
     }>();
 
@@ -110,6 +116,7 @@ export default function GpaResultsPage() {
         registerNo: st.registerNo,
         studentName: st.name,
         department: st.department.toUpperCase(),
+        batch: st.batch,
         semesters: {}
       });
     }
@@ -124,6 +131,10 @@ export default function GpaResultsPage() {
     }
 
     let rowsList = Array.from(map.values());
+
+    if (selectedBatch) {
+      rowsList = rowsList.filter((r) => r.batch === selectedBatch);
+    }
 
     if (selectedStudentReg) {
       rowsList = rowsList.filter((r) => r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase());
@@ -147,7 +158,7 @@ export default function GpaResultsPage() {
       const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
       return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [students, records, searchQuery, selectedSem, selectedStudentReg, sortField, sortOrder]);
+  }, [students, records, searchQuery, selectedSem, selectedBatch, selectedStudentReg, sortField, sortOrder]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string, sem: number) => {
     setDownloadingRowId(recordId);
@@ -275,6 +286,7 @@ export default function GpaResultsPage() {
 
       {/* Filters Bar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
+        {/* Department filter */}
         <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Department
@@ -297,7 +309,25 @@ export default function GpaResultsPage() {
           </select>
         </div>
 
-        <div className="md:col-span-3">
+        {/* Batch Filter Option */}
+        <div className="md:col-span-2">
+          <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
+            Batch Filter
+          </label>
+          <select
+            value={selectedBatch}
+            onChange={(e) => setSelectedBatch(e.target.value)}
+            className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
+          >
+            <option value="">All Batches</option>
+            {batches.map((b) => (
+              <option key={b.batch} value={b.batch}>{b.batch}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Semester Filter */}
+        <div className="md:col-span-2">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Semester Filter
           </label>
@@ -313,44 +343,21 @@ export default function GpaResultsPage() {
           </select>
         </div>
 
-        <div className="md:col-span-3">
+        {/* Searchable Student Combobox */}
+        <div className="md:col-span-5">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
-            Select Student
+            Select / Search Student
           </label>
-          <select
+          <SearchableStudentSelect
+            students={students}
             value={selectedStudentReg}
-            onChange={(e) => {
-              setSelectedStudentReg(e.target.value);
-              if (e.target.value) setSearchQuery('');
+            valueKey="registerNo"
+            onChange={(reg) => {
+              setSelectedStudentReg(reg);
+              if (reg) setSearchQuery('');
             }}
-            className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
-          >
-            <option value="">All Students ({students.length})</option>
-            {students.map((st) => (
-              <option key={st._id} value={st.registerNo}>
-                {st.registerNo} - {st.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-3">
-          <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
-            Search Student
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value) setSelectedStudentReg('');
-              }}
-              placeholder="Search name or reg no..."
-              className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-sky-400/25 focus:outline-none transition-all"
-            />
-            <Search className="h-4 w-4 text-sky-400/40 absolute left-3 top-2.5 pointer-events-none" />
-          </div>
+            placeholder={`Search student (${students.length})...`}
+          />
         </div>
       </div>
 

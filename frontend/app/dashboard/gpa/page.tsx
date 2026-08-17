@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-
 import { 
   GraduationCap, 
   FileText, 
@@ -10,10 +8,14 @@ import {
   CheckCircle,
   RefreshCw,
   Info,
-  Download
+  Download,
+  Plus,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { api, Department, Subject } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
+import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 
 interface SubjectRow {
   id: string;
@@ -21,6 +23,7 @@ interface SubjectRow {
   subjectName: string;
   credits: number;
   grade: string;
+  isCustom?: boolean;
 }
 
 const DEFAULT_GRADES = [
@@ -60,32 +63,78 @@ export default function InternalGpaCalculator() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Student Roster state
+  // Student Roster state & Batch filtering
   const [studentRoster, setStudentRoster] = useState<any[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
+  const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
 
   const canEditRecords = canEditRecordsFn();
 
+  // Load User, Departments & Regulations
   useEffect(() => {
-    const fetchStudents = async () => {
+    const init = async () => {
       try {
-        const sts = await api.getStudents(selectedDept || undefined);
+        const u = api.getCurrentUser();
+        setCurrentUser(u);
+
+        const depts = await api.getPublicDepartments();
+        setDepartments(depts);
+
+        // Lock to user department for dept_admin / staff
+        const userDept = u?.role !== 'super_admin' ? u?.department || '' : '';
+        if (userDept) {
+          setSelectedDept(userDept);
+        } else if (depts.length > 0) {
+          setSelectedDept(depts[0].code);
+        }
+
+        // Fetch dynamic regulations
+        const regs = await api.getRegulations();
+        const regNames = regs.map((r: any) => r.name);
+        setRegulations(regNames);
+        if (regNames.length > 0) {
+          setRegulation(regNames.includes('R2021') ? 'R2021' : regNames[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching departments:', err);
+      } finally {
+        setLoadingDepts(false);
+      }
+    };
+    init();
+  }, []);
+
+  // Fetch Student Roster & Batches restricted by active department
+  useEffect(() => {
+    const fetchStudentsAndBatches = async () => {
+      try {
+        const userDept = currentUser?.role !== 'super_admin' ? currentUser?.department || '' : '';
+        const activeDept = userDept || selectedDept;
+
+        const [sts, bts] = await Promise.all([
+          api.getStudents(activeDept || undefined, selectedBatch || undefined),
+          api.getStudentBatches(activeDept || undefined)
+        ]);
         setStudentRoster(sts);
+        setBatches(bts);
       } catch (e) {
         console.error('Error fetching students roster:', e);
       }
     };
-    fetchStudents();
-  }, [selectedDept]);
+    fetchStudentsAndBatches();
+  }, [selectedDept, selectedBatch, currentUser]);
 
-  const handleSelectStudent = (studentId: string) => {
-    setSelectedStudentId(studentId);
-    if (!studentId) return;
-    const st = studentRoster.find((s) => s._id === studentId);
+  const handleSelectStudent = (regNo: string, student?: any) => {
+    setSelectedStudentReg(regNo);
+    if (!regNo) return;
+    const st = student || studentRoster.find((s) => s.registerNo.toUpperCase() === regNo.toUpperCase());
     if (!st) return;
     setStudentName(st.name);
     setRegisterNo(st.registerNo);
-    if (st.department) setSelectedDept(st.department);
+    if (st.department && (currentUser?.role === 'super_admin' || currentUser?.department === st.department)) {
+      setSelectedDept(st.department);
+    }
     if (st.regulation) setRegulation(st.regulation);
   };
 
@@ -93,7 +142,6 @@ export default function InternalGpaCalculator() {
     setDownloadingPdf(true);
     try {
       const activeDeptObj = departments.find(d => d.code === selectedDept);
-      // Only include subjects where the student actually entered a grade
       const gradedRows = rows.filter(r => r.grade && r.grade.trim() !== '');
       if (gradedRows.length === 0) {
         alert('Please enter at least one grade before downloading the PDF.');
@@ -127,40 +175,6 @@ export default function InternalGpaCalculator() {
       setDownloadingPdf(false);
     }
   };
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const u = api.getCurrentUser();
-        setCurrentUser(u);
-        
-        const depts = await api.getPublicDepartments();
-        setDepartments(depts);
-        if (u?.department) {
-          setSelectedDept(u.department);
-        } else if (depts.length > 0) {
-          setSelectedDept(depts[0].code);
-        }
-
-        // Fetch dynamic regulations
-        const regs = await api.getRegulations();
-        const regNames = regs.map((r: any) => r.name);
-        setRegulations(regNames);
-        if (regNames.length > 0) {
-          if (regNames.includes('R2021')) {
-            setRegulation('R2021');
-          } else {
-            setRegulation(regNames[0]);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching departments:', err);
-      } finally {
-        setLoadingDepts(false);
-      }
-    };
-    init();
-  }, []);
 
   // Fetch subjects when dept, semester, or regulation changes
   useEffect(() => {
@@ -220,23 +234,47 @@ export default function InternalGpaCalculator() {
   // Live GPA calculation — only count subjects where a grade has been entered
   let totalCredits = 0, totalPoints = 0;
   rows.forEach(r => {
-    if (!r.grade || r.grade.trim() === '') return; // skip unentered subjects
+    if (!r.grade || r.grade.trim() === '') return;
     const cred = Number(r.credits) || 0;
     const gp = dynamicGradePoints[r.grade.toUpperCase()] !== undefined ? dynamicGradePoints[r.grade.toUpperCase()] : -1;
     if (gp >= 0 && cred >= 0) { totalCredits += cred; totalPoints += cred * gp; }
   });
   const gpa = totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0;
-  // Allow save/download as long as at least one grade is entered
   const anyGradeSet = rows.some(r => r.grade && r.grade.trim() !== '');
 
   const updateGrade = (id: string, grade: string) => {
     setRows(rows.map(r => r.id === id ? { ...r, grade } : r));
   };
 
+  // Temporary row editing for local calculation (does not touch DB)
+  const updateRowField = (id: string, field: keyof SubjectRow, val: any) => {
+    setRows(rows.map(r => r.id === id ? { ...r, [field]: val } : r));
+  };
+
+  const handleTemporaryDeleteRow = (id: string) => {
+    setRows(rows.filter(r => r.id !== id));
+  };
+
+  const handleTemporaryAddRow = () => {
+    const newId = `temp-${Date.now()}`;
+    setRows([
+      ...rows,
+      {
+        id: newId,
+        subjectCode: `ELECTIVE-${rows.length + 1}`,
+        subjectName: 'Elective / Custom Subject',
+        credits: 3,
+        grade: '',
+        isCustom: true
+      }
+    ]);
+  };
+
   const resetCalculator = () => {
     setRows(rows.map(r => ({ ...r, grade: '' })));
     setStudentName('');
     setRegisterNo('');
+    setSelectedStudentReg('');
     setSaveSuccess(null);
   };
 
@@ -246,7 +284,6 @@ export default function InternalGpaCalculator() {
     const nameToSave = studentName.trim() || 'Student';
     const regToSave = registerNo.trim() || 'Student';
 
-    // Only send subjects where a grade was actually entered
     const gradedRows = rows.filter(r => r.grade && r.grade.trim() !== '');
     if (gradedRows.length === 0) {
       alert('Please enter at least one grade before saving.');
@@ -358,7 +395,7 @@ export default function InternalGpaCalculator() {
                   {departments
                     .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
                     .map(d => (
-                      <option key={d._id} value={d.code}>{d.name}</option>
+                      <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
                     ))}
                 </select>
               )}
@@ -366,28 +403,38 @@ export default function InternalGpaCalculator() {
 
             <div className="section-divider !my-2" />
 
-            {/* Student Info & Fetch */}
+            {/* Student Info & Searchable Dropdown */}
             <div className="bg-sky-500/[0.04] border border-sky-500/10 rounded-xl p-3 space-y-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <Info className="h-3 w-3 text-sky-400/60" />
-                <span className="text-[10px] text-sky-300/60">Select registered student or type Register No to auto-fill details</span>
+                <span className="text-[10px] text-sky-300/60">Select registered student or type details below</span>
               </div>
 
-              {/* Student Dropdown */}
+              {/* Batch Selector Filter */}
               <div className="form-group">
-                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Select Registered Student</label>
+                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Filter Roster By Batch</label>
                 <select
-                  value={selectedStudentId}
-                  onChange={(e) => handleSelectStudent(e.target.value)}
-                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500/15 transition-all"
+                  value={selectedBatch}
+                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                 >
-                  <option value="">-- Choose Student from Roster --</option>
-                  {studentRoster.map((st) => (
-                    <option key={st._id} value={st._id}>
-                      {st.registerNo} - {st.name} ({st.department})
-                    </option>
+                  <option value="">All Batches ({studentRoster.length} students)</option>
+                  {batches.map((b) => (
+                    <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Searchable Student Combobox */}
+              <div className="form-group">
+                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Select Registered Student</label>
+                <SearchableStudentSelect
+                  students={studentRoster}
+                  value={selectedStudentReg}
+                  valueKey="registerNo"
+                  onChange={handleSelectStudent}
+                  placeholder="Search & choose student..."
+                />
               </div>
 
               <div className="form-group">
@@ -413,7 +460,7 @@ export default function InternalGpaCalculator() {
                     if (match) {
                       setStudentName(match.name);
                       if (match.regulation) setRegulation(match.regulation);
-                      setSelectedStudentId(match._id);
+                      setSelectedStudentReg(match.registerNo);
                     }
                   }}
                   placeholder="e.g. 953621104012"
@@ -447,7 +494,7 @@ export default function InternalGpaCalculator() {
             <button
               onClick={downloadReport}
               disabled={downloadingPdf || rows.length === 0 || !anyGradeSet}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/35 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 hover:shadow-sky-500/35 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm cursor-pointer"
             >
               {downloadingPdf ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /><span>Generating PDF...</span></>
@@ -472,85 +519,143 @@ export default function InternalGpaCalculator() {
           </div>
         </div>
 
-        {/* ── Right: Grades Table ── */}
+        {/* ── Right: Grades & Temporary Subject Customization Table ── */}
         <div className="lg:col-span-2 animate-slide-right">
-          <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-5 backdrop-blur-xl h-full">
-            <h2 className="text-sm font-bold text-white mb-5 pb-3 border-b border-sky-500/10 flex items-center justify-between">
-              <span>Semester Grades</span>
-              {rows.length > 0 && (
-                <span className="text-[10px] text-sky-300/40 font-normal">
-                  {rows.filter(r => r.grade).length} / {rows.length} graded
-                </span>
-              )}
-            </h2>
-
-            {loadingSubjects ? (
-              <div className="space-y-3">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="skeleton h-14 rounded-xl" style={{opacity: 1 - i * 0.12}} />
-                ))}
-              </div>
-            ) : rows.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <GraduationCap className="h-10 w-10 text-sky-500/25 mb-3 animate-float" />
-                <p className="text-sm text-sky-300/50 font-medium">No subjects configured</p>
-                <p className="text-xs text-sky-300/30 mt-1 max-w-xs">
-                  No subjects found for {selectedDept} — {regulation} — Semester {selectedSem}. Configure the syllabus catalog first.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                {/* Column headers */}
-                <div className="hidden md:grid grid-cols-12 gap-3 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-3 pb-1">
-                  <div className="col-span-2">Code</div>
-                  <div className="col-span-5">Subject</div>
-                  <div className="col-span-2 text-center">Credits</div>
-                  <div className="col-span-3 text-center">Grade</div>
+          <div className="bg-white/[0.02] border border-sky-500/10 rounded-2xl p-5 backdrop-blur-xl h-full flex flex-col justify-between">
+            <div>
+              <div className="mb-4 pb-3 border-b border-sky-500/10 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Semester Grades</span>
+                    {rows.length > 0 && (
+                      <span className="text-[10px] text-sky-300/40 font-normal">
+                        {rows.filter(r => r.grade).length} / {rows.length} graded
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-[10px] text-amber-300/60 mt-0.5">
+                    💡 Note: You can temporarily edit code/name/credits or delete/add subjects below for custom calculation. (Will NOT affect database records)
+                  </p>
                 </div>
-
-                {rows.map((row, idx) => (
-                  <div
-                    key={row.id}
-                    style={{animationDelay: `${idx * 40}ms`}}
-                    className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-3 rounded-xl border transition-all duration-150 animate-fade-in-up ${
-                      row.grade 
-                        ? 'bg-sky-500/[0.04] border-sky-500/12' 
-                        : 'bg-[#0a052a]/50 border-sky-500/[0.06] hover:border-sky-500/15'
-                    }`}
-                  >
-                    <div className="col-span-2 flex items-center">
-                      <span className="text-[10px] font-mono font-bold text-sky-400 bg-sky-500/10 px-2 py-1 rounded-lg border border-sky-500/15">
-                        {row.subjectCode}
-                      </span>
-                    </div>
-                    <div className="col-span-5 flex items-center">
-                      <span className="text-xs text-white/80 leading-tight">{row.subjectName}</span>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-sky-300/70 bg-sky-500/8 px-2 py-1 rounded-lg">
-                        {row.credits === 0 ? '0 Cr' : `${row.credits} Cr`}
-                      </span>
-                    </div>
-                    <div className="col-span-3 flex items-center">
-                      <select
-                        value={row.grade}
-                        onChange={e => updateGrade(row.id, e.target.value)}
-                        className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-2 text-xs focus:outline-none text-center font-bold transition-all ${
-                          row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
-                        }`}
-                      >
-                        <option value="">-- Grade --</option>
-                        {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
-                          <option key={g.grade} value={g.grade} className={getGradeColor(g.grade)}>
-                            {g.grade} ({g.points})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                ))}
+                <button
+                  type="button"
+                  onClick={handleTemporaryAddRow}
+                  className="flex items-center gap-1 text-[11px] font-bold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-2.5 py-1 rounded-xl transition-all cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Subject Row
+                </button>
               </div>
-            )}
+
+              {loadingSubjects ? (
+                <div className="space-y-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="skeleton h-14 rounded-xl" style={{opacity: 1 - i * 0.12}} />
+                  ))}
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <GraduationCap className="h-10 w-10 text-sky-500/25 mb-3 animate-float" />
+                  <p className="text-sm text-sky-300/50 font-medium">No subjects loaded</p>
+                  <p className="text-xs text-sky-300/30 mt-1 max-w-xs mb-3">
+                    No subjects found for {selectedDept} — {regulation} — Semester {selectedSem}. You can click "Add Subject Row" to manually enter subjects.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleTemporaryAddRow}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/20 transition-all cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Subject Row
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                  {/* Column headers */}
+                  <div className="hidden md:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-3 pb-1">
+                    <div className="col-span-2">Code</div>
+                    <div className="col-span-4">Subject Name</div>
+                    <div className="col-span-2 text-center">Credits</div>
+                    <div className="col-span-3 text-center">Grade</div>
+                    <div className="col-span-1 text-center">Action</div>
+                  </div>
+
+                  {rows.map((row, idx) => (
+                    <div
+                      key={row.id}
+                      style={{animationDelay: `${idx * 30}ms`}}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-xl border transition-all duration-150 animate-fade-in-up items-center ${
+                        row.grade 
+                          ? 'bg-sky-500/[0.04] border-sky-500/12' 
+                          : 'bg-[#0a052a]/50 border-sky-500/[0.06] hover:border-sky-500/15'
+                      }`}
+                    >
+                      {/* Code */}
+                      <div className="col-span-2">
+                        <input
+                          type="text"
+                          value={row.subjectCode}
+                          onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
+                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-[11px] font-mono font-bold text-sky-400 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Subject Name */}
+                      <div className="col-span-4">
+                        <input
+                          type="text"
+                          value={row.subjectName}
+                          onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
+                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Credits */}
+                      <div className="col-span-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="12"
+                          value={row.credits}
+                          onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
+                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-sky-300 font-semibold text-center focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Grade Selector */}
+                      <div className="col-span-3">
+                        <select
+                          value={row.grade}
+                          onChange={e => updateGrade(row.id, e.target.value)}
+                          className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${
+                            row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
+                          }`}
+                        >
+                          <option value="">-- Grade --</option>
+                          {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
+                            <option key={g.grade} value={g.grade} className={getGradeColor(g.grade)}>
+                              {g.grade} ({g.points})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Action: Temporary Delete */}
+                      <div className="col-span-1 flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleTemporaryDeleteRow(row.id)}
+                          className="p-1.5 text-red-400/60 hover:text-red-400 bg-red-500/5 hover:bg-red-500/15 border border-red-500/10 rounded-lg transition-all cursor-pointer"
+                          title="Remove subject row temporarily from calculation"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
