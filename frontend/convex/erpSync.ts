@@ -76,8 +76,10 @@ export const saveRegulations = mutation({
   },
 });
 
-// Mutation to insert NEW subjects only — existing records are never touched.
-// This preserves any local edits (credits, name, code) made by admins.
+// Mutation to import NEW subjects from ERP only.
+// Uses an erpSyncedKeys seen-key table: once an ERP subject key is recorded,
+// it is NEVER re-imported — even if the record was locally deleted or edited.
+// Format of key: "CODE|DEPT|REGULATION"
 export const saveSubjects = mutation({
   args: {
     subjects: v.array(
@@ -98,38 +100,42 @@ export const saveSubjects = mutation({
       const codeUpper = sub.code.toUpperCase().trim();
       const deptUpper = sub.department.toUpperCase().trim();
       const regUpper = sub.regulation.toUpperCase().trim();
+      const seenKey = `${codeUpper}|${deptUpper}|${regUpper}`;
 
-      const existing = await ctx.db
-        .query("subjects")
-        .withIndex("by_code_dept", (q) =>
-          q.eq("code", codeUpper).eq("department", deptUpper)
+      // Check if we have ever processed this ERP record before
+      const alreadySeen = await ctx.db
+        .query("erpSyncedKeys")
+        .withIndex("by_resource_key", (q) =>
+          q.eq("resource", "subjects").eq("key", seenKey)
         )
-        .filter((q) => q.eq(q.field("regulation"), regUpper))
         .first();
 
-      if (existing) {
-        // Already in our DB — skip to preserve any local edits.
+      if (alreadySeen) {
+        // This ERP record was already processed once — skip unconditionally.
+        // Local edits/deletions are fully protected.
         skipped++;
-      } else {
-        await ctx.db.insert("subjects", {
-          code: codeUpper,
-          name: sub.name,
-          credits: sub.credits,
-          semester: sub.semester,
-          department: deptUpper,
-          regulation: regUpper,
-        });
-        inserted++;
+        continue;
       }
+
+      // Brand-new ERP record — insert into subjects and mark as seen
+      await ctx.db.insert("subjects", {
+        code: codeUpper,
+        name: sub.name,
+        credits: sub.credits,
+        semester: sub.semester,
+        department: deptUpper,
+        regulation: regUpper,
+      });
+      await ctx.db.insert("erpSyncedKeys", { resource: "subjects", key: seenKey });
+      inserted++;
     }
     return { inserted, skipped };
   },
 });
 
-// Mutation to upsert student roster only — deliberately does NOT call
-// initializeStudentResults to avoid the 32k document-read limit during
-// bulk ERP imports. CGPA initialisation happens lazily when staff first
-// opens the student's GPA record.
+// Lightweight student roster import — no CGPA recalculation (avoids 32k doc limit).
+// Uses erpSyncedKeys seen-key table: once a register number is recorded,
+// it is never re-imported even if locally deleted.
 export const saveStudents = mutation({
   args: {
     students: v.array(
@@ -150,27 +156,33 @@ export const saveStudents = mutation({
       const regNoUpper = s.registerNo.trim().toUpperCase();
       const deptUpper = s.department.trim().toUpperCase();
       const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
+      const seenKey = regNoUpper;
 
-      const existing = await ctx.db
-        .query("students")
-        .withIndex("by_registerNo", (q) => q.eq("registerNo", regNoUpper))
+      // Check seen-key table first
+      const alreadySeen = await ctx.db
+        .query("erpSyncedKeys")
+        .withIndex("by_resource_key", (q) =>
+          q.eq("resource", "students").eq("key", seenKey)
+        )
         .first();
 
-      if (existing) {
-        // Already in roster — skip to avoid clobbering local edits.
+      if (alreadySeen) {
         skipped++;
-      } else {
-        await ctx.db.insert("students", {
-          name: s.name.trim(),
-          registerNo: regNoUpper,
-          department: deptUpper,
-          batch: s.batch.trim(),
-          regulation: regVal,
-          createdAt: now,
-          updatedAt: now,
-        });
-        inserted++;
+        continue;
       }
+
+      // Brand-new student from ERP — insert and mark as seen
+      await ctx.db.insert("students", {
+        name: s.name.trim(),
+        registerNo: regNoUpper,
+        department: deptUpper,
+        batch: s.batch.trim(),
+        regulation: regVal,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("erpSyncedKeys", { resource: "students", key: seenKey });
+      inserted++;
     }
     return { inserted, skipped };
   },

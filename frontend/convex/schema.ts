@@ -147,4 +147,13 @@ export default defineSchema({
     .index("by_registerNo", ["registerNo"])
     .index("by_department", ["department"])
     .index("by_dept_batch", ["department", "batch"]),
+
+  // ERP Sync Seen-Keys Table
+  // Tracks which ERP records have already been imported at least once.
+  // A key present here means: "we have already processed this ERP record —
+  // do NOT re-import it even if it was locally deleted or edited."
+  erpSyncedKeys: defineTable({
+    resource: v.string(),   // e.g. "subjects" | "students" | "departments"
+    key: v.string(),        // unique ERP identifier for the record
+  }).index("by_resource_key", ["resource", "key"]),
 });
