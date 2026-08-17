@@ -133,9 +133,42 @@ export const saveSubjects = mutation({
   },
 });
 
+export const BRANCH_CODE_MAP: Record<string, string> = {
+  "103": "CIVIL",
+  "104": "CSE",
+  "105": "EEE",
+  "106": "ECE",
+  "107": "CSBS",
+  "114": "MECH",
+  "205": "IT",
+  "243": "AD",
+  "321": "AM",
+  "108": "EIE",
+  "115": "MCT",
+  "202": "CHEM",
+  "203": "BT",
+  "214": "FT",
+};
+
+export function getDepartmentFromRegisterNo(regNo: string): string | null {
+  const cleanReg = regNo.replace(/\D/g, "");
+  if (cleanReg.length >= 9) {
+    let branchCode = "";
+    if (cleanReg.length === 12) {
+      branchCode = cleanReg.substring(6, 9);
+    } else if (cleanReg.length === 10) {
+      branchCode = cleanReg.substring(4, 7);
+    }
+    if (branchCode && BRANCH_CODE_MAP[branchCode]) {
+      return BRANCH_CODE_MAP[branchCode];
+    }
+  }
+  return null;
+}
+
 // Lightweight student roster import — no CGPA recalculation (avoids 32k doc limit).
 // Uses erpSyncedKeys seen-key table: once a register number is recorded,
-// it is never re-imported even if locally deleted.
+// it is never re-imported unless fixing a fallback department like "GEN".
 export const saveStudents = mutation({
   args: {
     students: v.array(
@@ -150,24 +183,35 @@ export const saveStudents = mutation({
   },
   handler: async (ctx, args) => {
     let inserted = 0;
+    let updated = 0;
     let skipped = 0;
     const now = Date.now();
+
     for (const s of args.students) {
       const regNoUpper = s.registerNo.trim().toUpperCase();
-      const deptUpper = s.department.trim().toUpperCase();
-      const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
-      const seenKey = regNoUpper;
+      let deptUpper = s.department.trim().toUpperCase();
 
-      // Check seen-key table first
-      const alreadySeen = await ctx.db
-        .query("erpSyncedKeys")
-        .withIndex("by_resource_key", (q) =>
-          q.eq("resource", "students").eq("key", seenKey)
-        )
+      // Resolve department from register number if currently GEN or invalid
+      if (!deptUpper || deptUpper === "GEN") {
+        const resolved = getDepartmentFromRegisterNo(regNoUpper);
+        if (resolved) deptUpper = resolved;
+      }
+
+      const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
+
+      const existing = await ctx.db
+        .query("students")
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", regNoUpper))
         .first();
 
-      if (alreadySeen) {
-        skipped++;
+      if (existing) {
+        // If existing student is GEN but we now resolved a valid department, update it!
+        if ((existing.department === "GEN" || !existing.department) && deptUpper && deptUpper !== "GEN") {
+          await ctx.db.patch(existing._id, { department: deptUpper, updatedAt: now });
+          updated++;
+        } else {
+          skipped++;
+        }
         continue;
       }
 
@@ -175,16 +219,16 @@ export const saveStudents = mutation({
       await ctx.db.insert("students", {
         name: s.name.trim(),
         registerNo: regNoUpper,
-        department: deptUpper,
+        department: deptUpper || "GEN",
         batch: s.batch.trim(),
         regulation: regVal,
         createdAt: now,
         updatedAt: now,
       });
-      await ctx.db.insert("erpSyncedKeys", { resource: "students", key: seenKey });
+      await ctx.db.insert("erpSyncedKeys", { resource: "students", key: regNoUpper });
       inserted++;
     }
-    return { inserted, skipped };
+    return { inserted, updated, skipped };
   },
 });
 
@@ -398,9 +442,12 @@ export const syncData = action({
               
               if (!registerNo || !name) return null;
 
-              const erpDeptId = pick(row, "department_id", "dept_id");
-              let department = deptMap[erpDeptId] || pick(row, "department", "dept", "department_code");
-              department = String(department || "GEN").trim().toUpperCase();
+              const erpDeptId = pick(row, "department_id", "dept_id", "branch_id", "department_code", "dept_code");
+              let department = deptMap[erpDeptId] || pick(row, "department", "dept", "department_code", "branch_code", "branch_name", "department_label");
+              if (!department || department === "GEN") {
+                department = getDepartmentFromRegisterNo(registerNo) || "GEN";
+              }
+              department = String(department).trim().toUpperCase();
 
               const erpRegId = pick(row, "regulation_id", "reg_id");
               let regulation = regMap[erpRegId] || pick(row, "regulation", "reg");

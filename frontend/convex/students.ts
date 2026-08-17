@@ -290,3 +290,56 @@ export const bulkInsert = mutation({
     return { count };
   },
 });
+
+const BRANCH_CODE_MAP: Record<string, string> = {
+  "103": "CIVIL",
+  "104": "CSE",
+  "105": "EEE",
+  "106": "ECE",
+  "107": "CSBS",
+  "114": "MECH",
+  "205": "IT",
+  "243": "AD",
+  "321": "AM",
+  "108": "EIE",
+  "115": "MCT",
+  "202": "CHEM",
+  "203": "BT",
+  "214": "FT",
+};
+
+function getDeptFromReg(regNo: string): string | null {
+  const cleanReg = regNo.replace(/\D/g, "");
+  if (cleanReg.length >= 9) {
+    let branchCode = "";
+    if (cleanReg.length === 12) {
+      branchCode = cleanReg.substring(6, 9);
+    } else if (cleanReg.length === 10) {
+      branchCode = cleanReg.substring(4, 7);
+    }
+    if (branchCode && BRANCH_CODE_MAP[branchCode]) {
+      return BRANCH_CODE_MAP[branchCode];
+    }
+  }
+  return null;
+}
+
+export const fixGenDepartments = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const students = await ctx.db.query("students").collect();
+    let updated = 0;
+    const now = Date.now();
+    for (const s of students) {
+      if (!s.department || s.department.toUpperCase() === "GEN") {
+        const resolved = getDeptFromReg(s.registerNo);
+        if (resolved) {
+          await ctx.db.patch(s._id, { department: resolved, updatedAt: now });
+          updated++;
+        }
+      }
+    }
+    return { updated, total: students.length };
+  },
+});
+
