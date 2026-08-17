@@ -76,7 +76,8 @@ export const saveRegulations = mutation({
   },
 });
 
-// Mutation to upsert subjects
+// Mutation to insert NEW subjects only — existing records are never touched.
+// This preserves any local edits (credits, name, code) made by admins.
 export const saveSubjects = mutation({
   args: {
     subjects: v.array(
@@ -92,7 +93,7 @@ export const saveSubjects = mutation({
   },
   handler: async (ctx, args) => {
     let inserted = 0;
-    let updated = 0;
+    let skipped = 0;
     for (const sub of args.subjects) {
       const codeUpper = sub.code.toUpperCase().trim();
       const deptUpper = sub.department.toUpperCase().trim();
@@ -107,12 +108,8 @@ export const saveSubjects = mutation({
         .first();
 
       if (existing) {
-        await ctx.db.patch(existing._id, {
-          name: sub.name,
-          credits: sub.credits,
-          semester: sub.semester,
-        });
-        updated++;
+        // Already in our DB — skip to preserve any local edits.
+        skipped++;
       } else {
         await ctx.db.insert("subjects", {
           code: codeUpper,
@@ -125,7 +122,57 @@ export const saveSubjects = mutation({
         inserted++;
       }
     }
-    return { inserted, updated };
+    return { inserted, skipped };
+  },
+});
+
+// Mutation to upsert student roster only — deliberately does NOT call
+// initializeStudentResults to avoid the 32k document-read limit during
+// bulk ERP imports. CGPA initialisation happens lazily when staff first
+// opens the student's GPA record.
+export const saveStudents = mutation({
+  args: {
+    students: v.array(
+      v.object({
+        name: v.string(),
+        registerNo: v.string(),
+        department: v.string(),
+        batch: v.string(),
+        regulation: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    let inserted = 0;
+    let skipped = 0;
+    const now = Date.now();
+    for (const s of args.students) {
+      const regNoUpper = s.registerNo.trim().toUpperCase();
+      const deptUpper = s.department.trim().toUpperCase();
+      const regVal = s.regulation ? s.regulation.trim().toUpperCase() : "R2021";
+
+      const existing = await ctx.db
+        .query("students")
+        .withIndex("by_registerNo", (q) => q.eq("registerNo", regNoUpper))
+        .first();
+
+      if (existing) {
+        // Already in roster — skip to avoid clobbering local edits.
+        skipped++;
+      } else {
+        await ctx.db.insert("students", {
+          name: s.name.trim(),
+          registerNo: regNoUpper,
+          department: deptUpper,
+          batch: s.batch.trim(),
+          regulation: regVal,
+          createdAt: now,
+          updatedAt: now,
+        });
+        inserted++;
+      }
+    }
+    return { inserted, skipped };
   },
 });
 
@@ -146,7 +193,7 @@ export const syncData = action({
     const results = {
       departments: { fetched: 0, inserted: 0, updated: 0, failed: 0 },
       regulations: { fetched: 0, inserted: 0, skipped: 0, failed: 0 },
-      subjects: { fetched: 0, inserted: 0, updated: 0, failed: 0 },
+      subjects: { fetched: 0, inserted: 0, skipped: 0, failed: 0 },
       students: { fetched: 0, inserted: 0, failed: 0 },
     };
 
@@ -310,9 +357,9 @@ export const syncData = action({
             const chunk = mappedSubjects.slice(i, i + chunkSize);
             const res = await ctx.runMutation(api.erpSync.saveSubjects, { subjects: chunk });
             results.subjects.inserted += res.inserted;
-            results.subjects.updated += res.updated;
+            results.subjects.skipped += res.skipped;
           }
-          logs.push(`Subjects Sync Complete. Inserts: ${results.subjects.inserted}, Updates: ${results.subjects.updated}`);
+          logs.push(`Subjects Sync Complete. New: ${results.subjects.inserted}, Already existed (preserved): ${results.subjects.skipped}`);
         } catch (err: any) {
           logs.push(`Error fetching subjects/course hours: ${err.message}`);
           results.subjects.failed = 1;
@@ -368,10 +415,12 @@ export const syncData = action({
           const chunkSize = 100;
           for (let i = 0; i < mappedStudents.length; i += chunkSize) {
             const chunk = mappedStudents.slice(i, i + chunkSize);
-            const res = await ctx.runMutation(api.students.bulkInsert, { students: chunk });
-            results.students.inserted += res.count;
+            // Use lightweight saveStudents — no CGPA recalculation per student,
+            // which avoids the 32k document-read limit in Convex transactions.
+            const res = await ctx.runMutation(api.erpSync.saveStudents, { students: chunk });
+            results.students.inserted += res.inserted;
           }
-          logs.push(`Students Sync Complete. Processed: ${results.students.inserted}`);
+          logs.push(`Students Sync Complete. New: ${results.students.inserted}, Already existed: ${mappedStudents.length - results.students.inserted}`);
         } catch (err: any) {
           logs.push(`Error fetching students: ${err.message}`);
           results.students.failed = 1;
