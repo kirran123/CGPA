@@ -59,6 +59,32 @@ export default function StudentManagementPage() {
   const [sortField, setSortField] = useState<'registerNo' | 'name'>('registerNo');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  // UI state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Single Add / Edit Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [formName, setFormName] = useState('');
+  const [formRegNo, setFormRegNo] = useState('');
+  const [formDept, setFormDept] = useState('');
+  const [formBatch, setFormBatch] = useState('');
+  const [formReg, setFormReg] = useState('R2021');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Bulk Excel Upload Modal State
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadDept, setUploadDept] = useState('');
+  const [uploadBatch, setUploadBatch] = useState('');
+  const [uploadReg, setUploadReg] = useState('R2021');
+  const [uploading, setUploading] = useState(false);
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const canEdit = canEditRecordsFn();
+
   const toggleSort = (field: 'registerNo' | 'name') => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -68,6 +94,155 @@ export default function StudentManagementPage() {
     }
   };
 
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const u = api.getCurrentUser();
+      setCurrentUser(u);
+
+      const depts = await api.getPublicDepartments();
+      setDepartments(depts);
+
+      const regs = await api.getRegulations();
+      const regNames = regs.map((r: any) => r.name);
+      setRegulations(regNames);
+      if (regNames.length > 0) {
+        const defaultReg = regNames.includes('R2021') ? 'R2021' : regNames[0];
+        setFormReg(defaultReg);
+        setUploadReg(defaultReg);
+      }
+
+      const userDept = u?.role !== 'super_admin' ? u?.department || '' : '';
+      const activeDept = userDept || selectedDept;
+      if (userDept && selectedDept !== userDept) {
+        setSelectedDept(userDept);
+      }
+
+      const fetchedStudents = await api.getStudents(
+        activeDept || undefined,
+        selectedBatch || undefined,
+        searchQuery || undefined
+      );
+      setStudents(fetchedStudents);
+
+      const fetchedBatches = await api.getStudentBatches(activeDept || undefined);
+      setBatches(fetchedBatches);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load student roster.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [selectedDept, selectedBatch]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadData();
+  };
+
+  const handleOpenAdd = () => {
+    setFormName('');
+    setFormRegNo('');
+    const defaultDept = currentUser?.role !== 'super_admin'
+      ? currentUser?.department || 'IT'
+      : (selectedDept || (departments.length > 0 ? departments[0].code : 'IT'));
+    setFormDept(defaultDept);
+    setFormBatch(selectedBatch || '2023-2027');
+    if (regulations.length > 0) setFormReg(regulations.includes('R2021') ? 'R2021' : regulations[0]);
+    setShowAddModal(true);
+  };
+
+  const handleOpenEdit = (student: Student) => {
+    setEditingStudent(student);
+    setFormName(student.name);
+    setFormRegNo(student.registerNo);
+    setFormDept(student.department);
+    setFormBatch(student.batch);
+    setFormReg(student.regulation || 'R2021');
+  };
+
+  const handleSaveStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim() || !formRegNo.trim() || !formDept.trim() || !formBatch.trim()) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (editingStudent) {
+        await api.updateStudent(editingStudent._id, {
+          name: formName,
+          registerNo: formRegNo,
+          department: formDept,
+          batch: formBatch,
+          regulation: formReg
+        });
+        setSuccessMsg(`Updated details for ${formName} (${formRegNo})`);
+        setEditingStudent(null);
+      } else {
+        await api.createStudent({
+          name: formName,
+          registerNo: formRegNo,
+          department: formDept,
+          batch: formBatch,
+          regulation: formReg
+        });
+        setSuccessMsg(`Added student ${formName} (${formRegNo}) to Batch ${formBatch}`);
+        setShowAddModal(false);
+      }
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save student.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteStudent = async (id: string, name: string, regNo: string) => {
+    if (!window.confirm(`Are you sure you want to delete student "${name}" (${regNo})?`)) return;
+
+    try {
+      await api.deleteStudent(id);
+      setSuccessMsg(`Deleted student record for ${name}`);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete student.');
+    }
+  };
+
+  const handleBulkUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      alert('Please select an Excel (.xlsx / .csv) file.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      formData.append('department', uploadDept || selectedDept || 'IT');
+      formData.append('batch', uploadBatch || '2023-2027');
+      formData.append('regulation', uploadReg || 'R2021');
+
+      const result = await api.bulkUploadStudents(formData);
+      setSuccessMsg(`Bulk upload complete! Processed ${result.count || 0} student records.`);
+      setShowUploadModal(false);
+      setUploadFile(null);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Bulk upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Sorting and Pagination
   const sortedStudents = [...students].sort((a, b) => {
     const valA = (sortField === 'registerNo' ? a.registerNo : a.name).trim().toUpperCase();
     const valB = (sortField === 'registerNo' ? b.registerNo : b.name).trim().toUpperCase();
