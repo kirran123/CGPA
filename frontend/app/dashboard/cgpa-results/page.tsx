@@ -16,13 +16,15 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { api, Department, CgpaRecord } from '@/lib/api';
-import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
+import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 
 export default function CgpaResultsPage() {
   const [records, setRecords] = useState<CgpaRecord[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
   const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -73,13 +75,15 @@ export default function CgpaResultsPage() {
 
       const activeDept = initialDept || selectedDept || undefined;
 
-      const [fetchedRecords, fetchedStudents] = await Promise.all([
+      const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
         api.getCgpaRecords(activeDept),
-        api.getStudents(activeDept)
+        api.getStudents(activeDept, selectedBatch || undefined),
+        api.getStudentBatches(activeDept)
       ]);
 
       setRecords(fetchedRecords);
       setStudents(fetchedStudents);
+      setBatches(fetchedBatches);
     } catch (err: any) {
       setError(err.message || 'Failed to load CGPA results.');
     } finally {
@@ -89,7 +93,7 @@ export default function CgpaResultsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedDept]);
+  }, [selectedDept, selectedBatch]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string) => {
     setDownloadingRowId(recordId);
@@ -278,7 +282,7 @@ export default function CgpaResultsPage() {
 
       {/* Filters Bar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-white/[0.02] border border-sky-500/10 p-4 rounded-2xl backdrop-blur-xl">
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
             Department
           </label>
@@ -300,30 +304,44 @@ export default function CgpaResultsPage() {
           </select>
         </div>
 
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
-            Select Student
+            Batch
           </label>
           <select
-            value={selectedStudentReg}
+            value={selectedBatch}
             onChange={(e) => {
-              setSelectedStudentReg(e.target.value);
-              if (e.target.value) setSearchQuery('');
+              setSelectedBatch(e.target.value);
+              setSelectedStudentReg('');
             }}
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
           >
-            <option value="">All Students ({students.length})</option>
-            {students.map((st) => (
-              <option key={st._id} value={st.registerNo}>
-                {st.registerNo} - {st.name}
-              </option>
+            <option value="">All Batches ({students.length})</option>
+            {batches.map((b) => (
+              <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
             ))}
           </select>
         </div>
 
-        <div className="md:col-span-4">
+        <div className="md:col-span-3">
           <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
-            Search Student
+            Select Student
+          </label>
+          <SearchableStudentSelect
+            students={students}
+            value={selectedStudentReg}
+            valueKey="registerNo"
+            onChange={(reg) => {
+              setSelectedStudentReg(reg);
+              if (reg) setSearchQuery('');
+            }}
+            placeholder="Search & choose student..."
+          />
+        </div>
+
+        <div className="md:col-span-3">
+          <label className="text-[10px] uppercase font-bold text-sky-300/40 tracking-wider block mb-1">
+            Search Text
           </label>
           <div className="relative">
             <input
@@ -333,7 +351,7 @@ export default function CgpaResultsPage() {
                 setSearchQuery(e.target.value);
                 if (e.target.value) setSelectedStudentReg('');
               }}
-              placeholder="Search by student name or register number..."
+              placeholder="Filter by name or reg no..."
               className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-sky-400/25 focus:outline-none transition-all"
             />
             <Search className="h-4 w-4 text-sky-400/40 absolute left-3 top-2.5 pointer-events-none" />

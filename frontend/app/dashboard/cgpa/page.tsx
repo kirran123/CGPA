@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { api, Department } from '@/lib/api';
 import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
+import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 
 interface SemesterRow {
   id: string;
@@ -38,9 +39,11 @@ export default function InternalCgpaCalculator() {
     { id: '2', semester: 2, gpa: 0, credits: 0 }
   ]);
 
-  // Student search & auto-fetch state
+  // Student search & auto-fetch state & Batch filter
   const [studentRoster, setStudentRoster] = useState<any[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
+  const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
   const [fetchingGpaHistory, setFetchingGpaHistory] = useState(false);
   const [autoFetchNotice, setAutoFetchNotice] = useState<string | null>(null);
 
@@ -54,18 +57,25 @@ export default function InternalCgpaCalculator() {
 
   const [semesterCreditsMap, setSemesterCreditsMap] = useState<Record<number, number>>({});
 
-  // Load student roster when department changes
+  // Fetch student roster and batches when department or batch changes
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchStudentsAndBatches = async () => {
       try {
-        const sts = await api.getStudents(selectedDept || undefined);
+        const userDept = currentUser?.role !== 'super_admin' ? currentUser?.department || '' : '';
+        const activeDept = userDept || selectedDept;
+
+        const [sts, bts] = await Promise.all([
+          api.getStudents(activeDept || undefined, selectedBatch || undefined),
+          api.getStudentBatches(activeDept || undefined)
+        ]);
         setStudentRoster(sts);
+        setBatches(bts);
       } catch (e) {
         console.error('Error fetching students roster:', e);
       }
     };
-    fetchStudents();
-  }, [selectedDept]);
+    fetchStudentsAndBatches();
+  }, [selectedDept, selectedBatch, currentUser]);
 
   // Auto-fetch total semester credits from subject curriculum
   useEffect(() => {
@@ -91,17 +101,19 @@ export default function InternalCgpaCalculator() {
     fetchSemesterCredits();
   }, [selectedDept, regulation]);
 
-  const handleSelectStudent = async (studentId: string) => {
-    setSelectedStudentId(studentId);
+  const handleSelectStudent = async (regNo: string, studentObj?: any) => {
+    setSelectedStudentReg(regNo);
     setAutoFetchNotice(null);
-    if (!studentId) return;
+    if (!regNo) return;
 
-    const st = studentRoster.find((s) => s._id === studentId);
+    const st = studentObj || studentRoster.find((s) => s.registerNo.toUpperCase() === regNo.toUpperCase());
     if (!st) return;
 
     setStudentName(st.name);
     setRegisterNo(st.registerNo);
-    if (st.department) setSelectedDept(st.department);
+    if (st.department && (currentUser?.role === 'super_admin' || currentUser?.department === st.department)) {
+      setSelectedDept(st.department);
+    }
     if (st.regulation) setRegulation(st.regulation);
 
     setFetchingGpaHistory(true);
@@ -321,23 +333,38 @@ return (
             Academic Profile
           </h2>
 
-          {/* Quick Student Select Bar */}
-          <div className="form-group bg-emerald-500/[0.04] border border-emerald-500/20 rounded-xl p-3 space-y-2">
+          {/* Quick Student Select Bar & Batch Filter */}
+          <div className="form-group bg-emerald-500/[0.04] border border-emerald-500/20 rounded-xl p-3 space-y-3">
             <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
               Quick Student Lookup (Auto-Fetch GPA)
             </label>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => handleSelectStudent(e.target.value)}
-              className="w-full bg-[#071830] border border-emerald-500/30 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
-            >
-              <option value="">-- Select Student to Auto-Fetch GPAs --</option>
-              {studentRoster.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.registerNo} - {s.name} ({s.batch || 'Batch'})
-                </option>
-              ))}
-            </select>
+
+            {/* Batch Filter Dropdown */}
+            <div>
+              <label className="text-[9px] uppercase font-bold text-emerald-300/70 block mb-1">Filter Roster By Batch</label>
+              <select
+                value={selectedBatch}
+                onChange={(e) => setSelectedBatch(e.target.value)}
+                className="w-full bg-[#071830] border border-emerald-500/20 focus:border-emerald-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-all"
+              >
+                <option value="">All Batches ({studentRoster.length} students)</option>
+                {batches.map((b) => (
+                  <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Searchable Student Dropdown */}
+            <div>
+              <label className="text-[9px] uppercase font-bold text-emerald-300/70 block mb-1">Search &amp; Select Student</label>
+              <SearchableStudentSelect
+                students={studentRoster}
+                value={selectedStudentReg}
+                valueKey="registerNo"
+                onChange={handleSelectStudent}
+                placeholder="Search & choose student..."
+              />
+            </div>
             {fetchingGpaHistory && (
               <div className="flex items-center gap-2 text-[10px] text-emerald-300">
                 <Loader2 className="h-3 w-3 animate-spin" />
