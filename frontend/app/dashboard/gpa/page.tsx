@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  GraduationCap, 
-  FileText, 
-  Loader2, 
-  Save, 
+import {
+  GraduationCap,
+  FileText,
+  Loader2,
+  Save,
   CheckCircle,
   RefreshCw,
   Info,
@@ -329,8 +329,8 @@ export default function InternalGpaCalculator() {
             Select department, regulation &amp; semester → grades auto-load from syllabus catalog
           </p>
         </div>
-        <button 
-          onClick={resetCalculator} 
+        <button
+          onClick={resetCalculator}
           className="flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white transition-all px-3 py-1.5 rounded-lg border border-sky-500/20 hover:border-sky-500/40 bg-sky-500/5 hover:bg-sky-500/10 cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
@@ -376,7 +376,7 @@ export default function InternalGpaCalculator() {
                 className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sky-500/15 transition-all"
               >
                 {[...Array(8)].map((_, i) => (
-                  <option key={i+1} value={i+1}>Semester {i+1}</option>
+                  <option key={i + 1} value={i + 1}>Semester {i + 1}</option>
                 ))}
               </select>
             </div>
@@ -551,7 +551,7 @@ export default function InternalGpaCalculator() {
               {loadingSubjects ? (
                 <div className="space-y-3">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="skeleton h-14 rounded-xl" style={{opacity: 1 - i * 0.12}} />
+                    <div key={i} className="skeleton h-14 rounded-xl" style={{ opacity: 1 - i * 0.12 }} />
                   ))}
                 </div>
               ) : rows.length === 0 ? (
@@ -584,12 +584,11 @@ export default function InternalGpaCalculator() {
                   {rows.map((row, idx) => (
                     <div
                       key={row.id}
-                      style={{animationDelay: `${idx * 30}ms`}}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-xl border transition-all duration-150 animate-fade-in-up items-center ${
-                        row.grade 
-                          ? 'bg-sky-500/[0.04] border-sky-500/12' 
+                      style={{ animationDelay: `${idx * 30}ms` }}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-xl border transition-all duration-150 animate-fade-in-up items-center ${row.grade
+                          ? 'bg-sky-500/[0.04] border-sky-500/12'
                           : 'bg-[#0a052a]/50 border-sky-500/[0.06] hover:border-sky-500/15'
-                      }`}
+                        }`}
                     >
                       {/* Code */}
                       <div className="col-span-2">
@@ -628,9 +627,8 @@ export default function InternalGpaCalculator() {
                         <select
                           value={row.grade}
                           onChange={e => updateGrade(row.id, e.target.value)}
-                          className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${
-                            row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
-                          }`}
+                          className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
+                            }`}
                         >
                           <option value="">-- Grade --</option>
                           {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (

@@ -16,6 +16,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { api, Department, CgpaRecord } from '@/lib/api';
+import { canEditRecords as canEditRecordsFn } from '@/lib/permissions';
 import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 
 export default function CgpaResultsPage() {
