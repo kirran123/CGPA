@@ -1,260 +1,156 @@
-# 📘 Complete User Guide & Operating Manual
-## Ramco Institute of Technology — GPA & CGPA Calculation Portal
+# 📘 RIT GPA & CGPA Portal — User Interface & System Manual
 
-Welcome to the official User Manual for the **RIT GPA & CGPA Portal**. This guide is written in clear, simple, and friendly English to help students, faculty members, Department Heads (HODs / Dept Admins), and Super Administrators easily navigate and make full use of our portal.
-
----
-
-## 📋 Table of Contents
-1. [System Overview & Key Features](#-1-system-overview--key-features)
-2. [PART 1: Public Website & Student Guide](#-part-1-public-website--student-guide)
-   - [1.1 Quick Semester GPA Calculator](#11-quick-semester-gpa-calculator)
-   - [1.2 Cumulative CGPA Calculator](#12-cumulative-cgpa-calculator)
-   - [1.3 Downloading Student PDF Reports](#13-downloading-student-pdf-reports)
-3. [PART 2: Department Head (HOD / Dept Admin) Manual](#-part-2-department-head-hod--dept-admin-manual)
-   - [2.1 Logging In & Department Data Isolation](#21-logging-in--department-data-isolation)
-   - [2.2 Managing Student Batches & Rosters](#22-managing-student-batches--rosters)
-   - [2.3 Managing Department Staff & Faculty Accounts](#23-managing-department-staff--faculty-accounts)
-   - [2.4 Configuring Subject Curricula & Total Credits](#24-configuring-subject-curricula--total-credits)
-   - [2.5 Calculating & Overwriting Department GPA / CGPA Results](#25-calculating--overwriting-department-gpa--cgpa-results)
-   - [2.6 Managing Results (Viewing, Editing, Deleting, Department Defaults)](#26-managing-results-viewing-editing-deleting-department-defaults)
-   - [2.7 Generating Department Rank Lists & Official PDFs](#27-generating-department-rank-lists--official-pdfs)
-4. [PART 3: Faculty / Staff Operating Manual](#-part-3-faculty--staff-operating-manual)
-   - [3.1 Staff Access & Department Focus](#31-staff-access--department-focus)
-   - [3.2 Single Student GPA & CGPA Calculation](#32-single-student-gpa--cgpa-calculation)
-   - [3.3 Bulk GPA Calculation for Student Batches](#33-bulk-gpa-calculation-for-student-batches)
-   - [3.4 Temporary Grade & Credit Adjustments](#34-temporary-grade--credit-adjustments)
-   - [3.5 Saving Results to the Department Portal](#35-saving-results-to-the-department-portal)
-5. [PART 4: Super Administrator Manual](#-part-4-super-administrator-manual)
-   - [4.1 Institutional Oversight & IT Department Default](#41-institutional-oversight--it-department-default)
-   - [4.2 Switching Between Departments](#42-switching-between-departments)
-   - [4.3 System-Wide Analytics & Maintenance](#43-system-wide-analytics--maintenance)
-6. [💡 Frequently Asked Questions (FAQ) & Troubleshooting](#-frequently-asked-questions-faq--troubleshooting)
+This manual explains how to use the **Ramco Institute of Technology GPA & CGPA Portal**. It focuses on the User Interface (UI), showing you step-by-step what each screen, button, and dropdown does so that students, staff members, and HODs can easily use the system.
 
 ---
 
-## 🌐 1. System Overview & Key Features
+## 🌐 1. Public Website Interface (No Login Required)
 
-The RIT GPA & CGPA Portal is a modern, high-precision academic analytics system engineered under **Anna University R2021 & Custom Regulations**.
+### 1.1 Homepage & Navigation Bar
+- **Top Header Bar**: Contains direct links to **Home**, **GPA Calculator**, **CGPA Calculator**, and the **Staff/Admin Login** button on the far right.
+- **Hero Banner**: Gives quick access cards for *Semester GPA Calculation* and *Cumulative CGPA Calculation*.
 
-### 🌟 Core Capabilities:
-- **Automatic Credit Fetching**: Automatically retrieves exact subject names and credit weights from the department curriculum database.
-- **Credit-Weighted Calculation Formula**:
-  $$\text{GPA} = \frac{\sum (\text{Subject Credits} \times \text{Grade Point})}{\sum \text{Subject Credits}}$$
-- **Role-Based Security & Department Isolation**: Department Admins and Staff strictly view and manage records within their assigned department (e.g., Information Technology, Computer Science, Mechanical, etc.).
-- **Automatic Overwrite & Zero Duplicates**: Re-calculating a student's GPA or CGPA updates their existing record without creating duplicate entries.
-- **Unified Student PDF Reports**: Clicking the PDF button downloads a consolidated report containing **all calculated semesters** for that student.
+### 1.2 Semester GPA Calculator Screen
+- **Regulation Dropdown**: Select your curriculum regulation (e.g., `R2021`).
+- **Department Dropdown**: Select your branch (e.g., `Information Technology (IT)`).
+- **Semester Select**: Pick the semester (e.g., `Semester 5`).
+- **Subject List Table**: Once you select the semester, all registered subjects for that semester automatically appear with their official credit values.
+- **Grade Select Dropdowns**: For each subject, click the grade dropdown and select your grade (`O`, `A+`, `A`, `B+`, `B`, `C`, or `U/RA`).
+- **Live GPA Score Box**: At the top right of the card, your calculated GPA updates instantly as you choose grades.
+- **`Download PDF Report` Button**: Click this green button at the bottom of the page to download your formatted PDF grade sheet.
 
----
-
-## 🎓 PART 1: Public Website & Student Guide
-
-Students and external visitors can access public calculators directly from the homepage without needing an account login.
-
-### 1.1 Quick Semester GPA Calculator
-**Goal**: Calculate your semester GPA by selecting your Department, Regulation, and Semester.
-
-1. **Open the Homepage**: Go to the main portal website.
-2. **Select Academic Setup**:
-   - **Regulation**: Choose your regulation (e.g., `R2021`).
-   - **Department**: Choose your department (e.g., `Information Technology (IT)`).
-   - **Semester**: Choose the semester number (e.g., `Semester 5`).
-3. **Subject Roster Auto-Load**:
-   - The system automatically populates all subjects registered for that semester along with their official credit values.
-4. **Enter Your Grades**:
-   - Select the letter grade achieved for each subject (`O`, `A+`, `A`, `B+`, `B`, `C`, `U/RA`).
-5. **View Live Results**:
-   - The **Semester GPA** updates instantly at the top of the screen as you select grades.
-6. **Download Report**:
-   - Click **`Download PDF Report`** to get an official summary copy.
+### 1.3 Cumulative CGPA Calculator Screen
+- **Setup Dropdowns**: Choose your Regulation and Department.
+- **Semester Breakdown List**: Displays semester slots (`Sem 1`, `Sem 2`, etc.) with their auto-loaded total credits.
+- **GPA Input Fields**: Type your achieved GPA score into the box for each completed semester.
+- **`+ Add Semester` Button**: Adds the next numerical semester slot (up to 8 semesters).
+- **Trash Can Icon**: Click to remove a semester row.
+- **Big CGPA Badge**: Shows your calculated CGPA out of 10.0 with a status message (e.g., *Outstanding 🏆*, *Excellent ⭐*).
+- **`Download PDF Report` Button**: Generates a PDF summary of your CGPA across semesters.
 
 ---
 
-### 1.2 Cumulative CGPA Calculator
-**Goal**: Calculate your overall CGPA across multiple semesters.
+## 🏛️ 2. Department Head (HOD / Dept Admin) Interface
 
-1. **Navigate to CGPA Calculator**: Click **CGPA Calculator** from the top menu or homepage card.
-2. **Setup Department & Regulation**: Select your department and regulation.
-3. **Auto-Fetched Semester Credits**:
-   - The system automatically loads official total credits for each semester slot.
-4. **Enter Semester GPAs**:
-   - Type in your GPA score for each completed semester (`Sem 1`, `Sem 2`, `Sem 3`, etc.).
-5. **Adding / Removing Semesters**:
-   - Click **`+ Add Semester`** to add the next numerical semester (up to 8 semesters).
-   - Click the **Trash / Delete** icon to remove a semester.
-6. **Live CGPA Computation**:
-   - The portal computes your credit-weighted CGPA automatically and displays your overall academic performance status (e.g., *Outstanding 🏆*, *Excellent ⭐*, *Very Good 👍*).
+HODs have complete control over their department's student roster, staff accounts, subject curriculum, and student results.
 
----
+### 2.1 Login & Department Scope
+1. Click **`Staff / Admin Login`** on the top right of the website.
+2. Enter your HOD email and password.
+3. Upon logging in, the top banner shows your **Department Name** (e.g., `Information Technology`).
+4. All student lists, staff members, and results will automatically show **only** your department.
 
-### 1.3 Downloading Student PDF Reports
-- On any public calculator page, click **`Download PDF Report`**.
-- The portal produces a clean, high-resolution PDF document formatted with official Ramco Institute of Technology headers, subject details, grade breakdowns, and totals.
+### 2.2 Student Roster Screen (`Dashboard > Student Roster`)
+- **Filter Roster by Batch Dropdown**: Choose a batch (e.g., `2023-2027`) to display students in that class.
+- **Search Bar**: Type a student's name or register number to quickly locate them.
+- **`+ Add Student` Button**: Opens a pop-up window to enter a new student's Name, Register Number, Department, and Batch.
+- **`Bulk Upload CSV` Button**: Click to upload an Excel/CSV file to add an entire class roster at once.
+- **Action Buttons**:
+  - ✏️ **Pencil Icon**: Edit student details.
+  - 🗑️ **Trash Icon**: Remove a student from the department roster.
 
----
+### 2.3 Staff Management Screen (`Dashboard > Staff Management`)
+- **`+ Add Staff Member` Button**: Opens a modal to create a new faculty account. Enter Staff Name, Email, Staff ID, and Password.
+- **Staff List Table**: Shows all active staff members in your department.
+- **Status Toggle Switch**: Easily activate or deactivate a staff member's login access.
 
-## 🏛️ PART 2: Department Head (HOD / Dept Admin) Manual
+### 2.4 Subject Settings Screen (`Dashboard > Grade Settings / Total Credits`)
+- **Subject Curriculum Table**: View and configure subject codes, subject names, credit weights, and elective categories per semester.
+- **Total Credits Screen**: Review and update total semester credit totals (e.g., Sem 1 = 22, Sem 2 = 26) used for CGPA calculations.
 
-Department Admins (HODs) have full administrative control over their department's student roster, faculty accounts, subject regulations, and academic grade results.
+### 2.5 GPA Calculation Screen (`Dashboard > GPA Calculation`)
+- **Batch Dropdown**: Select the target class batch.
+- **Select Registered Student Box**: Click to search or pick a student (e.g., `953623205001 - ABINAYA G M`).
+- **Auto-Fetch Confirmation Banner**: Displays a green notice confirming student records were fetched.
+- **Subject Grade Selectors**: Pick grades for each subject.
+- **`Save to Database` Button**: Saves the GPA score directly into the department results table.
+  - *Note*: If a result already exists for that student and semester, it **overwrites** the existing entry so there are no duplicates.
 
-### 2.1 Logging In & Department Data Isolation
-1. Click **`Staff / Admin Login`** on the top right.
-2. Enter your authorized login credentials.
-3. **Automatic Scope**:
-   - Upon logging in, the portal automatically locks your active view to your assigned department (e.g., `IT`).
-   - You will only see students, staff members, subject settings, and GPA/CGPA results belonging to your department.
+### 2.6 CGPA Calculation Screen (`Dashboard > CGPA Calculation`)
+- **Select Registered Student Box**: Choose the student.
+- **Auto-Fetched Semester History**: Automatically fills in previously calculated semester GPAs in sequential order (`Sem 1`, `Sem 2`, `Sem 3`, etc.).
+- **`+ Add Semester` Button**: Safely adds missing semester slots without creating duplicate entries.
+- **`Save to Database` Button**: Saves the student's overall CGPA and semester breakdown.
 
----
+### 2.7 Bulk GPA Calculation Screen (`Dashboard > Bulk GPA Calculation`)
+- **Setup Selectors**: Choose Department, Batch, Semester, and Regulation.
+- **File Upload / Matrix Entry**: Upload a class mark spreadsheet or type grades directly into the grid.
+- **`Process & Save Batch Results` Button**: Calculates and stores GPA records for all students in the batch simultaneously.
 
-### 2.2 Managing Student Batches & Rosters
-- **Path**: `Dashboard > Student Roster`
-- **Adding Students**:
-  - Click **`+ Add Student`**.
-  - Enter **Student Name**, **Register Number**, **Department**, and **Batch** (e.g., `2023-2027`).
-- **Batch Filtering**:
-  - Filter students by batch using the dropdown at the top of the roster.
-- **Bulk Upload**:
-  - Upload CSV/Excel files containing student registration details to import entire classes in seconds.
+### 2.8 GPA Results & CGPA Results Dashboards
+- **Department Filter**: Automatically locked to your department (Super Admins can switch departments).
+- **Semester Filter**: Choose a specific semester (`Sem 1`, `Sem 2`, ...) or select `All Semesters`.
+- **Search Bar**: Search by student name or register number.
+- **Unified Action Control Set (per student row)**:
+  - 📄 **`PDF` Button**: Downloads a complete Student GPA Report containing **all calculated semesters** for that student.
+  - ✏️ **`Edit` Button**: Opens a pop-up modal to edit grades or temporary credits for the selected semester.
+  - 🗑️ **`Delete` Button**: Deletes the semester result after confirmation.
 
----
-
-### 2.3 Managing Department Staff & Faculty Accounts
-- **Path**: `Dashboard > Staff Management`
-- **Create Staff Account**:
-  - Click **`+ Add Staff Member`**.
-  - Fill in Name, Email, Staff ID, and Assign Password.
-  - The staff member will automatically inherit access **only** to your department.
-- **Disable / Remove Staff**:
-  - HODs can edit details or deactivate staff accounts at any time.
-
----
-
-### 2.4 Configuring Subject Curricula & Total Credits
-- **Path**: `Dashboard > Grade Settings / Total Credits`
-- **Setting Up Subjects**:
-  - Specify subject codes, subject titles, credit weights (e.g., 3, 4, 1.5), and elective options per regulation.
-- **Semester Credit Configurations**:
-  - Verify total credit allocations for Semesters 1 through 8 to ensure smooth CGPA calculations across all batches.
+### 2.9 Rank List Screen (`Dashboard > GPA Results / Rank Lists`)
+- **Semester Select**: Pick the semester.
+- **`Export Department Rank List PDF` Button**: Downloads a clean, ordered leaderboard (Rank 1 to 100) of top-performing students in the department.
 
 ---
 
-### 2.5 Calculating & Overwriting Department GPA / CGPA Results
+## 👩‍🏫 3. Faculty / Staff Interface & Daily Workflow
 
-#### A. Single Student Calculation
-1. Go to `Dashboard > GPA Calculation` or `Dashboard > CGPA Calculation`.
-2. **Select Student**: Choose a batch and pick a student from the dropdown menu (e.g., `953623205001 - ABINAYA G M`).
-3. **Auto-Fetch History**:
-   - The portal automatically loads any previously saved semester GPA records for that student into sequential order (`Sem 1`, `Sem 2`, `Sem 3`, ...).
-4. **Enter/Update Grades & Click Save**:
-   - Click **`Save to Database`**.
-   - **Important**: If results for that student and semester already exist, the portal automatically **overwrites the existing record** with the new values. **No duplicate entries will ever be created.**
+Staff members use the portal to calculate and save student GPAs and CGPAs for their department.
 
-#### B. Bulk GPA Calculation for Entire Batches
-1. Go to `Dashboard > Bulk GPA Calculation`.
-2. Select **Department**, **Batch**, **Semester**, and **Regulation**.
-3. Upload the batch grade sheet or enter grades.
-4. Click **`Process & Save Batch Results`**. All calculated results immediately store into the department database.
+### 3.1 Staff Login & Dashboard View
+1. Click **`Staff / Admin Login`** on the home page.
+2. Enter your staff email and password.
+3. The dashboard sidebar displays your available tools: `GPA Calculation`, `CGPA Calculation`, `Bulk GPA`, `GPA Results`, and `CGPA Results`.
 
----
+### 3.2 Calculating GPA for a Student (Step-by-Step UI Action)
+1. Click **`GPA Calculation`** in the left menu.
+2. Select your class batch from the **Filter Roster by Batch** dropdown.
+3. Click **`Select Registered Student`** and choose the student's name.
+4. The student's details and subjects for the chosen semester automatically load.
+5. Select the letter grade (`O`, `A+`, `A`, `B+`, `B`, `C`, `U/RA`) for each subject.
+6. Check the **Live GPA Display Box** to confirm the calculated score.
+7. Click the green **`Save to Database`** button.
+   - A success message will appear confirming the result has been stored.
+   - If the student already had a result for this semester, it will be updated with the new score.
 
-### 2.6 Managing Results (Viewing, Editing, Deleting, Department Defaults)
+### 3.3 Calculating CGPA for a Student (Step-by-Step UI Action)
+1. Click **`CGPA Calculation`** in the left menu.
+2. Select the student from the **Select Registered Student** dropdown.
+3. All previous semester GPAs for that student will automatically populate in order (`Sem 1`, `Sem 2`, `Sem 3`, etc.).
+4. If a semester is missing, click **`+ Add Semester`**.
+5. Click **`Save to Database`**.
 
-- **Path**: `Dashboard > GPA Results` & `Dashboard > CGPA Results`
-- **Default Department View**:
-  - The page loads records strictly for your department.
-- **Unified Action Control Set**:
-  - Each student row features a single set of action controls:
-    - 📄 **`PDF`**: Downloads the complete student report containing **all calculated semesters** for that student.
-    - ✏️ **`Edit`**: Opens an edit modal to modify grades or temporary subject credits.
-    - 🗑️ **`Delete`**: Permanently deletes the selected semester record upon confirmation.
+### 3.4 Performing Bulk Batch GPA Calculations
+1. Click **`Bulk GPA`** in the left menu.
+2. Select the **Batch** and **Semester**.
+3. Upload the batch grade spreadsheet or fill in the grade table.
+4. Click **`Calculate & Store Batch`**. All student GPAs for that batch will be processed and saved.
 
----
+### 3.5 Testing Temporary Grade / Credit Scenarios
+- When calculating on the GPA page, staff members can edit subject names or credit numbers directly in the input boxes.
+- This allows you to test "what-if" grade changes for a student.
+- **Important**: These changes are temporary for the current calculation and will **not** alter the master curriculum database.
 
-### 2.7 Generating Department Rank Lists & Official PDFs
-- **Path**: `Dashboard > GPA Results / Rank Lists`
-- Click **`Export Department Rank List PDF`** to generate an official ordered leaderboard (Rank 1 to 100) based on GPA/CGPA for academic awards and departmental reviews.
-
----
-
-## 👩‍🏫 PART 3: Faculty / Staff Operating Manual
-
-Staff accounts allow faculty members to quickly calculate, review, and record student performance.
-
-### 3.1 Staff Access & Department Focus
-- When a staff member logs in, the system automatically scopes all actions to their assigned department.
-- Staff members can calculate single student GPAs/CGPAs, process bulk class spreadsheets, and save records to the main database.
+### 3.6 Checking & Exporting Results
+1. Click **`GPA Results`** or **`CGPA Results`** in the left menu.
+2. Use the search bar to find any student in your department.
+3. Click **`PDF`** next to a student's row to download their complete multi-semester GPA report.
 
 ---
 
-### 3.2 Single Student GPA & CGPA Calculation
-1. Open `Dashboard > GPA Calculation` (or `CGPA Calculation`).
-2. Select your student from the **Select Registered Student** dropdown.
-3. The student's academic profile and calculated semester history automatically load.
-4. Enter grades and click **`Save to Database`**. The calculated result updates the department database immediately.
+## 👑 4. Super Administrator Interface Controls
+
+Super Administrators oversee the entire portal across all academic departments.
+
+### 4.1 Default IT Department Access
+- When a Super Admin opens **GPA Results** or **CGPA Results**, the UI defaults to displaying the **Information Technology (IT)** department to keep the interface fast and clean.
+
+### 4.2 Department Switcher Dropdown
+- Located at the top left of the dashboard screens.
+- Click the dropdown to switch between any department (`IT`, `CSE`, `ECE`, `EEE`, `MECH`, `CIVIL`).
+- The entire page updates instantly to display the selected department's data.
+
+### 4.3 Analytics Overview Screen (`Dashboard > Analytics`)
+- Displays overall system metrics: Total Students, Total Department Staff, Overall Pass Percentages, and System Usage statistics.
 
 ---
-
-### 3.3 Bulk GPA Calculation for Student Batches
-1. Open `Dashboard > Bulk GPA Calculation`.
-2. Select your class batch and upload the student grade matrix.
-3. Click **`Calculate and Store Batch`**. The system verifies grade codes (`O`, `A+`, `A`, `B+`, `B`, `C`, `U/RA`) and saves all student scores simultaneously.
-
----
-
-### 3.4 Temporary Grade & Credit Adjustments
-*Need to test "what-if" scenarios for a student without changing the institution database?*
-- While calculating on the GPA page, you can temporarily edit subject credits or subject names.
-- **Note**: These adjustments remain temporary for the current calculation session and will **not** alter the master subject curriculum in the database.
-
----
-
-### 3.5 Saving Results to the Department Portal
-- Whenever you click **`Save to Database`**, the result is recorded under your department.
-- All department HODs and fellow staff members will instantly see the updated GPA/CGPA results in the **GPA Results** and **CGPA Results** dashboards.
-
----
-
-## 👑 PART 4: Super Administrator Manual
-
-Super Administrators have full system-wide governance over all departments, global settings, and user permissions.
-
-### 4.1 Institutional Oversight & IT Department Default
-- **Default View**: When Super Admins open the **GPA Results** or **CGPA Results** dashboard, the system defaults to displaying the **Information Technology (IT)** department to maintain clean performance and focus.
-- **Full Scope**: Super Admins can access and modify records across all academic departments.
-
----
-
-### 4.2 Switching Between Departments
-- Super Admins can use the **Department Dropdown Filter** at the top of any dashboard page to switch between departments (e.g., `IT`, `CSE`, `ECE`, `EEE`, `MECH`, `CIVIL`).
-
----
-
-### 4.3 System-Wide Analytics & Maintenance
-- **Path**: `Dashboard > Analytics`
-- Monitor total student count, batch-wise performance metrics, department-wide pass percentages, and total PDF report downloads across Ramco Institute of Technology.
-
----
-
-## 💡 Frequently Asked Questions (FAQ) & Troubleshooting
-
-#### Q1: What happens if I calculate GPA for a student who already has a record for that semester?
-> **Answer**: The system automatically **overwrites** the previous record with the newly calculated GPA. No duplicate entries will be created.
-
-#### Q2: Why does the PDF download button say `PDF` instead of `PDF S5`?
-> **Answer**: Clicking the **`PDF`** button downloads a complete Student GPA Report compiling **all calculated semesters** available for that student in one clean document.
-
-#### Q3: Why don't Staff members see students from other departments?
-> **Answer**: The system enforces **Departmental Data Isolation**. Staff and Dept Admins can only view and manage students within their assigned department to protect data privacy.
-
-#### Q4: How are letter grades converted to grade points?
-> Under Regulation R2021:
-> - **O (Outstanding)** = 10
-> - **A+ (Excellent)** = 9
-> - **A (Very Good)** = 8
-> - **B+ (Good)** = 7
-> - **B (Average)** = 6
-> - **C (Satisfactory)** = 5
-> - **U / RA (Re-appear)** = 0
-
----
-*Generated for Ramco Institute of Technology — Academic Credit & Grade Point Portal.*
+*Ramco Institute of Technology — Academic Credit & GPA Management System.*
