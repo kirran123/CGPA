@@ -121,53 +121,48 @@ export default function AnalyticsDashboard() {
 
   const isSuperAdmin = user?.role === 'super_admin';
 
-  const getKpiLabel = (type: 'gpa' | 'cgpa' | 'total' | 'students') => {
-    if (isSuperAdmin) {
-      if (type === 'gpa') return 'Institution Avg GPA';
-      if (type === 'cgpa') return 'Institution Avg CGPA';
-      if (type === 'total') return 'Total Student Entries';
-      return 'Unique Students';
-    } else {
-      if (type === 'gpa') return 'My Avg Calculated GPA';
-      if (type === 'cgpa') return 'My Avg Calculated CGPA';
-      if (type === 'total') return 'My Total Calculations';
-      return 'My Unique Students';
-    }
-  };
-
   const kpis = [
     {
-      label: getKpiLabel('total'),
-      value: stats.stats.totalRecords.toLocaleString(),
-      icon: <FileCheck className="h-5 w-5 text-sky-400" />,
-      desc: isSuperAdmin ? 'Cumulative recorded sets' : 'Calculated by me',
-      color: 'text-sky-400',
-      bg: 'bg-sky-500/10',
-      border: 'border-sky-500/15'
-    },
-    {
-      label: getKpiLabel('students'),
+      label: isSuperAdmin ? 'Total Students' : 'Department Total Students',
       value: stats.stats.totalStudents.toLocaleString(),
       icon: <Users className="h-5 w-5 text-blue-400" />,
-      desc: isSuperAdmin ? 'Distinct register numbers' : 'Distinct students I calculated',
+      desc: isSuperAdmin ? 'Master roster & registered students across RIT' : `${user?.department || 'Department'} roster students synced from ERP`,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
       border: 'border-blue-500/15'
     },
     {
-      label: getKpiLabel('gpa'),
+      label: isSuperAdmin ? 'Total Faculty' : 'Department Faculty',
+      value: (stats.stats.totalFaculty ?? 0).toLocaleString(),
+      icon: <Shield className="h-5 w-5 text-indigo-400" />,
+      desc: isSuperAdmin ? 'Active faculty & department staff across RIT' : `Faculty members present in ${user?.department || 'Department'} department`,
+      color: 'text-indigo-400',
+      bg: 'bg-indigo-500/10',
+      border: 'border-indigo-500/15'
+    },
+    {
+      label: isSuperAdmin ? 'Total Calculations' : 'Department Calculations',
+      value: stats.stats.totalRecords.toLocaleString(),
+      icon: <FileCheck className="h-5 w-5 text-sky-400" />,
+      desc: isSuperAdmin ? 'Cumulative recorded GPA & CGPA sets' : 'Calculations recorded for this department',
+      color: 'text-sky-400',
+      bg: 'bg-sky-500/10',
+      border: 'border-sky-500/15'
+    },
+    {
+      label: isSuperAdmin ? 'Institution Avg GPA' : 'Department Avg GPA',
       value: stats.stats.avgGpa.toFixed(2),
       icon: <GraduationCap className="h-5 w-5 text-emerald-400" />,
-      desc: isSuperAdmin ? 'Across semester records' : 'My calculation average',
+      desc: isSuperAdmin ? 'Across semester records' : 'Calculation average for department',
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/15'
     },
     {
-      label: getKpiLabel('cgpa'),
+      label: isSuperAdmin ? 'Institution Avg CGPA' : 'Department Avg CGPA',
       value: stats.stats.avgCgpa.toFixed(2),
       icon: <TrendingUp className="h-5 w-5 text-amber-400" />,
-      desc: isSuperAdmin ? 'Overall CGPA average' : 'My CGPA average',
+      desc: isSuperAdmin ? 'Overall CGPA average' : 'Overall department CGPA average',
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/15'
@@ -203,12 +198,12 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Global KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpis.map((k, idx) => (
           <div
             key={idx}
             style={{animationDelay: `${idx * 40}ms`}}
-            className="glass-card rounded-2xl p-5 border border-sky-500/10 hover:border-sky-500/25 flex flex-col justify-between hover:shadow-lg transition-all animate-fade-in-up"
+            className="glass-card rounded-2xl p-4 border border-sky-500/10 hover:border-sky-500/25 flex flex-col justify-between hover:shadow-lg transition-all animate-fade-in-up"
           >
             <div className="flex justify-between items-start mb-3">
               <span className="text-[10px] font-bold text-sky-300/38 uppercase tracking-widest leading-none">{k.label}</span>
@@ -217,7 +212,7 @@ export default function AnalyticsDashboard() {
               </div>
             </div>
             <div>
-              <div className="text-3xl font-black text-white leading-none font-['Outfit'] mb-1">{k.value}</div>
+              <div className="text-2xl font-black text-white leading-none font-['Outfit'] mb-1">{k.value}</div>
               <p className="text-[10px] text-sky-300/28 font-medium">{k.desc}</p>
             </div>
           </div>

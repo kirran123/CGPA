@@ -98,6 +98,10 @@ export default function CgpaResultsPage() {
   }, [selectedDept, selectedBatch]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string) => {
+    if (recordId.startsWith('temp_')) {
+      alert(`No CGPA record calculated yet for ${regNo}.`);
+      return;
+    }
     setDownloadingRowId(recordId);
     try {
       const blob = await api.downloadCgpaReportPdf(recordId);
@@ -134,6 +138,10 @@ export default function CgpaResultsPage() {
   };
 
   const handleDeleteRow = async (id: string, name: string, regNo: string) => {
+    if (id.startsWith('temp_')) {
+      alert(`No CGPA record exists to delete for "${name}" (${regNo}).`);
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete the CGPA record for "${name}" (${regNo})?`)) return;
     try {
       await api.deleteCgpaRecord(id);
@@ -184,17 +192,31 @@ export default function CgpaResultsPage() {
         }))
         .filter((s) => s.gpa > 0);
 
-      await api.updateCgpaRecord(editingRecord._id, {
-        studentName: editName,
-        registerNo: editRegNo,
-        semesters: semestersArray,
-        cgpa: editCgpa
-      });
-      setSuccessMsg(`Updated academic record for ${editName} (${editRegNo})`);
+      if (editingRecord._id.startsWith('temp_')) {
+        await api.calculateCgpa({
+          studentName: editName,
+          registerNo: editRegNo,
+          department: editingRecord.department || selectedDept || 'IT',
+          semesters: semestersArray,
+          cgpa: editCgpa,
+          totalCredits: 0,
+          regulation: 'R2021',
+          isBulk: false
+        });
+        setSuccessMsg(`Created academic record for ${editName} (${editRegNo})`);
+      } else {
+        await api.updateCgpaRecord(editingRecord._id, {
+          studentName: editName,
+          registerNo: editRegNo,
+          semesters: semestersArray,
+          cgpa: editCgpa
+        });
+        setSuccessMsg(`Updated academic record for ${editName} (${editRegNo})`);
+      }
       setEditingRecord(null);
       await loadData(selectedDept, selectedBatch);
     } catch (err: any) {
-      alert(err.message || 'Failed to update record.');
+      alert(err.message || 'Failed to save record.');
     } finally {
       setSavingEdit(false);
     }

@@ -208,12 +208,34 @@ export default function GpaResultsPage() {
     }
   };
 
-  const handleOpenEdit = (rec: GpaRecord) => {
-    setEditingRecord(rec);
-    setEditName(rec.studentName);
-    setEditRegNo(rec.registerNo);
-    setEditGpa(rec.gpa);
-    setEditSem(rec.semester);
+  const handleOpenEdit = (rec?: GpaRecord | null, student?: { name: string; registerNo: string; department: string }) => {
+    if (rec) {
+      setEditingRecord(rec);
+      setEditName(rec.studentName);
+      setEditRegNo(rec.registerNo);
+      setEditGpa(rec.gpa);
+      setEditSem(rec.semester);
+    } else if (student) {
+      const tempRec = {
+        _id: `temp_${student.registerNo}`,
+        studentName: student.name,
+        registerNo: student.registerNo,
+        department: student.department || selectedDept || 'IT',
+        gpa: 0,
+        semester: selectedSem ? parseInt(selectedSem) : 1,
+        createdAt: new Date().toISOString(),
+        calculatedBy: { name: 'System' },
+        subjects: [],
+        totalCredits: 0,
+        totalPoints: 0,
+        isBulk: false
+      } as any;
+      setEditingRecord(tempRec);
+      setEditName(student.name);
+      setEditRegNo(student.registerNo);
+      setEditGpa(0);
+      setEditSem(selectedSem ? parseInt(selectedSem) : 1);
+    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -221,17 +243,32 @@ export default function GpaResultsPage() {
     if (!editingRecord) return;
     setSavingEdit(true);
     try {
-      await api.updateGpaRecord(editingRecord._id, {
-        studentName: editName,
-        registerNo: editRegNo,
-        gpa: editGpa,
-        semester: editSem
-      });
-      setSuccessMsg(`Updated GPA record for ${editName} (${editRegNo})`);
+      if (editingRecord._id.startsWith('temp_')) {
+        await api.calculateGpa({
+          studentName: editName,
+          registerNo: editRegNo,
+          department: editingRecord.department || selectedDept || 'IT',
+          semester: editSem,
+          gpa: editGpa,
+          totalCredits: 0,
+          totalPoints: 0,
+          courses: [],
+          isBulk: false
+        });
+        setSuccessMsg(`Created GPA record for ${editName} (${editRegNo})`);
+      } else {
+        await api.updateGpaRecord(editingRecord._id, {
+          studentName: editName,
+          registerNo: editRegNo,
+          gpa: editGpa,
+          semester: editSem
+        });
+        setSuccessMsg(`Updated GPA record for ${editName} (${editRegNo})`);
+      }
       setEditingRecord(null);
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update record.');
+      alert(err.message || 'Failed to save record.');
     } finally {
       setSavingEdit(false);
     }
@@ -487,7 +524,35 @@ export default function GpaResultsPage() {
                             )}
                           </>
                         ) : (
-                          <span className="text-[10px] text-sky-300/25 font-medium italic">No GPA yet</span>
+                          <>
+                            <button
+                              onClick={() => alert(`No GPA record found for ${r.studentName} (${r.registerNo}). Calculate GPA first.`)}
+                              className="flex items-center gap-1 text-[10px] font-bold text-sky-300/40 bg-sky-500/5 border border-sky-500/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
+                              title="No GPA record available to download"
+                            >
+                              <FileText className="h-3 w-3" />
+                              <span>PDF</span>
+                            </button>
+
+                            {canEdit && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenEdit(null, { name: r.studentName, registerNo: r.registerNo, department: r.department })}
+                                  className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
+                                  title="Add/Calculate GPA for Student"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => alert(`No GPA record exists to delete for ${r.studentName}.`)}
+                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400/40 rounded-xl transition-all cursor-pointer"
+                                  title="No Record to Delete"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>

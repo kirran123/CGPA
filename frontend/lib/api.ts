@@ -139,6 +139,7 @@ export interface DashboardStats {
   stats: {
     totalRecords: number;
     totalStudents: number;
+    totalFaculty?: number;
     avgGpa: number;
     avgCgpa: number;
   };

@@ -24,6 +24,7 @@ export const getDashboardStats = query({
       const gpaRecs = await ctx.db.query("gpaRecords").collect();
       const cgpaRecs = await ctx.db.query("cgpaRecords").collect();
       const allStudents = await ctx.db.query("students").collect();
+      const allUsers = await ctx.db.query("users").collect();
 
       const totalRecords = gpaRecs.length + cgpaRecs.length;
       // Combine roster students and any distinct student regNos from records
@@ -32,6 +33,8 @@ export const getDashboardStats = query({
         ...gpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
         ...cgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
       ]);
+
+      const totalFaculty = allUsers.filter((u) => u.status === "Active").length;
 
       // Overall average GPA
       const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
@@ -44,6 +47,7 @@ export const getDashboardStats = query({
       stats = {
         totalRecords,
         totalStudents: uniqueStudents.size,
+        totalFaculty,
         avgGpa: parseFloat(avgGpa.toFixed(2)),
         avgCgpa: parseFloat(avgCgpa.toFixed(2)),
       };
@@ -121,12 +125,17 @@ export const getDashboardStats = query({
         .withIndex("by_department", (q) => q.eq("department", activeDept))
         .collect();
 
-      let deptStudents = await ctx.db
-        .query("students")
-        .withIndex("by_department", (q) => q.eq("department", activeDept))
-        .collect();
+      const allStudents = await ctx.db.query("students").collect();
+      const deptStudents = allStudents.filter(
+        (s) => s.department && s.department.trim().toUpperCase() === activeDept
+      );
 
-      // If user is dept_admin or staff, they can only see what they calculated
+      const allUsers = await ctx.db.query("users").collect();
+      const deptFaculty = allUsers.filter(
+        (u) => u.department && u.department.trim().toUpperCase() === activeDept && u.status === "Active"
+      );
+
+      // If user is dept_admin or staff, they can only see what they calculated for records
       const isDeptUser = args.role === "dept_admin" || args.role === "staff";
       if (isDeptUser) {
         gpaRecs = gpaRecs.filter((r) => r.calculatedBy === args.userId);
@@ -149,6 +158,7 @@ export const getDashboardStats = query({
       stats = {
         totalRecords,
         totalStudents: uniqueStudents.size,
+        totalFaculty: deptFaculty.length,
         avgGpa: parseFloat(avgGpa.toFixed(2)),
         avgCgpa: parseFloat(avgCgpa.toFixed(2)),
         myRecordsCount: totalRecords,
