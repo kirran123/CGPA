@@ -485,12 +485,16 @@ export const api = {
   },
 
   getCgpaRecords: async (department?: string, batch?: string): Promise<CgpaRecord[]> => {
-    const result = await convex.query(convexApi.cgpa.getRecords, { department, batch });
-    return result.map((r: any) => ({
+    const result = await convex.query(convexApi.cgpa.getRecords, { department: department || undefined });
+    let mapped = result.map((r: any) => ({
       ...r,
       _id: r._id,
       createdAt: new Date(r.createdAt).toISOString(),
     }));
+    if (batch) {
+      mapped = mapped.filter((r: any) => r.batch === batch);
+    }
+    return mapped;
   },
 
   updateCgpaRecord: async (id: string, data: { studentName?: string; registerNo?: string; cgpa?: number; semesters?: any[] }): Promise<any> => {

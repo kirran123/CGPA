@@ -205,16 +205,13 @@ export const calculateSingle = mutation({
 // database-fixed semester credits. Credits stored in records are overridden.
 // ─────────────────────────────────────────────────────────────────────────────
 export const getRecords = query({
-  args: { department: v.optional(v.string()), batch: v.optional(v.string()), userId: v.optional(v.id("users")) },
+  args: { department: v.optional(v.string()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const deptUpper = args.department ? args.department.toUpperCase() : undefined;
 
     let students = await ctx.db.query("students").collect();
     if (deptUpper) {
       students = students.filter((s) => s.department.toUpperCase() === deptUpper);
-    }
-    if (args.batch) {
-      students = students.filter((s) => s.batch === args.batch);
     }
 
     let cgpaRecords = await ctx.db.query("cgpaRecords").collect();
