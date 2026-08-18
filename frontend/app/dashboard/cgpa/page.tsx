@@ -28,7 +28,7 @@ interface SemesterRow {
 
 export default function InternalCgpaCalculator() {
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedDept, setSelectedDept] = useState('IT');
   const [studentName, setStudentName] = useState('');
   const [registerNo, setRegisterNo] = useState('');
   const [regulation, setRegulation] = useState('');
@@ -62,7 +62,7 @@ export default function InternalCgpaCalculator() {
     const fetchStudentsAndBatches = async () => {
       try {
         const userDept = currentUser?.role !== 'super_admin' ? currentUser?.department || '' : '';
-        const activeDept = userDept || selectedDept;
+        const activeDept = userDept || selectedDept || 'IT';
 
         const [sts, bts] = await Promise.all([
           api.getStudents(activeDept || undefined, selectedBatch || undefined),
@@ -180,7 +180,9 @@ export default function InternalCgpaCalculator() {
         if (u?.department) {
           setSelectedDept(u.department);
         } else if (depts.length > 0) {
-          setSelectedDept(depts[0].code);
+          // Default to IT dept for super_admin; fallback to first dept
+          const itDept = depts.find((d) => d.code === 'IT');
+          setSelectedDept(itDept ? itDept.code : depts[0].code);
         }
 
         // Fetch dynamic regulations

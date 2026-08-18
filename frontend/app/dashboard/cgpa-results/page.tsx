@@ -23,7 +23,7 @@ export default function CgpaResultsPage() {
   const [records, setRecords] = useState<CgpaRecord[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [selectedDept, setSelectedDept] = useState<string>('');
+  const [selectedDept, setSelectedDept] = useState<string>('IT');
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
   const [selectedStudentReg, setSelectedStudentReg] = useState<string>('');
@@ -71,10 +71,10 @@ export default function CgpaResultsPage() {
       const depts = await api.getPublicDepartments();
       setDepartments(depts);
 
-      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : (dept || '');
-      if (initialDept && !dept) setSelectedDept(initialDept);
+      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : (dept || 'IT');
+      if (!selectedDept || !dept) setSelectedDept(initialDept);
 
-      const activeDept = initialDept || dept || undefined;
+      const activeDept = initialDept || dept || 'IT';
       // Fetch ALL CGPA records (no batch filter — students are the batch source of truth)
       // Fetch students filtered by batch for the search dropdown
       const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
