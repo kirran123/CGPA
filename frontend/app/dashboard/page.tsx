@@ -50,6 +50,15 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+
+    const handleFocus = () => fetchDashboardData();
+    window.addEventListener('focus', handleFocus);
+    const interval = setInterval(fetchDashboardData, 10000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleAddRegulation = async (e: React.FormEvent) => {
