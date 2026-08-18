@@ -23,7 +23,7 @@ import SearchableStudentSelect from '@/components/SearchableStudentSelect';
 export default function GpaResultsPage() {
   const [records, setRecords] = useState<GpaRecord[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [selectedDept, setSelectedDept] = useState<string>('');
+  const [selectedDept, setSelectedDept] = useState<string>('IT');
   const [selectedSem, setSelectedSem] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
@@ -74,10 +74,14 @@ export default function GpaResultsPage() {
       const depts = await api.getPublicDepartments();
       setDepartments(depts);
 
-      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : selectedDept;
-      if (initialDept && !selectedDept) setSelectedDept(initialDept);
+      const activeDept = u?.role !== 'super_admin'
+        ? (u?.department || 'IT')
+        : (selectedDept || 'IT');
 
-      const activeDept = initialDept || selectedDept || undefined;
+      if (selectedDept !== activeDept && u?.role !== 'super_admin') {
+        setSelectedDept(activeDept);
+      }
+
       const semNum = selectedSem ? parseInt(selectedSem) : undefined;
 
       const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
@@ -486,78 +490,82 @@ export default function GpaResultsPage() {
                         </td>
                       );
                     })}
-                    {/* Actions cell: per-semester PDF, Edit, Delete */}
+                    {/* Actions cell: Single PDF, Edit, and Delete button per student row */}
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1 flex-wrap">
-                        {Object.keys(r.semesters).length > 0 ? (
-                          [1, 2, 3, 4, 5, 6, 7, 8].map((sNum) => {
-                            const semInfo = r.semesters[sNum];
-                            if (!semInfo) return null;
-                            return (
-                              <div key={sNum} className="flex items-center gap-0.5">
-                                <button
-                                  disabled={downloadingRowId === semInfo.id}
-                                  onClick={() => handleDownloadRowPdf(semInfo.id, r.registerNo, sNum)}
-                                  className="flex items-center gap-0.5 text-[9px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-1.5 py-0.5 rounded-lg transition-all cursor-pointer disabled:opacity-40"
-                                  title={`Download Sem ${sNum} GPA Report`}
-                                >
-                                  {downloadingRowId === semInfo.id
-                                    ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                    : <FileText className="h-2.5 w-2.5" />}
-                                  <span>S{sNum}</span>
-                                </button>
-                                {canEdit && (
-                                  <>
-                                    <button
-                                      onClick={() => handleOpenEdit(semInfo.record)}
-                                      className="p-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-lg transition-all cursor-pointer"
-                                      title={`Edit Sem ${sNum} GPA`}
-                                    >
-                                      <Edit className="h-2.5 w-2.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteRow(semInfo.id, r.studentName, r.registerNo)}
-                                      className="p-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer"
-                                      title={`Delete Sem ${sNum} GPA Record`}
-                                    >
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <>
+                      {(() => {
+                        const availableSemNums = Object.keys(r.semesters).map(Number).sort((a, b) => b - a);
+                        const targetSemNum = selectedSem
+                          ? parseInt(selectedSem)
+                          : availableSemNums[0];
+                        const targetSemInfo = targetSemNum ? r.semesters[targetSemNum] : null;
+
+                        return (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* 1. Single PDF Download button */}
                             <button
-                              onClick={() => alert(`No GPA record found for ${r.studentName} (${r.registerNo}). Calculate GPA first.`)}
-                              className="flex items-center gap-1 text-[10px] font-bold text-sky-300/40 bg-sky-500/5 border border-sky-500/10 px-2 py-1 rounded-xl transition-all cursor-pointer"
-                              title="No GPA record available to download"
+                              disabled={!targetSemInfo || downloadingRowId === targetSemInfo.id}
+                              onClick={() => {
+                                if (targetSemInfo) {
+                                  handleDownloadRowPdf(targetSemInfo.id, r.registerNo, targetSemNum);
+                                } else {
+                                  alert(`No GPA record found for ${r.studentName} (${r.registerNo}). Calculate GPA first.`);
+                                }
+                              }}
+                              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-xl border transition-all cursor-pointer ${
+                                targetSemInfo
+                                  ? 'text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/20 shadow-sm'
+                                  : 'text-sky-300/30 bg-sky-500/5 border-sky-500/10 cursor-not-allowed'
+                              }`}
+                              title={targetSemInfo ? `Download PDF Report (${targetSemNum ? `Sem ${targetSemNum}` : 'GPA'})` : 'No GPA record to download'}
                             >
-                              <FileText className="h-3 w-3" />
-                              <span>PDF</span>
+                              {targetSemInfo && downloadingRowId === targetSemInfo.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <FileText className="h-3 w-3 text-sky-400" />
+                              )}
+                              <span>{targetSemInfo ? `PDF${targetSemNum ? ` S${targetSemNum}` : ''}` : 'PDF'}</span>
                             </button>
+
+                            {/* 2. Single Edit button */}
                             {canEdit && (
-                              <>
-                                <button
-                                  onClick={() => handleOpenEdit(null, { name: r.studentName, registerNo: r.registerNo, department: r.department })}
-                                  className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
-                                  title="Add/Calculate GPA for Student"
-                                >
-                                  <Edit className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => alert(`No GPA record exists to delete for ${r.studentName}.`)}
-                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400/40 rounded-xl transition-all cursor-pointer"
-                                  title="No Record to Delete"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </>
+                              <button
+                                onClick={() =>
+                                  handleOpenEdit(
+                                    targetSemInfo ? targetSemInfo.record : null,
+                                    { name: r.studentName, registerNo: r.registerNo, department: r.department }
+                                  )
+                                }
+                                className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 hover:text-white rounded-xl transition-all cursor-pointer"
+                                title={targetSemInfo ? `Edit GPA (Sem ${targetSemNum})` : 'Add/Calculate GPA for Student'}
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
                             )}
-                          </>
-                        )}
-                      </div>
+
+                            {/* 3. Single Delete button */}
+                            {canEdit && (
+                              <button
+                                disabled={!targetSemInfo}
+                                onClick={() => {
+                                  if (targetSemInfo) {
+                                    handleDeleteRow(targetSemInfo.id, r.studentName, r.registerNo);
+                                  } else {
+                                    alert(`No GPA record exists to delete for ${r.studentName}.`);
+                                  }
+                                }}
+                                className={`p-1.5 border rounded-xl transition-all cursor-pointer ${
+                                  targetSemInfo
+                                    ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/20 text-red-400 hover:text-red-300'
+                                    : 'bg-red-500/5 border-red-500/10 text-red-400/30 cursor-not-allowed'
+                                }`}
+                                title={targetSemInfo ? `Delete GPA Record (${targetSemNum ? `Sem ${targetSemNum}` : ''})` : 'No Record to Delete'}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
