@@ -12,7 +12,8 @@ import {
   Sparkles,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  Check
 } from 'lucide-react';
 import { api, Department } from '@/lib/api';
 
@@ -23,6 +24,7 @@ interface SubjectRow {
   credits: number;
   grade: string;
   isCustom?: boolean;
+  isEditing?: boolean;
 }
 
 const DEFAULT_GRADES = [
@@ -96,7 +98,8 @@ export default function GpaCalculator() {
             subjectCode: sub.code,
             subjectName: sub.name,
             credits: sub.credits,
-            grade: ''
+            grade: '',
+            isEditing: false
           })));
         } else {
           setRows([]);
@@ -153,6 +156,11 @@ export default function GpaCalculator() {
     setRows(rows.map(r => r.id === id ? { ...r, grade } : r));
   };
 
+  // Toggle edit state for row (Code, Name, Credits only editable when isEditing is true)
+  const toggleEditRow = (id: string) => {
+    setRows(rows.map(r => r.id === id ? { ...r, isEditing: !r.isEditing } : r));
+  };
+
   // Temporary row editing for local calculation
   const updateRowField = (id: string, field: keyof SubjectRow, val: any) => {
     setRows(rows.map(r => r.id === id ? { ...r, [field]: val } : r));
@@ -172,7 +180,8 @@ export default function GpaCalculator() {
         subjectName: 'Elective / Custom Subject',
         credits: 3,
         grade: '',
-        isCustom: true
+        isCustom: true,
+        isEditing: true
       }
     ]);
   };
@@ -406,29 +415,43 @@ export default function GpaCalculator() {
                         key={row.id}
                         style={{animationDelay: `${idx * 30}ms`}}
                         className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-xl border transition-all animate-fade-in-up items-center ${
-                          row.grade ? 'bg-sky-500/[0.05] border-sky-500/12' : 'bg-[#0a052a]/40 border-sky-500/[0.06] hover:border-sky-500/15'
+                          row.isEditing
+                            ? 'bg-amber-500/[0.06] border-amber-500/30 shadow-md ring-1 ring-amber-500/20'
+                            : row.grade
+                              ? 'bg-sky-500/[0.05] border-sky-500/12'
+                              : 'bg-[#0a052a]/40 border-sky-500/[0.06] hover:border-sky-500/15'
                         }`}
                       >
                         {/* Code */}
                         <div className="col-span-2">
                           <input
                             type="text"
+                            readOnly={!row.isEditing}
                             value={row.subjectCode}
                             title={row.subjectCode}
                             onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
-                            className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-[11px] font-mono font-bold text-sky-400 focus:outline-none"
+                            className={`w-full rounded-lg px-2 py-1 text-[11px] font-mono font-bold focus:outline-none transition-all ${
+                              row.isEditing
+                                ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20'
+                                : 'bg-[#071830]/40 border border-sky-500/10 text-sky-400/80 cursor-default'
+                            }`}
                           />
                         </div>
 
-                        {/* Subject Name */}
+                        {/* Subject Name — Fully Visible */}
                         <div className="col-span-5">
                           <input
                             id={`public-sub-name-${row.id}`}
                             type="text"
+                            readOnly={!row.isEditing}
                             value={row.subjectName}
                             title={row.subjectName}
                             onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
-                            className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                            className={`w-full rounded-lg px-2 py-1 text-[11px] sm:text-xs focus:outline-none transition-all ${
+                              row.isEditing
+                                ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20 font-semibold'
+                                : 'bg-[#071830]/40 border border-sky-500/10 text-white cursor-default'
+                            }`}
                           />
                         </div>
 
@@ -438,9 +461,14 @@ export default function GpaCalculator() {
                             type="number"
                             min="0"
                             max="12"
+                            readOnly={!row.isEditing}
                             value={row.credits}
                             onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-sky-300 font-semibold text-center focus:outline-none"
+                            className={`w-full rounded-lg px-1 py-1 text-xs font-semibold text-center focus:outline-none transition-all ${
+                              row.isEditing
+                                ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20'
+                                : 'bg-[#071830]/40 border border-sky-500/10 text-sky-300/80 cursor-default'
+                            }`}
                           />
                         </div>
 
@@ -462,19 +490,20 @@ export default function GpaCalculator() {
                           </select>
                         </div>
 
-                        {/* Action: Edit & Delete (Edit is BEFORE Delete) */}
+                        {/* Action: Edit & Delete (Edit toggles edit mode) */}
                         <div className="col-span-2 flex items-center justify-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => {
-                              const el = document.getElementById(`public-sub-name-${row.id}`);
-                              if (el) el.focus();
-                            }}
-                            className="p-1.5 text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/25 border border-sky-500/20 hover:border-sky-500/40 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold"
-                            title="Edit subject details"
+                            onClick={() => toggleEditRow(row.id)}
+                            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold ${
+                              row.isEditing
+                                ? 'bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm'
+                                : 'bg-sky-500/10 text-sky-300 hover:text-white hover:bg-sky-500/25 border border-sky-500/20'
+                            }`}
+                            title={row.isEditing ? "Finish editing subject" : "Edit subject details temporarily"}
                           >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Edit</span>
+                            {row.isEditing ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
+                            <span className="hidden sm:inline">{row.isEditing ? 'Done' : 'Edit'}</span>
                           </button>
                           <button
                             type="button"
