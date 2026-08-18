@@ -334,51 +334,6 @@ export default function InternalCgpaCalculator() {
               Academic Profile
             </h2>
 
-            {/* Quick Student Select Bar & Batch Filter */}
-            <div className="form-group bg-emerald-500/[0.04] border border-emerald-500/20 rounded-xl p-3 space-y-3">
-              <label className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">
-                Quick Student Lookup (Auto-Fetch GPA)
-              </label>
-
-              {/* Batch Filter Dropdown */}
-              <div>
-                <label className="text-[9px] uppercase font-bold text-emerald-300/70 block mb-1">Filter Roster By Batch</label>
-                <select
-                  value={selectedBatch}
-                  onChange={(e) => setSelectedBatch(e.target.value)}
-                  className="w-full bg-[#071830] border border-emerald-500/20 focus:border-emerald-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-all"
-                >
-                  <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
-                  {batches.map((b) => (
-                    <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Searchable Student Dropdown */}
-              <div>
-                <label className="text-[9px] uppercase font-bold text-emerald-300/70 block mb-1">Search &amp; Select Student</label>
-                <SearchableStudentSelect
-                  students={studentRoster}
-                  value={selectedStudentReg}
-                  valueKey="registerNo"
-                  onChange={handleSelectStudent}
-                  placeholder="Search & choose student..."
-                />
-              </div>
-              {fetchingGpaHistory && (
-                <div className="flex items-center gap-2 text-[10px] text-emerald-300">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Fetching semester GPAs...</span>
-                </div>
-              )}
-              {autoFetchNotice && (
-                <p className="text-[10px] text-emerald-300 font-medium leading-relaxed">
-                  {autoFetchNotice}
-                </p>
-              )}
-            </div>
-
             {/* Regulation */}
             <div className="form-group">
               <label className="form-label">Regulation</label>
@@ -406,7 +361,7 @@ export default function InternalCgpaCalculator() {
                   {departments
                     .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
                     .map(d => (
-                      <option key={d._id} value={d.code}>{d.name}</option>
+                      <option key={d._id} value={d.code}>{d.name} ({d.code})</option>
                     ))}
                 </select>
               )}
@@ -414,22 +369,63 @@ export default function InternalCgpaCalculator() {
 
             <div className="section-divider !my-2" />
 
-            {/* Optional Student Info */}
+            {/* Student Info & Searchable Dropdown */}
             <div className="bg-sky-500/[0.04] border border-sky-500/10 rounded-xl p-3 space-y-3">
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5 mb-1">
                 <Info className="h-3 w-3 text-sky-400/60" />
-                <span className="text-[10px] text-sky-300/50">Optional — leave blank to auto-assign (Student1, Student2…)</span>
+                <span className="text-[10px] text-sky-300/60">Select registered student or type details below</span>
               </div>
+
+              {/* Batch Selector Filter */}
+              <div className="form-group">
+                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Filter Roster By Batch</label>
+                <select
+                  value={selectedBatch}
+                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                >
+                  <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
+                  {batches.map((b) => (
+                    <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Searchable Student Combobox */}
+              <div className="form-group">
+                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Select Registered Student</label>
+                <SearchableStudentSelect
+                  students={studentRoster}
+                  value={selectedStudentReg}
+                  valueKey="registerNo"
+                  onChange={handleSelectStudent}
+                  placeholder="Search & choose student..."
+                />
+              </div>
+
+              {fetchingGpaHistory && (
+                <div className="flex items-center gap-2 text-[10px] text-emerald-300">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Fetching semester GPAs...</span>
+                </div>
+              )}
+              {autoFetchNotice && (
+                <p className="text-[10px] text-emerald-300 font-medium leading-relaxed">
+                  {autoFetchNotice}
+                </p>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Student Name</label>
                 <input
                   type="text"
                   value={studentName}
                   onChange={e => setStudentName(e.target.value)}
-                  placeholder="e.g. Name"
+                  placeholder="e.g. Abinesh S"
                   className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder:text-sky-400/25 transition-all"
                 />
               </div>
+
               <div className="form-group">
                 <label className="form-label">Register No.</label>
                 <input
@@ -440,7 +436,7 @@ export default function InternalCgpaCalculator() {
                     setRegisterNo(val);
                     const match = studentRoster.find(s => s.registerNo.toUpperCase() === val.trim().toUpperCase());
                     if (match) {
-                      handleSelectStudent(match._id);
+                      handleSelectStudent(match.registerNo, match);
                     }
                   }}
                   placeholder="e.g. 953621104012"
