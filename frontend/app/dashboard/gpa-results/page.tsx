@@ -164,14 +164,23 @@ export default function GpaResultsPage() {
     });
   }, [students, records, searchQuery, selectedSem, selectedBatch, selectedStudentReg, sortField, sortOrder]);
 
-  const handleDownloadRowPdf = async (recordId: string, regNo: string, sem: number) => {
-    setDownloadingRowId(recordId);
+  const handleDownloadStudentPdf = async (regNo: string, dept: string, recordId?: string) => {
+    setDownloadingRowId(regNo);
     try {
-      const blob = await api.downloadGpaReportPdf(recordId);
+      let blob: Blob;
+      try {
+        blob = await api.downloadOverallSemesterGpaPdf(dept, undefined, [regNo]);
+      } catch (err: any) {
+        if (recordId) {
+          blob = await api.downloadGpaReportPdf(recordId);
+        } else {
+          throw err;
+        }
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `GPA_Sem${sem}_${regNo}.pdf`;
+      a.download = `GPA_Report_${regNo}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -498,32 +507,33 @@ export default function GpaResultsPage() {
                           ? parseInt(selectedSem)
                           : availableSemNums[0];
                         const targetSemInfo = targetSemNum ? r.semesters[targetSemNum] : null;
+                        const hasAnyRecord = availableSemNums.length > 0;
 
                         return (
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* 1. Single PDF Download button */}
+                            {/* 1. PDF Download button (All Available Semesters for Student) */}
                             <button
-                              disabled={!targetSemInfo || downloadingRowId === targetSemInfo.id}
+                              disabled={!hasAnyRecord || downloadingRowId === r.registerNo}
                               onClick={() => {
-                                if (targetSemInfo) {
-                                  handleDownloadRowPdf(targetSemInfo.id, r.registerNo, targetSemNum);
+                                if (hasAnyRecord) {
+                                  handleDownloadStudentPdf(r.registerNo, r.department, targetSemInfo?.id);
                                 } else {
                                   alert(`No GPA record found for ${r.studentName} (${r.registerNo}). Calculate GPA first.`);
                                 }
                               }}
-                              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-xl border transition-all cursor-pointer ${
-                                targetSemInfo
+                              className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+                                hasAnyRecord
                                   ? 'text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/20 shadow-sm'
                                   : 'text-sky-300/30 bg-sky-500/5 border-sky-500/10 cursor-not-allowed'
                               }`}
-                              title={targetSemInfo ? `Download PDF Report (${targetSemNum ? `Sem ${targetSemNum}` : 'GPA'})` : 'No GPA record to download'}
+                              title={hasAnyRecord ? 'Download Complete Student GPA Report (All Available Semesters)' : 'No GPA record to download'}
                             >
-                              {targetSemInfo && downloadingRowId === targetSemInfo.id ? (
+                              {downloadingRowId === r.registerNo ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <FileText className="h-3 w-3 text-sky-400" />
                               )}
-                              <span>{targetSemInfo ? `PDF${targetSemNum ? ` S${targetSemNum}` : ''}` : 'PDF'}</span>
+                              <span>PDF</span>
                             </button>
 
                             {/* 2. Single Edit button */}
