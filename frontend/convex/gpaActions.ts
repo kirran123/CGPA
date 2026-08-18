@@ -17,6 +17,8 @@ const isValidGrade = (raw: string, validGrades: Set<string>) => {
   return validGrades.has(g);
 };
 
+const cleanCode = (code: string) => code.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+
 // Pure calculation — no ctx.db access
 function calcGPA(
   subjectsInput: Array<{ subjectCode: string; grade: string }>,
@@ -28,7 +30,7 @@ function calcGPA(
   const subjectsDetails: any[] = [];
   for (const s of subjectsInput) {
     if (!isValidGrade(s.grade, validGrades)) continue;
-    const subject = subjectMap.get(s.subjectCode.toUpperCase());
+    const subject = subjectMap.get(s.subjectCode.toUpperCase()) || subjectMap.get(cleanCode(s.subjectCode));
     if (!subject) continue;
     const grade = s.grade.trim().toUpperCase();
     const gradePoint = gradeMap[grade] ?? 0;
@@ -164,7 +166,10 @@ export const bulkCalculate = action({
       if (!subjectCache.has(key)) {
         const list: any[] = await ctx.runQuery(api.subjects.get, { department: activeDept, semester: student.semester, regulation: student.regulation });
         const sm: SubMap = new Map();
-        list.forEach((s: any) => sm.set(s.code.toUpperCase(), { name: s.name, credits: s.credits }));
+        list.forEach((s: any) => {
+          sm.set(s.code.toUpperCase(), { name: s.name, credits: s.credits });
+          sm.set(cleanCode(s.code), { name: s.name, credits: s.credits });
+        });
         subjectCache.set(key, sm);
         const grades: any[] = await ctx.runQuery(api.gradeSettings.get, { department: activeDept, regulation: student.regulation, semester: student.semester });
         gradeCache.set(key, grades.length > 0 ? grades.reduce((a: any, g: any) => { a[g.grade.toUpperCase()] = g.points; return a; }, {}) : { ...DEFAULT_GRADE_MAP });

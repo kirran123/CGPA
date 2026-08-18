@@ -70,6 +70,8 @@ export default function BulkGpaUpload() {
   /* "regulation" is a regulation name or FROM_FILE */
   const [selectedReg, setSelectedReg] = useState<string>('');
   const [batchName, setBatchName] = useState('');
+  const [availableBatches, setAvailableBatches] = useState<{ batch: string; count: number }[]>([]);
+  const [selectedBatchOption, setSelectedBatchOption] = useState<string>('');
   
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -113,6 +115,32 @@ export default function BulkGpaUpload() {
     };
     fetchDeptsAndRegs();
   }, []);
+
+  useEffect(() => {
+    const fetchBatches = async () => {
+      if (!selectedDept) return;
+      try {
+        const bts = await api.getStudentBatches(selectedDept);
+        const defaultBatches = ['2025-2029', '2024-2028', '2023-2027', '2022-2026', '2021-2025'];
+        const existingMap = new Map<string, number>();
+        (bts || []).forEach((b: any) => existingMap.set(b.batch, b.count));
+        
+        const merged: { batch: string; count: number }[] = [];
+        existingMap.forEach((count, batch) => {
+          merged.push({ batch, count });
+        });
+        for (const db of defaultBatches) {
+          if (!existingMap.has(db)) {
+            merged.push({ batch: db, count: 0 });
+          }
+        }
+        setAvailableBatches(merged);
+      } catch (err) {
+        console.error('Error fetching student batches:', err);
+      }
+    };
+    fetchBatches();
+  }, [selectedDept]);
 
   /* ── File picking helpers ── */
   const applyFile = (f: File) => {
@@ -349,21 +377,62 @@ export default function BulkGpaUpload() {
               </div>
             </div>
 
-            {/* Batch Name */}
+            {/* Batch Name & Selection */}
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider">
-                Batch Name *
+              <label className="block text-[10px] font-bold text-sky-300 uppercase tracking-wider flex items-center justify-between">
+                <span>Batch Name *</span>
+                {availableBatches.length > 0 && (
+                  <span className="text-[10px] text-sky-400 font-normal">
+                    {availableBatches.length} batch(es) available
+                  </span>
+                )}
               </label>
-              <input
-                type="text"
-                required
-                value={batchName}
-                onChange={e => setBatchName(e.target.value)}
-                placeholder="e.g. IT Batch 1 – Semester 3 (June 2026)"
-                className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-4 py-3 text-xs text-white placeholder-sky-300/30 focus:outline-none transition-colors"
-              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Dropdown to pick existing batch */}
+                <div>
+                  <select
+                    value={selectedBatchOption}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedBatchOption(val);
+                      if (val !== 'custom' && val !== '') {
+                        setBatchName(val);
+                      } else if (val === 'custom') {
+                        setBatchName('');
+                      }
+                    }}
+                    className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
+                  >
+                    <option value="">— Select Available Batch —</option>
+                    {availableBatches.map((b) => (
+                      <option key={b.batch} value={b.batch}>
+                        {b.batch} {b.count > 0 ? `(${b.count} students)` : ''}
+                      </option>
+                    ))}
+                    <option value="custom">+ Enter Custom Batch Name...</option>
+                  </select>
+                </div>
+
+                {/* Input for custom batch name */}
+                <div>
+                  <input
+                    type="text"
+                    required
+                    value={batchName}
+                    onChange={(e) => {
+                      setBatchName(e.target.value);
+                      if (!availableBatches.some((b) => b.batch === e.target.value)) {
+                        setSelectedBatchOption('custom');
+                      }
+                    }}
+                    placeholder="e.g. 2023-2027 or IT Batch 1"
+                    className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-sky-300/30 focus:outline-none transition-colors"
+                  />
+                </div>
+              </div>
               <p className="text-[10px] text-sky-300/40">
-                This name will group all calculated student GPA records in the batch results view.
+                Select an existing batch from your department or type a custom batch name to group GPA results.
               </p>
             </div>
 

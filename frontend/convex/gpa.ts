@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { matchDeptCode } from "./departments";
 
 const DEFAULT_GRADE_MAP: Record<string, number> = {
   O: 10, "A+": 9, A: 8, "B+": 7, B: 6, C: 5, U: 0,
@@ -399,23 +400,56 @@ export const bulkInsert = mutation({
     const department = args.records[0].department;
     for (const rec of args.records) {
       const regUpper = rec.registerNo.trim().toUpperCase();
+      const nameUpper = rec.studentName.trim().toUpperCase();
       const deptUpper = rec.department.toUpperCase();
 
-      const officialStudent = await ctx.db
+      // Find official student by registerNo OR name
+      let officialStudent = await ctx.db
         .query("students")
         .withIndex("by_registerNo", (q) => q.eq("registerNo", regUpper))
         .first();
 
+      if (!officialStudent && rec.studentName.trim()) {
+        const allSts = await ctx.db.query("students").collect();
+        officialStudent = allSts.find(
+          (s) => s.name.trim().toUpperCase() === nameUpper && matchDeptCode(s.department, deptUpper)
+        ) || null;
+      }
+
       const resolvedName = officialStudent ? officialStudent.name : rec.studentName.trim();
+      const resolvedReg = officialStudent ? officialStudent.registerNo : regUpper;
 
-      const existing = await ctx.db.query("gpaRecords")
-        .withIndex("by_student", (q) => q.eq("registerNo", regUpper).eq("semester", rec.semester).eq("department", deptUpper))
+      // Find existing GPA record for this student & semester to update
+      let existing = await ctx.db
+        .query("gpaRecords")
+        .withIndex("by_student", (q) => q.eq("registerNo", resolvedReg).eq("semester", rec.semester).eq("department", deptUpper))
         .first();
-      const data = { ...rec, studentName: resolvedName, registerNo: regUpper, department: deptUpper, createdAt: Date.now() };
-      if (existing) await ctx.db.patch(existing._id, data);
-      else await ctx.db.insert("gpaRecords", data);
 
-      await syncStudentCgpa(ctx, regUpper, deptUpper, rec.regulation, resolvedName, args.userId);
+      if (!existing && nameUpper) {
+        const deptRecs = await ctx.db
+          .query("gpaRecords")
+          .withIndex("by_department", (q) => q.eq("department", deptUpper))
+          .collect();
+        existing = deptRecs.find(
+          (r) => r.semester === rec.semester && r.studentName.trim().toUpperCase() === nameUpper
+        ) || null;
+      }
+
+      const data = {
+        ...rec,
+        studentName: resolvedName,
+        registerNo: resolvedReg,
+        department: deptUpper,
+        createdAt: Date.now(),
+      };
+
+      if (existing) {
+        await ctx.db.patch(existing._id, data);
+      } else {
+        await ctx.db.insert("gpaRecords", data);
+      }
+
+      await syncStudentCgpa(ctx, resolvedReg, deptUpper, rec.regulation, resolvedName, args.userId);
     }
     const user = await ctx.db.get(args.userId);
     await ctx.db.insert("historyLogs", { action: "Bulk Calculate GPA", details: `Bulk calculated GPA for ${args.records.length} students (batch: ${batchName})`, performedBy: args.userId, performedByName: user?.name || "Unknown", department, timestamp: Date.now() });
