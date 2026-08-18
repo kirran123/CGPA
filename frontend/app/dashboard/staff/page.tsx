@@ -447,9 +447,11 @@ export default function StaffManagement() {
                       onChange={e => setDepartment(e.target.value)}
                       className="w-full bg-white/[0.04] border border-sky-500/20 focus:border-sky-500 rounded-xl px-2 py-2 text-sm text-white focus:outline-none disabled:opacity-50 transition-colors">
                       <option value="">None</option>
-                      {departments.map(d => (
-                        <option key={d._id} value={d.code}>{d.code}</option>
-                      ))}
+                      {departments
+                        .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                        .map(d => (
+                          <option key={d._id} value={d.code}>{d.code}</option>
+                        ))}
                     </select>
                   </div>
                 </div>

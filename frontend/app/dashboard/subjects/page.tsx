@@ -442,7 +442,9 @@ export default function SubjectManagement() {
                   {currentUser?.role === 'super_admin' ? (
                     <select value={department} onChange={e => setDepartment(e.target.value)}
                       className="w-full bg-[#071830] border border-sky-500/20 focus:border-sky-500/60 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none truncate">
-                      {departments.map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
+                      {departments
+                        .filter(d => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                        .map(d => <option key={d._id} value={d.code}>{d.name}</option>)}
                     </select>
                   ) : (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-sky-500/10 rounded-lg text-xs text-sky-300/60">

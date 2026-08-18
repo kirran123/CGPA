@@ -173,11 +173,13 @@ export default function DashboardTotalCredits() {
               onChange={(e) => setSelectedDept(e.target.value)}
               className="bg-[#050d21] border border-sky-500/25 focus:border-emerald-500/50 rounded-xl px-3.5 py-2 text-xs font-bold text-white focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed w-full sm:min-w-[200px] truncate shadow-inner transition-all"
             >
-              {departments.map((d) => (
-                <option key={d._id} value={d.code}>
-                  {d.name} ({d.code})
-                </option>
-              ))}
+              {departments
+                .filter((d) => currentUser?.role === 'super_admin' || d.code === currentUser?.department)
+                .map((d) => (
+                  <option key={d._id} value={d.code}>
+                    {d.name} ({d.code})
+                  </option>
+                ))}
             </select>
           </div>
 
