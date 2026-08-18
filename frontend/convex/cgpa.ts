@@ -222,27 +222,33 @@ export const getRecords = query({
       }
     }
 
-    let students = await ctx.db.query("students").collect();
-    if (validDepts.size > 0) {
-      students = students.filter((s) => validDepts.has(s.department.toUpperCase()));
-    }
+    // Run all independent queries in PARALLEL to minimize latency
+    const [allStudentsRaw, allCgpaRaw, allGpaRaw, allSemesterCredits, allSubjects, allUsers] = await Promise.all([
+      ctx.db.query("students").collect(),
+      ctx.db.query("cgpaRecords").collect(),
+      ctx.db.query("gpaRecords").collect(),
+      ctx.db.query("semesterCredits").collect(),
+      ctx.db.query("subjects").collect(),
+      ctx.db.query("users").collect(),
+    ]);
 
-    let cgpaRecords = await ctx.db.query("cgpaRecords").collect();
-    if (validDepts.size > 0) {
-      cgpaRecords = cgpaRecords.filter((r) => validDepts.has(r.department.toUpperCase()));
-    }
+    // Filter by valid departments
+    const students = validDepts.size > 0
+      ? allStudentsRaw.filter((s) => validDepts.has(s.department.toUpperCase()))
+      : allStudentsRaw;
+
+    let cgpaRecords = validDepts.size > 0
+      ? allCgpaRaw.filter((r) => validDepts.has(r.department.toUpperCase()))
+      : allCgpaRaw;
     if (args.userId) {
       cgpaRecords = cgpaRecords.filter((r) => r.calculatedBy === args.userId);
     }
 
-    let gpaRecords = await ctx.db.query("gpaRecords").collect();
-    if (validDepts.size > 0) {
-      gpaRecords = gpaRecords.filter((r) => validDepts.has(r.department.toUpperCase()));
-    }
+    const gpaRecords = validDepts.size > 0
+      ? allGpaRaw.filter((r) => validDepts.has(r.department.toUpperCase()))
+      : allGpaRaw;
 
-    // Pre-load all semesterCredits & subjects to build credits maps per (dept, regulation)
-    const allSemesterCredits = await ctx.db.query("semesterCredits").collect();
-    const allSubjects = await ctx.db.query("subjects").collect();
+    // Build subject credit cache
     const subjectCreditCache = new Map<string, Map<number, number>>();
 
     for (const c of allSemesterCredits) {
@@ -263,12 +269,32 @@ export const getRecords = query({
       }
     }
 
+    // Pre-build users map
+    const usersMap = new Map<string, any>();
+    for (const u of allUsers) {
+      usersMap.set(String(u._id), u);
+    }
+
     const cgpaRecordMap = new Map<string, any>();
     for (const r of cgpaRecords) {
       const key = r.registerNo.trim().toUpperCase();
       const prev = cgpaRecordMap.get(key);
       if (!prev || (r.createdAt || 0) > (prev.createdAt || 0)) {
         cgpaRecordMap.set(key, r);
+      }
+    }
+
+    // Pre-group GPA records by registerNo → Map<regNo, Map<semester, record>>
+    // This converts the O(N×M) per-student scan into O(1) Map lookups
+    const gpaByStudent = new Map<string, Map<number, any>>();
+    for (const r of gpaRecords) {
+      if (!r.registerNo) continue;
+      const regKey = r.registerNo.trim().toUpperCase();
+      if (!gpaByStudent.has(regKey)) gpaByStudent.set(regKey, new Map());
+      const semMap = gpaByStudent.get(regKey)!;
+      const existing = semMap.get(r.semester);
+      if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
+        semMap.set(r.semester, r);
       }
     }
 
@@ -289,11 +315,10 @@ export const getRecords = query({
       const cacheKey = `${stDept}__${stReg}`;
       const semCreditsMap = subjectCreditCache.get(cacheKey) || new Map<number, number>();
 
-      // Gather all GPA records for this student
-      const stGpaRecs = gpaRecords.filter((r) => r.registerNo.trim().toUpperCase() === regUpper);
+      // Build semGpaMap from pre-grouped data (O(1) lookup, no linear scan)
       const semGpaMap = new Map<number, any>();
 
-      // Populate from stored cgpaRecord first
+      // 1. Populate from stored cgpaRecord semesters
       if (rec?.semesters) {
         for (const s of rec.semesters) {
           if (s.gpa > 0) {
@@ -302,12 +327,15 @@ export const getRecords = query({
         }
       }
 
-      // Override/append from gpaRecords if newer
-      for (const r of stGpaRecs) {
-        if (r.gpa > 0) {
-          const existing = semGpaMap.get(r.semester);
-          if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
-            semGpaMap.set(r.semester, { semester: r.semester, gpa: r.gpa, createdAt: r.createdAt || 0 });
+      // 2. Override/append from latest gpaRecords per semester (O(1) lookup)
+      const studentGpaSemMap = gpaByStudent.get(regUpper);
+      if (studentGpaSemMap) {
+        for (const [sem, r] of studentGpaSemMap.entries()) {
+          if (r.gpa > 0) {
+            const existing = semGpaMap.get(sem);
+            if (!existing || (r.createdAt || 0) > (existing.createdAt || 0)) {
+              semGpaMap.set(sem, { semester: sem, gpa: r.gpa, createdAt: r.createdAt || 0 });
+            }
           }
         }
       }
