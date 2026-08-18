@@ -541,10 +541,10 @@ export default function InternalGpaCalculator() {
                 <button
                   type="button"
                   onClick={handleTemporaryAddRow}
-                  className="flex items-center gap-1 text-[11px] font-bold text-emerald-300 hover:text-white bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-2.5 py-1 rounded-xl transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add Subject Row
+                  <Plus className="h-4 w-4 text-emerald-400" />
+                  <span>+ Add Subject Row</span>
                 </button>
               </div>
 
@@ -564,10 +564,10 @@ export default function InternalGpaCalculator() {
                   <button
                     type="button"
                     onClick={handleTemporaryAddRow}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/20 transition-all cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 rounded-xl hover:bg-emerald-500/30 transition-all cursor-pointer shadow-md"
                   >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Subject Row
+                    <Plus className="h-4 w-4" />
+                    <span>+ Add Subject Row</span>
                   </button>
                 </div>
               ) : (
@@ -575,10 +575,10 @@ export default function InternalGpaCalculator() {
                   {/* Column headers */}
                   <div className="hidden md:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-3 pb-1">
                     <div className="col-span-2">Code</div>
-                    <div className="col-span-6">Subject Name</div>
+                    <div className="col-span-5">Subject Name</div>
                     <div className="col-span-1 text-center">Credits</div>
                     <div className="col-span-2 text-center">Grade</div>
-                    <div className="col-span-1 text-center">Action</div>
+                    <div className="col-span-2 text-center">Actions</div>
                   </div>
 
                   {rows.map((row, idx) => (
@@ -602,8 +602,9 @@ export default function InternalGpaCalculator() {
                       </div>
 
                       {/* Subject Name */}
-                      <div className="col-span-6">
+                      <div className="col-span-5">
                         <input
+                          id={`sub-name-${row.id}`}
                           type="text"
                           value={row.subjectName}
                           title={row.subjectName}
@@ -641,15 +642,28 @@ export default function InternalGpaCalculator() {
                         </select>
                       </div>
 
-                      {/* Action: Temporary Delete */}
-                      <div className="col-span-1 flex items-center justify-center">
+                      {/* Action: Edit & Delete (Edit is BEFORE Delete) */}
+                      <div className="col-span-2 flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(`sub-name-${row.id}`);
+                            if (el) el.focus();
+                          }}
+                          className="p-1.5 text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/25 border border-sky-500/20 hover:border-sky-500/40 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold"
+                          title="Edit subject details"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Edit</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleTemporaryDeleteRow(row.id)}
-                          className="p-1.5 text-red-400/60 hover:text-red-400 bg-red-500/5 hover:bg-red-500/15 border border-red-500/10 rounded-lg transition-all cursor-pointer"
+                          className="p-1.5 text-red-400/70 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold"
                           title="Remove subject row temporarily from calculation"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                       </div>
                     </div>
