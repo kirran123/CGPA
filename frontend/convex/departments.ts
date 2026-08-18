@@ -171,18 +171,21 @@ export const update = mutation({
 });
 
 export function getCanonicalDeptCode(dept?: string, registerNo?: string): string {
-  if (dept) {
-    const norm = dept.trim().toUpperCase();
-    if (norm === "IT" || norm === "205" || norm.includes("INFORMATION TECH")) return "IT";
-    if (norm === "CSE" || norm === "104" || norm.includes("COMPUTER SCIENCE")) return "CSE";
-    if (norm === "ECE" || norm === "106" || norm.includes("ELECTRONICS")) return "ECE";
-    if (norm === "EEE" || norm === "105" || norm.includes("ELECTRICAL")) return "EEE";
-    if (norm === "MECH" || norm === "114" || norm.includes("MECHANICAL")) return "MECH";
-    if (norm === "CIVIL" || norm === "103" || norm.includes("CIVIL")) return "CIVIL";
-    if (norm === "AD" || norm === "AIDS" || norm === "243" || norm.includes("ARTIFICIAL INTELLIGENCE")) return "AD";
-    if (norm === "AM" || norm === "AIML" || norm === "321" || norm.includes("MACHINE LEARNING")) return "AM";
-    if (norm === "CSBS" || norm === "107") return "CSBS";
-    if (norm === "EIE" || norm === "108") return "EIE";
+  if (dept && dept.trim()) {
+    const norm = dept.trim().toUpperCase().replace(/[^A-Z0-9]/g, " ");
+    const words = norm.split(/\s+/);
+
+    if (words.includes("205") || words.includes("IT") || norm.includes("INFORMATION TECH")) return "IT";
+    if (words.includes("104") || words.includes("CSE") || norm.includes("COMPUTER SCIENCE")) return "CSE";
+    if (words.includes("106") || words.includes("ECE") || norm.includes("ELECTRONICS") || norm.includes("COMMUNICATION")) return "ECE";
+    if (words.includes("105") || words.includes("EEE") || norm.includes("ELECTRICAL")) return "EEE";
+    if (words.includes("114") || words.includes("MECH") || norm.includes("MECHANICAL")) return "MECH";
+    if (words.includes("103") || words.includes("CIVIL")) return "CIVIL";
+    if (words.includes("243") || words.includes("AD") || words.includes("AIDS") || (norm.includes("ARTIFICIAL") && norm.includes("DATA"))) return "AD";
+    if (words.includes("321") || words.includes("AM") || words.includes("AIML") || (norm.includes("ARTIFICIAL") && norm.includes("MACHINE"))) return "AM";
+    if (words.includes("107") || words.includes("CSBS")) return "CSBS";
+    if (words.includes("108") || words.includes("EIE")) return "EIE";
+
     if (norm !== "GEN" && norm !== "UNDEFINED" && norm !== "") return norm;
   }
 

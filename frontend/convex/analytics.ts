@@ -115,14 +115,14 @@ export const getDashboardStats = query({
       const user = await ctx.db.get(args.userId);
       let deptStr = args.department || user?.department;
       if (!deptStr && user?.email) {
-        const em = user.email.toLowerCase();
-        if (em.includes("it")) deptStr = "IT";
-        else if (em.includes("cs")) deptStr = "CSE";
-        else if (em.includes("ec")) deptStr = "ECE";
-        else if (em.includes("ee")) deptStr = "EEE";
-        else if (em.includes("mech")) deptStr = "MECH";
-        else if (em.includes("civil")) deptStr = "CIVIL";
-        else if (em.includes("ad")) deptStr = "AD";
+        const prefix = user.email.split("@")[0].toLowerCase();
+        if (prefix.includes("it")) deptStr = "IT";
+        else if (prefix.includes("cs")) deptStr = "CSE";
+        else if (prefix.includes("ec")) deptStr = "ECE";
+        else if (prefix.includes("ee")) deptStr = "EEE";
+        else if (prefix.includes("mech")) deptStr = "MECH";
+        else if (prefix.includes("civil")) deptStr = "CIVIL";
+        else if (prefix.includes("ad")) deptStr = "AD";
       }
       const activeDept = (deptStr || "IT").toUpperCase();
 
