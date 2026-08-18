@@ -77,7 +77,7 @@ export default function CgpaResultsPage() {
       const activeDept = initialDept || selectedDept || undefined;
 
       const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
-        api.getCgpaRecords(activeDept),
+        api.getCgpaRecords(activeDept, selectedBatch || undefined),
         api.getStudents(activeDept, selectedBatch || undefined),
         api.getStudentBatches(activeDept)
       ]);
@@ -201,6 +201,9 @@ export default function CgpaResultsPage() {
 
   const filteredRecords = records
     .filter((r) => {
+      if (selectedBatch && r.batch && r.batch !== selectedBatch) {
+        return false;
+      }
       if (selectedStudentReg) {
         return r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase();
       }
@@ -317,7 +320,7 @@ export default function CgpaResultsPage() {
             }}
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
           >
-            <option value="">All Batches ({students.length})</option>
+            <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || students.length})</option>
             {batches.map((b) => (
               <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
             ))}

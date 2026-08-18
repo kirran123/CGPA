@@ -347,7 +347,7 @@ export default function InternalCgpaCalculator() {
                   onChange={(e) => setSelectedBatch(e.target.value)}
                   className="w-full bg-[#071830] border border-emerald-500/20 focus:border-emerald-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-all"
                 >
-                  <option value="">All Batches ({studentRoster.length} students)</option>
+                  <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
                   {batches.map((b) => (
                     <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
                   ))}

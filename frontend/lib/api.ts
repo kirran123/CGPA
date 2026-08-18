@@ -113,6 +113,7 @@ export interface CgpaRecord {
   studentName: string;
   registerNo: string;
   department: string;
+  batch?: string;
   regulation?: string;
   semesters: {
     semester: number;
@@ -483,8 +484,8 @@ export const api = {
     return { ...result, _id: result._id, createdAt: new Date(result.createdAt).toISOString() } as CgpaRecord;
   },
 
-  getCgpaRecords: async (department?: string): Promise<CgpaRecord[]> => {
-    const result = await convex.query(convexApi.cgpa.getRecords, { department });
+  getCgpaRecords: async (department?: string, batch?: string): Promise<CgpaRecord[]> => {
+    const result = await convex.query(convexApi.cgpa.getRecords, { department, batch });
     return result.map((r: any) => ({
       ...r,
       _id: r._id,

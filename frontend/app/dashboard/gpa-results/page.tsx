@@ -319,9 +319,9 @@ export default function GpaResultsPage() {
             onChange={(e) => setSelectedBatch(e.target.value)}
             className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
           >
-            <option value="">All Batches</option>
+            <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || students.length})</option>
             {batches.map((b) => (
-              <option key={b.batch} value={b.batch}>{b.batch}</option>
+              <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
             ))}
           </select>
         </div>

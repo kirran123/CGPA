@@ -419,7 +419,7 @@ export default function InternalGpaCalculator() {
                   onChange={(e) => setSelectedBatch(e.target.value)}
                   className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                 >
-                  <option value="">All Batches ({studentRoster.length} students)</option>
+                  <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
                   {batches.map((b) => (
                     <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
                   ))}
@@ -575,9 +575,9 @@ export default function InternalGpaCalculator() {
                   {/* Column headers */}
                   <div className="hidden md:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-3 pb-1">
                     <div className="col-span-2">Code</div>
-                    <div className="col-span-4">Subject Name</div>
-                    <div className="col-span-2 text-center">Credits</div>
-                    <div className="col-span-3 text-center">Grade</div>
+                    <div className="col-span-6">Subject Name</div>
+                    <div className="col-span-1 text-center">Credits</div>
+                    <div className="col-span-2 text-center">Grade</div>
                     <div className="col-span-1 text-center">Action</div>
                   </div>
 
@@ -595,39 +595,41 @@ export default function InternalGpaCalculator() {
                         <input
                           type="text"
                           value={row.subjectCode}
+                          title={row.subjectCode}
                           onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
                           className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-[11px] font-mono font-bold text-sky-400 focus:outline-none"
                         />
                       </div>
 
                       {/* Subject Name */}
-                      <div className="col-span-4">
+                      <div className="col-span-6">
                         <input
                           type="text"
                           value={row.subjectName}
+                          title={row.subjectName}
                           onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
-                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none"
                         />
                       </div>
 
                       {/* Credits */}
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <input
                           type="number"
                           min="0"
                           max="12"
                           value={row.credits}
                           onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
-                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-2 py-1 text-xs text-sky-300 font-semibold text-center focus:outline-none"
+                          className="w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/40 rounded-lg px-1.5 py-1 text-xs text-sky-300 font-semibold text-center focus:outline-none"
                         />
                       </div>
 
                       {/* Grade Selector */}
-                      <div className="col-span-3">
+                      <div className="col-span-2">
                         <select
                           value={row.grade}
                           onChange={e => updateGrade(row.id, e.target.value)}
-                          className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
+                          className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-1.5 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
                             }`}
                         >
                           <option value="">-- Grade --</option>

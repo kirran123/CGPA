@@ -76,8 +76,16 @@ export default function SearchableStudentSelect({
     setQuery('');
   };
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
   return (
-    <div ref={containerRef} className={`relative w-full ${className}`}>
+    <div ref={containerRef} className={`relative w-full ${isOpen ? 'z-50' : ''} ${className}`}>
       {/* Target Trigger Input */}
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -116,13 +124,13 @@ export default function SearchableStudentSelect({
 
       {/* Search & List Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#071830] border border-sky-500/25 rounded-xl shadow-2xl overflow-hidden backdrop-blur-2xl animate-scale-in">
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#071830] border border-sky-500/25 rounded-xl shadow-2xl overflow-hidden backdrop-blur-2xl animate-scale-in min-w-[280px]">
           {/* Search Bar */}
           <div className="p-2 border-b border-sky-500/15 bg-sky-500/[0.03] sticky top-0">
             <div className="relative">
               <input
+                ref={inputRef}
                 type="text"
-                autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search name or reg no..."
