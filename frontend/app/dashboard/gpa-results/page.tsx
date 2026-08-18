@@ -451,39 +451,43 @@ export default function GpaResultsPage() {
                     })}
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {Object.values(r.semesters).length > 0 && (
-                          <button
-                            disabled={downloadingRowId === Object.values(r.semesters)[0].id}
-                            onClick={() => handleDownloadRowPdf(Object.values(r.semesters)[0].id, r.registerNo, Object.values(r.semesters)[0].record.semester)}
-                            className="flex items-center gap-1 text-[10px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-2 py-1 rounded-xl transition-all cursor-pointer disabled:opacity-40"
-                            title="Download GPA Report PDF"
-                          >
-                            {downloadingRowId === Object.values(r.semesters)[0].id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <FileText className="h-3 w-3" />
-                            )}
-                            <span>PDF</span>
-                          </button>
-                        )}
-
-                        {canEdit && Object.values(r.semesters).length > 0 && (
+                        {Object.values(r.semesters).length > 0 ? (
                           <>
                             <button
-                              onClick={() => handleOpenEdit(Object.values(r.semesters)[0].record)}
-                              className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
-                              title="Edit GPA Record"
+                              disabled={downloadingRowId === Object.values(r.semesters)[0].id}
+                              onClick={() => handleDownloadRowPdf(Object.values(r.semesters)[0].id, r.registerNo, Object.values(r.semesters)[0].record.semester)}
+                              className="flex items-center gap-1 text-[10px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-2 py-1 rounded-xl transition-all cursor-pointer disabled:opacity-40"
+                              title="Download GPA Report PDF"
                             >
-                              <Edit className="h-3.5 w-3.5" />
+                              {downloadingRowId === Object.values(r.semesters)[0].id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <FileText className="h-3 w-3" />
+                              )}
+                              <span>PDF</span>
                             </button>
-                            <button
-                              onClick={() => handleDeleteRow(Object.values(r.semesters)[0].id, r.studentName, r.registerNo)}
-                              className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+
+                            {canEdit && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenEdit(Object.values(r.semesters)[0].record)}
+                                  className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
+                                  title="Edit GPA Record"
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRow(Object.values(r.semesters)[0].id, r.studentName, r.registerNo)}
+                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
+                                  title="Delete Record"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
                           </>
+                        ) : (
+                          <span className="text-[10px] text-sky-300/25 font-medium italic">No GPA yet</span>
                         )}
                       </div>
                     </td>

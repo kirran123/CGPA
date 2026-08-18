@@ -23,11 +23,14 @@ export const getDashboardStats = query({
       // Global View (Super Admin)
       const gpaRecs = await ctx.db.query("gpaRecords").collect();
       const cgpaRecs = await ctx.db.query("cgpaRecords").collect();
+      const allStudents = await ctx.db.query("students").collect();
 
       const totalRecords = gpaRecs.length + cgpaRecs.length;
+      // Combine roster students and any distinct student regNos from records
       const uniqueStudents = new Set([
-        ...gpaRecs.map((r) => r.registerNo),
-        ...cgpaRecs.map((r) => r.registerNo),
+        ...allStudents.map((s) => s.registerNo.trim().toUpperCase()),
+        ...gpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+        ...cgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
       ]);
 
       // Overall average GPA
@@ -52,13 +55,16 @@ export const getDashboardStats = query({
         .collect();
 
       for (const d of depts) {
-        const dGpaRecs = gpaRecs.filter((r) => r.department === d.code);
-        const dCgpaRecs = cgpaRecs.filter((r) => r.department === d.code);
+        const dDeptCode = d.code.toUpperCase();
+        const dGpaRecs = gpaRecs.filter((r) => r.department.toUpperCase() === dDeptCode);
+        const dCgpaRecs = cgpaRecs.filter((r) => r.department.toUpperCase() === dDeptCode);
+        const dStudents = allStudents.filter((s) => s.department.toUpperCase() === dDeptCode);
 
         const dRecordsCount = dGpaRecs.length + dCgpaRecs.length;
         const dUniqueStudents = new Set([
-          ...dGpaRecs.map((r) => r.registerNo),
-          ...dCgpaRecs.map((r) => r.registerNo),
+          ...dStudents.map((s) => s.registerNo.trim().toUpperCase()),
+          ...dGpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+          ...dCgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
         ]);
 
         const dGpas = dGpaRecs.map((r) => r.gpa).filter((g) => g > 0);
@@ -115,6 +121,11 @@ export const getDashboardStats = query({
         .withIndex("by_department", (q) => q.eq("department", activeDept))
         .collect();
 
+      let deptStudents = await ctx.db
+        .query("students")
+        .withIndex("by_department", (q) => q.eq("department", activeDept))
+        .collect();
+
       // If user is dept_admin or staff, they can only see what they calculated
       const isDeptUser = args.role === "dept_admin" || args.role === "staff";
       if (isDeptUser) {
@@ -124,8 +135,9 @@ export const getDashboardStats = query({
 
       const totalRecords = gpaRecs.length + cgpaRecs.length;
       const uniqueStudents = new Set([
-        ...gpaRecs.map((r) => r.registerNo),
-        ...cgpaRecs.map((r) => r.registerNo),
+        ...deptStudents.map((s) => s.registerNo.trim().toUpperCase()),
+        ...gpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+        ...cgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
       ]);
 
       const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
