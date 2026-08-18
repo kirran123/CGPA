@@ -171,7 +171,10 @@ export const update = mutation({
 });
 
 export function matchDeptCode(deptA?: string, deptB?: string, registerNo?: string): boolean {
-  if (!deptA && registerNo) {
+  let inferredA = (deptA || "").trim().toUpperCase();
+
+  // If deptA is missing, empty, "GEN", or "UNDEFINED", infer department from register number!
+  if ((!inferredA || inferredA === "GEN" || inferredA === "UNDEFINED") && registerNo) {
     const cleanReg = registerNo.replace(/\D/g, "");
     if (cleanReg.length >= 9) {
       let bCode = "";
@@ -181,11 +184,12 @@ export function matchDeptCode(deptA?: string, deptB?: string, registerNo?: strin
         "103": "CIVIL", "104": "CSE", "105": "EEE", "106": "ECE", "107": "CSBS",
         "114": "MECH", "205": "IT", "243": "AD", "321": "AM", "108": "EIE"
       };
-      if (bCode && bMap[bCode]) deptA = bMap[bCode];
+      if (bCode && bMap[bCode]) inferredA = bMap[bCode];
     }
   }
-  if (!deptA || !deptB) return false;
-  const normA = deptA.trim().toUpperCase();
+
+  if (!inferredA || !deptB) return false;
+  const normA = inferredA;
   const normB = deptB.trim().toUpperCase();
   if (normA === normB) return true;
 

@@ -135,14 +135,12 @@ export const getDashboardStats = query({
         (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin" && u.status !== "Inactive"
       );
 
-      // If user is dept_admin or staff, they can only see what they calculated for records
+      // Calculate user-specific record filters separately for calculation stats
       const isDeptUser = args.role === "dept_admin" || args.role === "staff";
-      if (isDeptUser) {
-        gpaRecs = gpaRecs.filter((r) => r.calculatedBy === args.userId);
-        cgpaRecs = cgpaRecs.filter((r) => r.calculatedBy === args.userId);
-      }
+      const userGpaRecs = isDeptUser ? gpaRecs.filter((r) => r.calculatedBy === args.userId) : gpaRecs;
+      const userCgpaRecs = isDeptUser ? cgpaRecs.filter((r) => r.calculatedBy === args.userId) : cgpaRecs;
 
-      const totalRecords = gpaRecs.length + cgpaRecs.length;
+      const totalRecords = userGpaRecs.length + userCgpaRecs.length;
       const uniqueStudents = new Set([
         ...deptStudents.map((s) => (s.registerNo || "").trim().toUpperCase()),
         ...gpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
@@ -150,10 +148,10 @@ export const getDashboardStats = query({
       ]);
       uniqueStudents.delete("");
 
-      const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
+      const gpas = userGpaRecs.map((r) => r.gpa).filter((g) => g > 0);
       const avgGpa = gpas.length > 0 ? gpas.reduce((s, g) => s + g, 0) / gpas.length : 0;
 
-      const cgpas = cgpaRecs.map((r) => r.cgpa).filter((c) => c > 0);
+      const cgpas = userCgpaRecs.map((r) => r.cgpa).filter((c) => c > 0);
       const avgCgpa = cgpas.length > 0 ? cgpas.reduce((s, c) => s + c, 0) / cgpas.length : 0;
 
       stats = {
