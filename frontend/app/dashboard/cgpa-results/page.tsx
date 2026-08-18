@@ -75,11 +75,11 @@ export default function CgpaResultsPage() {
       if (initialDept && !dept) setSelectedDept(initialDept);
 
       const activeDept = initialDept || dept || undefined;
-      const activeBatch = batch || undefined;
-
+      // Fetch ALL CGPA records (no batch filter — students are the batch source of truth)
+      // Fetch students filtered by batch for the search dropdown
       const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
-        api.getCgpaRecords(activeDept, activeBatch),
-        api.getStudents(activeDept, activeBatch),
+        api.getCgpaRecords(activeDept),
+        api.getStudents(activeDept, batch || undefined),
         api.getStudentBatches(activeDept)
       ]);
 
@@ -138,7 +138,7 @@ export default function CgpaResultsPage() {
     try {
       await api.deleteCgpaRecord(id);
       setSuccessMsg(`Deleted CGPA record for ${name}`);
-      await loadData();
+      await loadData(selectedDept, selectedBatch);
     } catch (err: any) {
       alert(err.message || 'Failed to delete record.');
     }
@@ -192,7 +192,7 @@ export default function CgpaResultsPage() {
       });
       setSuccessMsg(`Updated academic record for ${editName} (${editRegNo})`);
       setEditingRecord(null);
-      await loadData();
+      await loadData(selectedDept, selectedBatch);
     } catch (err: any) {
       alert(err.message || 'Failed to update record.');
     } finally {
@@ -200,24 +200,55 @@ export default function CgpaResultsPage() {
     }
   };
 
-  const filteredRecords = records
-    .filter((r) => {
-      if (selectedStudentReg) {
-        return r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase();
+  // Build filteredRecords from students (the batch source of truth) + CGPA records
+  // This mirrors the GPA results pattern: students define who appears in the table.
+  const filteredRecords = React.useMemo(() => {
+    // Build a map of CGPA records keyed by registerNo (uppercase)
+    const cgpaMap = new Map<string, CgpaRecord>();
+    for (const r of records) {
+      cgpaMap.set(r.registerNo.trim().toUpperCase(), r);
+    }
+
+    // Start from students (already batch-filtered when a batch is selected)
+    let rows: CgpaRecord[] = students.map((st) => {
+      const key = st.registerNo.trim().toUpperCase();
+      const cgpaRec = cgpaMap.get(key);
+      if (cgpaRec) {
+        return { ...cgpaRec, studentName: st.name, batch: st.batch };
       }
-      if (!searchQuery.trim()) return true;
+      // Student has no CGPA record yet — show placeholder row
+      return {
+        _id: st._id,
+        studentName: st.name,
+        registerNo: st.registerNo,
+        department: st.department,
+        batch: st.batch,
+        regulation: st.regulation || 'R2021',
+        semesters: [],
+        totalCredits: 0,
+        cgpa: 0,
+        createdAt: new Date(st.createdAt).toISOString(),
+      } as CgpaRecord;
+    });
+
+    // Apply student/search filter
+    if (selectedStudentReg) {
+      rows = rows.filter((r) => r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase());
+    } else if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
-      return (
+      rows = rows.filter((r) =>
         r.studentName.toLowerCase().includes(q) ||
         r.registerNo.toLowerCase().includes(q)
       );
-    })
-    .sort((a, b) => {
+    }
+
+    return rows.sort((a, b) => {
       const valA = (sortField === 'registerNo' ? a.registerNo : a.studentName).trim().toUpperCase();
       const valB = (sortField === 'registerNo' ? b.registerNo : b.studentName).trim().toUpperCase();
       const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
       return sortOrder === 'asc' ? cmp : -cmp;
     });
+  }, [students, records, searchQuery, selectedStudentReg, sortField, sortOrder]);
 
   const getSemCgpaMap = (semesters: { semester: number; gpa: number }[]) => {
     const map: Record<number, number> = {};
