@@ -486,43 +486,47 @@ export default function GpaResultsPage() {
                         </td>
                       );
                     })}
+                    {/* Actions cell: per-semester PDF, Edit, Delete */}
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {Object.values(r.semesters).length > 0 ? (
-                          <>
-                            <button
-                              disabled={downloadingRowId === Object.values(r.semesters)[0].id}
-                              onClick={() => handleDownloadRowPdf(Object.values(r.semesters)[0].id, r.registerNo, Object.values(r.semesters)[0].record.semester)}
-                              className="flex items-center gap-1 text-[10px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-2 py-1 rounded-xl transition-all cursor-pointer disabled:opacity-40"
-                              title="Download GPA Report PDF"
-                            >
-                              {downloadingRowId === Object.values(r.semesters)[0].id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <FileText className="h-3 w-3" />
-                              )}
-                              <span>PDF</span>
-                            </button>
-
-                            {canEdit && (
-                              <>
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                        {Object.keys(r.semesters).length > 0 ? (
+                          [1, 2, 3, 4, 5, 6, 7, 8].map((sNum) => {
+                            const semInfo = r.semesters[sNum];
+                            if (!semInfo) return null;
+                            return (
+                              <div key={sNum} className="flex items-center gap-0.5">
                                 <button
-                                  onClick={() => handleOpenEdit(Object.values(r.semesters)[0].record)}
-                                  className="p-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-xl transition-all cursor-pointer"
-                                  title="Edit GPA Record"
+                                  disabled={downloadingRowId === semInfo.id}
+                                  onClick={() => handleDownloadRowPdf(semInfo.id, r.registerNo, sNum)}
+                                  className="flex items-center gap-0.5 text-[9px] font-bold text-sky-300 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-1.5 py-0.5 rounded-lg transition-all cursor-pointer disabled:opacity-40"
+                                  title={`Download Sem ${sNum} GPA Report`}
                                 >
-                                  <Edit className="h-3.5 w-3.5" />
+                                  {downloadingRowId === semInfo.id
+                                    ? <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    : <FileText className="h-2.5 w-2.5" />}
+                                  <span>S{sNum}</span>
                                 </button>
-                                <button
-                                  onClick={() => handleDeleteRow(Object.values(r.semesters)[0].id, r.studentName, r.registerNo)}
-                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer"
-                                  title="Delete Record"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </>
-                            )}
-                          </>
+                                {canEdit && (
+                                  <>
+                                    <button
+                                      onClick={() => handleOpenEdit(semInfo.record)}
+                                      className="p-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 rounded-lg transition-all cursor-pointer"
+                                      title={`Edit Sem ${sNum} GPA`}
+                                    >
+                                      <Edit className="h-2.5 w-2.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteRow(semInfo.id, r.studentName, r.registerNo)}
+                                      className="p-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg transition-all cursor-pointer"
+                                      title={`Delete Sem ${sNum} GPA Record`}
+                                    >
+                                      <Trash2 className="h-2.5 w-2.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })
                         ) : (
                           <>
                             <button
@@ -533,7 +537,6 @@ export default function GpaResultsPage() {
                               <FileText className="h-3 w-3" />
                               <span>PDF</span>
                             </button>
-
                             {canEdit && (
                               <>
                                 <button
