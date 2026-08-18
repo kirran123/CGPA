@@ -35,7 +35,7 @@ export const getDashboardStats = query({
       ]);
       uniqueStudents.delete("");
 
-      const totalFaculty = allUsers.filter((u) => u.role !== "super_admin" && u.status !== "Inactive").length;
+      const totalFaculty = allUsers.filter((u) => u.role !== "super_admin").length;
 
       // Overall average GPA
       const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
@@ -113,11 +113,18 @@ export const getDashboardStats = query({
     } else {
       // Department-level View
       const user = await ctx.db.get(args.userId);
-      const deptStr = args.department || user?.department;
-      if (!deptStr) {
-        throw new Error("Department must be specified either via parameters or user profile.");
+      let deptStr = args.department || user?.department;
+      if (!deptStr && user?.email) {
+        const em = user.email.toLowerCase();
+        if (em.includes("it")) deptStr = "IT";
+        else if (em.includes("cs")) deptStr = "CSE";
+        else if (em.includes("ec")) deptStr = "ECE";
+        else if (em.includes("ee")) deptStr = "EEE";
+        else if (em.includes("mech")) deptStr = "MECH";
+        else if (em.includes("civil")) deptStr = "CIVIL";
+        else if (em.includes("ad")) deptStr = "AD";
       }
-      const activeDept = deptStr.toUpperCase();
+      const activeDept = (deptStr || "IT").toUpperCase();
 
       let gpaRecs = await ctx.db.query("gpaRecords").collect();
       gpaRecs = gpaRecs.filter((r) => matchDeptCode(r.department, activeDept, r.registerNo));
@@ -132,7 +139,7 @@ export const getDashboardStats = query({
 
       const allUsers = await ctx.db.query("users").collect();
       const deptFaculty = allUsers.filter(
-        (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin" && u.status !== "Inactive"
+        (u) => (matchDeptCode(u.department, activeDept) || (u.email && u.email.toLowerCase().includes(activeDept.toLowerCase()))) && u.role !== "super_admin"
       );
 
       // Calculate user-specific record filters separately for calculation stats

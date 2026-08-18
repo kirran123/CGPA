@@ -170,47 +170,45 @@ export const update = mutation({
   },
 });
 
-export function matchDeptCode(deptA?: string, deptB?: string, registerNo?: string): boolean {
-  let inferredA = (deptA || "").trim().toUpperCase();
-
-  // If deptA is missing, empty, "GEN", or "UNDEFINED", infer department from register number!
-  if ((!inferredA || inferredA === "GEN" || inferredA === "UNDEFINED") && registerNo) {
-    const cleanReg = registerNo.replace(/\D/g, "");
-    if (cleanReg.length >= 9) {
-      let bCode = "";
-      if (cleanReg.length === 12) bCode = cleanReg.substring(6, 9);
-      else if (cleanReg.length === 10) bCode = cleanReg.substring(4, 7);
-      const bMap: Record<string, string> = {
-        "103": "CIVIL", "104": "CSE", "105": "EEE", "106": "ECE", "107": "CSBS",
-        "114": "MECH", "205": "IT", "243": "AD", "321": "AM", "108": "EIE"
-      };
-      if (bCode && bMap[bCode]) inferredA = bMap[bCode];
-    }
+export function getCanonicalDeptCode(dept?: string, registerNo?: string): string {
+  if (dept) {
+    const norm = dept.trim().toUpperCase();
+    if (norm === "IT" || norm === "205" || norm.includes("INFORMATION TECH")) return "IT";
+    if (norm === "CSE" || norm === "104" || norm.includes("COMPUTER SCIENCE")) return "CSE";
+    if (norm === "ECE" || norm === "106" || norm.includes("ELECTRONICS")) return "ECE";
+    if (norm === "EEE" || norm === "105" || norm.includes("ELECTRICAL")) return "EEE";
+    if (norm === "MECH" || norm === "114" || norm.includes("MECHANICAL")) return "MECH";
+    if (norm === "CIVIL" || norm === "103" || norm.includes("CIVIL")) return "CIVIL";
+    if (norm === "AD" || norm === "AIDS" || norm === "243" || norm.includes("ARTIFICIAL INTELLIGENCE")) return "AD";
+    if (norm === "AM" || norm === "AIML" || norm === "321" || norm.includes("MACHINE LEARNING")) return "AM";
+    if (norm === "CSBS" || norm === "107") return "CSBS";
+    if (norm === "EIE" || norm === "108") return "EIE";
+    if (norm !== "GEN" && norm !== "UNDEFINED" && norm !== "") return norm;
   }
 
-  if (!inferredA || !deptB) return false;
-  const normA = inferredA;
-  const normB = deptB.trim().toUpperCase();
-  if (normA === normB) return true;
+  // Fallback to register number branch extraction if department string is GEN, missing, or unassigned
+  if (registerNo) {
+    const cleanReg = registerNo.replace(/\D/g, "");
+    if (cleanReg.includes("205")) return "IT";
+    if (cleanReg.includes("104")) return "CSE";
+    if (cleanReg.includes("106")) return "ECE";
+    if (cleanReg.includes("105")) return "EEE";
+    if (cleanReg.includes("114")) return "MECH";
+    if (cleanReg.includes("103")) return "CIVIL";
+    if (cleanReg.includes("243")) return "AD";
+    if (cleanReg.includes("321")) return "AM";
+    if (cleanReg.includes("107")) return "CSBS";
+    if (cleanReg.includes("108")) return "EIE";
+  }
+  return "";
+}
 
-  const aliasMap: Record<string, string[]> = {
-    "AI&DS": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
-    "AD": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
-    "AIDS": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
-    "AIML": ["AM", "AIML", "AI-ML", "321"],
-    "AM": ["AM", "AIML", "AI-ML", "321"],
-    "IT": ["IT", "205", "INFORMATION TECHNOLOGY", "INFORMATION TECHNOLOGY "],
-    "CSE": ["CSE", "104", "COMPUTER SCIENCE", "COMPUTER SCIENCE & ENGINEERING", "COMPUTER SCIENCE AND ENGINEERING"],
-    "ECE": ["ECE", "106", "ELECTRONICS & COMMUNICATION", "ELECTRONICS AND COMMUNICATION ENGINEERING"],
-    "EEE": ["EEE", "105", "ELECTRICAL & ELECTRONICS", "ELECTRICAL AND ELECTRONICS ENGINEERING"],
-    "MECH": ["MECH", "114", "MECHANICAL", "MECHANICAL ENGINEERING"],
-    "CIVIL": ["CIVIL", "103", "CIVIL ENGINEERING"],
-  };
-
-  const aliasesA = aliasMap[normA] || [normA];
-  const aliasesB = aliasMap[normB] || [normB];
-
-  return aliasesA.some((a) => aliasesB.includes(a));
+export function matchDeptCode(deptA?: string, deptB?: string, registerNo?: string): boolean {
+  if (!deptB) return false;
+  const codeA = getCanonicalDeptCode(deptA, registerNo);
+  const codeB = getCanonicalDeptCode(deptB);
+  if (!codeA || !codeB) return false;
+  return codeA === codeB;
 }
 
 // Get Department stats (Super Admin only)
