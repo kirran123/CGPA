@@ -272,6 +272,13 @@ export const getRecords = query({
       }
     }
 
+    // Pre-load ALL users to avoid N+1 DB lookups inside the student loop
+    const allUsers = await ctx.db.query("users").collect();
+    const usersMap = new Map<string, any>();
+    for (const u of allUsers) {
+      usersMap.set(String(u._id), u);
+    }
+
     const out: any[] = [];
 
     for (const st of students) {
@@ -313,7 +320,7 @@ export const getRecords = query({
       const { cgpa: computedCgpa, totalCredits, semesters: mergedSemesters } = computeWeightedCGPA(mergedGpas, semCreditsMap);
 
       if (rec) {
-        const user = rec.calculatedBy ? ((await ctx.db.get(rec.calculatedBy as any)) as any) : null;
+        const user = rec.calculatedBy ? usersMap.get(String(rec.calculatedBy)) : null;
         out.push({
           ...rec,
           studentName: st.name,
