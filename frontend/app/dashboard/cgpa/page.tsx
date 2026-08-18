@@ -118,15 +118,36 @@ export default function InternalCgpaCalculator() {
     setFetchingGpaHistory(true);
     try {
       const history = await api.getStudentGpaHistory(st.registerNo, st.department);
+      
+      const historyMap = new Map<number, { gpa: number; credits: number }>();
       if (history && history.length > 0) {
-        const newRows: SemesterRow[] = history.map((h: any, idx: number) => ({
-          id: String(h.semester || idx + 1),
-          semester: h.semester || idx + 1,
-          gpa: h.gpa || 0,
-          credits: h.credits || 0,
-        }));
-        setRows(newRows);
-        setAutoFetchNotice(`Successfully auto-fetched ${history.length} calculated semester GPA records for ${st.name}!`);
+        history.forEach((h: any) => {
+          if (h.semester) {
+            historyMap.set(Number(h.semester), { gpa: h.gpa || 0, credits: h.credits || 0 });
+          }
+        });
+      }
+
+      // Show semesters 1 through highest semester (at least 2, up to 8)
+      const maxSem = historyMap.size > 0 ? Math.max(...Array.from(historyMap.keys())) : 2;
+      const targetSemCount = Math.min(8, Math.max(2, maxSem));
+
+      const newRows: SemesterRow[] = [];
+      for (let sem = 1; sem <= targetSemCount; sem++) {
+        const fetched = historyMap.get(sem);
+        const autoCreds = semesterCreditsMap[sem] || 0;
+        newRows.push({
+          id: String(sem),
+          semester: sem,
+          gpa: fetched ? fetched.gpa : 0,
+          credits: fetched && fetched.credits > 0 ? fetched.credits : autoCreds,
+        });
+      }
+
+      setRows(newRows);
+
+      if (historyMap.size > 0) {
+        setAutoFetchNotice(`Successfully auto-fetched ${historyMap.size} calculated semester GPA record(s) for ${st.name}!`);
       } else {
         setAutoFetchNotice(`No calculated GPA records found for ${st.name} (${st.registerNo}). You can enter GPAs manually below.`);
       }
@@ -223,15 +244,22 @@ export default function InternalCgpaCalculator() {
     : (filledRows > 0 ? parseFloat((gpaSum / filledRows).toFixed(2)) : 0);
 
   const addRow = () => {
-    const nextSem = rows.length + 1;
+    if (rows.length >= 8) return;
+    const existingSemNumbers = new Set(rows.map(r => r.semester));
+    let nextSem = 1;
+    while (nextSem <= 8 && existingSemNumbers.has(nextSem)) {
+      nextSem++;
+    }
     if (nextSem > 8) return;
     const autoCreds = semesterCreditsMap[nextSem] || 0;
-    setRows([...rows, { id: String(nextSem), semester: nextSem, gpa: 0, credits: autoCreds }]);
+    const updated = [...rows, { id: String(nextSem), semester: nextSem, gpa: 0, credits: autoCreds }];
+    updated.sort((a, b) => a.semester - b.semester);
+    setRows(updated);
   };
 
   const removeRow = (id: string) => {
     if (rows.length === 1) return;
-    const updated = rows.filter(r => r.id !== id).map((r, idx) => ({ ...r, semester: idx + 1, id: String(idx + 1) }));
+    const updated = rows.filter(r => r.id !== id);
     setRows(updated);
   };
 

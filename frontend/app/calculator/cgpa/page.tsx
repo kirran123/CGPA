@@ -111,15 +111,22 @@ export default function CgpaCalculator() {
     : (countedSems > 0 ? parseFloat((gpaSum / countedSems).toFixed(2)) : 0);
 
   const addRow = () => {
-    const nextSem = rows.length + 1;
+    if (rows.length >= 8) return;
+    const existingSemNumbers = new Set(rows.map(r => r.semester));
+    let nextSem = 1;
+    while (nextSem <= 8 && existingSemNumbers.has(nextSem)) {
+      nextSem++;
+    }
     if (nextSem > 8) return;
     const autoCreds = semesterCreditsMap[nextSem] || 0;
-    setRows([...rows, { id: String(nextSem), semester: nextSem, gpa: 0, credits: autoCreds }]);
+    const updated = [...rows, { id: String(nextSem), semester: nextSem, gpa: 0, credits: autoCreds }];
+    updated.sort((a, b) => a.semester - b.semester);
+    setRows(updated);
   };
 
   const removeRow = (id: string) => {
     if (rows.length === 1) return;
-    const updated = rows.filter(r => r.id !== id).map((r, idx) => ({ ...r, semester: idx + 1, id: String(idx + 1) }));
+    const updated = rows.filter(r => r.id !== id);
     setRows(updated);
   };
 
