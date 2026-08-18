@@ -139,7 +139,7 @@ export const getDashboardStats = query({
 
       const allUsers = await ctx.db.query("users").collect();
       const deptFaculty = allUsers.filter(
-        (u) => (matchDeptCode(u.department, activeDept) || (u.email && u.email.toLowerCase().includes(activeDept.toLowerCase()))) && u.role !== "super_admin"
+        (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin"
       );
 
       // Calculate user-specific record filters separately for calculation stats
