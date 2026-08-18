@@ -1,6 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { sortDepartmentsCustom } from "./departments";
+import { sortDepartmentsCustom, matchDeptCode } from "./departments";
 
 // Get dashboard stats
 export const getDashboardStats = query({
@@ -34,7 +34,7 @@ export const getDashboardStats = query({
         ...cgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
       ]);
 
-      const totalFaculty = allUsers.filter((u) => u.status === "Active").length;
+      const totalFaculty = allUsers.filter((u) => u.status === "Active" && u.role !== "super_admin").length;
 
       // Overall average GPA
       const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
@@ -60,9 +60,10 @@ export const getDashboardStats = query({
 
       for (const d of depts) {
         const dDeptCode = d.code.toUpperCase();
-        const dGpaRecs = gpaRecs.filter((r) => r.department.toUpperCase() === dDeptCode);
-        const dCgpaRecs = cgpaRecs.filter((r) => r.department.toUpperCase() === dDeptCode);
-        const dStudents = allStudents.filter((s) => s.department.toUpperCase() === dDeptCode);
+        const dGpaRecs = gpaRecs.filter((r) => matchDeptCode(r.department, dDeptCode));
+        const dCgpaRecs = cgpaRecs.filter((r) => matchDeptCode(r.department, dDeptCode));
+        const dStudents = allStudents.filter((s) => matchDeptCode(s.department, dDeptCode));
+        const dFaculty = allUsers.filter((u) => matchDeptCode(u.department, dDeptCode) && u.role !== "super_admin" && u.status === "Active");
 
         const dRecordsCount = dGpaRecs.length + dCgpaRecs.length;
         const dUniqueStudents = new Set([
@@ -84,6 +85,7 @@ export const getDashboardStats = query({
           email: d.email || `${d.code.toLowerCase()}hod@rit.edu.in`,
           totalRecords: dRecordsCount,
           totalStudents: dUniqueStudents.size,
+          totalFaculty: dFaculty.length,
           avgGpa: parseFloat(dAvgGpa.toFixed(2)),
           avgCgpa: parseFloat(dAvgCgpa.toFixed(2)),
         });
@@ -115,24 +117,20 @@ export const getDashboardStats = query({
       }
       const activeDept = deptStr.toUpperCase();
 
-      let gpaRecs = await ctx.db
-        .query("gpaRecords")
-        .withIndex("by_department", (q) => q.eq("department", activeDept))
-        .collect();
+      let gpaRecs = await ctx.db.query("gpaRecords").collect();
+      gpaRecs = gpaRecs.filter((r) => matchDeptCode(r.department, activeDept));
 
-      let cgpaRecs = await ctx.db
-        .query("cgpaRecords")
-        .withIndex("by_department", (q) => q.eq("department", activeDept))
-        .collect();
+      let cgpaRecs = await ctx.db.query("cgpaRecords").collect();
+      cgpaRecs = cgpaRecs.filter((r) => matchDeptCode(r.department, activeDept));
 
       const allStudents = await ctx.db.query("students").collect();
       const deptStudents = allStudents.filter(
-        (s) => s.department && s.department.trim().toUpperCase() === activeDept
+        (s) => matchDeptCode(s.department, activeDept)
       );
 
       const allUsers = await ctx.db.query("users").collect();
       const deptFaculty = allUsers.filter(
-        (u) => u.department && u.department.trim().toUpperCase() === activeDept && u.status === "Active"
+        (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin" && u.status === "Active"
       );
 
       // If user is dept_admin or staff, they can only see what they calculated for records

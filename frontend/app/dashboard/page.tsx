@@ -256,10 +256,14 @@ export default function AnalyticsDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 border-t border-sky-500/6 pt-3 text-center">
+                  <div className="grid grid-cols-4 gap-1.5 text-center">
                     <div className="bg-sky-500/[0.04] border border-sky-500/6 rounded-xl py-1.5">
                       <div className="text-xs font-extrabold text-white leading-none">{d.totalStudents}</div>
                       <div className="text-[8px] text-sky-300/30 uppercase mt-0.5">Students</div>
+                    </div>
+                    <div className="bg-indigo-500/[0.04] border border-indigo-500/6 rounded-xl py-1.5">
+                      <div className="text-xs font-extrabold text-indigo-300 leading-none">{d.totalFaculty ?? 0}</div>
+                      <div className="text-[8px] text-sky-300/30 uppercase mt-0.5">Faculty</div>
                     </div>
                     <div className="bg-emerald-500/[0.04] border border-emerald-500/6 rounded-xl py-1.5">
                       <div className="text-xs font-extrabold text-emerald-400 leading-none">{d.avgGpa > 0 ? d.avgGpa.toFixed(2) : 'N/A'}</div>

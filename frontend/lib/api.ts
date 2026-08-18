@@ -163,6 +163,7 @@ export interface DashboardStats {
     email: string;
     totalRecords: number;
     totalStudents: number;
+    totalFaculty?: number;
     avgGpa: number;
     avgCgpa: number;
   }[];

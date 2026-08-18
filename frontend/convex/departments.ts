@@ -170,40 +170,57 @@ export const update = mutation({
   },
 });
 
+export function matchDeptCode(deptA?: string, deptB?: string): boolean {
+  if (!deptA || !deptB) return false;
+  const normA = deptA.trim().toUpperCase();
+  const normB = deptB.trim().toUpperCase();
+  if (normA === normB) return true;
+
+  const aliasMap: Record<string, string[]> = {
+    "AI&DS": ["AD", "AIDS", "AI-DS", "AI&DS"],
+    "AD": ["AD", "AIDS", "AI-DS", "AI&DS"],
+    "AIDS": ["AD", "AIDS", "AI-DS", "AI&DS"],
+    "AIML": ["AM", "AIML", "AI-ML"],
+    "AM": ["AM", "AIML", "AI-ML"],
+    "IT": ["IT", "205", "INFORMATION TECHNOLOGY"],
+    "CSE": ["CSE", "104", "COMPUTER SCIENCE"],
+    "ECE": ["ECE", "106"],
+    "EEE": ["EEE", "105"],
+    "MECH": ["MECH", "114", "MECHANICAL"],
+    "CIVIL": ["CIVIL", "103"],
+  };
+
+  const aliasesA = aliasMap[normA] || [normA];
+  const aliasesB = aliasMap[normB] || [normB];
+
+  return aliasesA.some((a) => aliasesB.includes(a));
+}
+
 // Get Department stats (Super Admin only)
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
     const depts = await ctx.db.query("departments").collect();
+    const allStudents = await ctx.db.query("students").collect();
+    const allUsers = await ctx.db.query("users").collect();
+    const allGpaRecs = await ctx.db.query("gpaRecords").collect();
+    const allCgpaRecs = await ctx.db.query("cgpaRecords").collect();
+
     const statsList = [];
 
     for (const d of depts) {
-      // Get all GPA and CGPA records for this department code
-      const gpaRecs = await ctx.db
-        .query("gpaRecords")
-        .withIndex("by_department", (q) => q.eq("department", d.code))
-        .collect();
+      const dGpaRecs = allGpaRecs.filter((r) => matchDeptCode(r.department, d.code));
+      const dCgpaRecs = allCgpaRecs.filter((r) => matchDeptCode(r.department, d.code));
+      const dStudents = allStudents.filter((s) => matchDeptCode(s.department, d.code));
+      const dStaff = allUsers.filter((u) => matchDeptCode(u.department, d.code) && u.role !== "super_admin" && u.status === "Active");
 
-      const cgpaRecs = await ctx.db
-        .query("cgpaRecords")
-        .withIndex("by_department", (q) => q.eq("department", d.code))
-        .collect();
-
-      // Distinct students by registerNo
       const studentRegs = new Set([
-        ...gpaRecs.map((r) => r.registerNo),
-        ...cgpaRecs.map((r) => r.registerNo),
+        ...dStudents.map((s) => s.registerNo.trim().toUpperCase()),
+        ...dGpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+        ...dCgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
       ]);
 
-      // Staff count (excluding super_admins)
-      const staffList = await ctx.db
-        .query("users")
-        .withIndex("by_department", (q) => q.eq("department", d.code))
-        .collect();
-      const staffCount = staffList.filter((u) => u.role !== "super_admin").length;
-
-      // Average GPA calculation
-      const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
+      const gpas = dGpaRecs.map((r) => r.gpa).filter((g) => g > 0);
       const avgGpa =
         gpas.length > 0 ? (gpas.reduce((s, g) => s + g, 0) / gpas.length).toFixed(2) : "N/A";
 
@@ -216,7 +233,7 @@ export const getStats = query({
         email: d.email || `${d.code.toLowerCase()}hod@rit.edu.in`,
         status: d.status,
         students: studentRegs.size,
-        staff: staffCount,
+        staff: dStaff.length,
         avgGpa: avgGpa,
       });
     }
