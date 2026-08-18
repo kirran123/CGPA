@@ -29,12 +29,13 @@ export const getDashboardStats = query({
       const totalRecords = gpaRecs.length + cgpaRecs.length;
       // Combine roster students and any distinct student regNos from records
       const uniqueStudents = new Set([
-        ...allStudents.map((s) => s.registerNo.trim().toUpperCase()),
-        ...gpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
-        ...cgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+        ...allStudents.map((s) => (s.registerNo || "").trim().toUpperCase()),
+        ...gpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
+        ...cgpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
       ]);
+      uniqueStudents.delete("");
 
-      const totalFaculty = allUsers.filter((u) => u.status === "Active" && u.role !== "super_admin").length;
+      const totalFaculty = allUsers.filter((u) => u.role !== "super_admin" && u.status !== "Inactive").length;
 
       // Overall average GPA
       const gpas = gpaRecs.map((r) => r.gpa).filter((g) => g > 0);
@@ -46,7 +47,7 @@ export const getDashboardStats = query({
 
       stats = {
         totalRecords,
-        totalStudents: uniqueStudents.size,
+        totalStudents: Math.max(allStudents.length, uniqueStudents.size),
         totalFaculty,
         avgGpa: parseFloat(avgGpa.toFixed(2)),
         avgCgpa: parseFloat(avgCgpa.toFixed(2)),
@@ -63,14 +64,15 @@ export const getDashboardStats = query({
         const dGpaRecs = gpaRecs.filter((r) => matchDeptCode(r.department, dDeptCode));
         const dCgpaRecs = cgpaRecs.filter((r) => matchDeptCode(r.department, dDeptCode));
         const dStudents = allStudents.filter((s) => matchDeptCode(s.department, dDeptCode));
-        const dFaculty = allUsers.filter((u) => matchDeptCode(u.department, dDeptCode) && u.role !== "super_admin" && u.status === "Active");
+        const dFaculty = allUsers.filter((u) => matchDeptCode(u.department, dDeptCode) && u.role !== "super_admin" && u.status !== "Inactive");
 
         const dRecordsCount = dGpaRecs.length + dCgpaRecs.length;
         const dUniqueStudents = new Set([
-          ...dStudents.map((s) => s.registerNo.trim().toUpperCase()),
-          ...dGpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
-          ...dCgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+          ...dStudents.map((s) => (s.registerNo || "").trim().toUpperCase()),
+          ...dGpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
+          ...dCgpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
         ]);
+        dUniqueStudents.delete("");
 
         const dGpas = dGpaRecs.map((r) => r.gpa).filter((g) => g > 0);
         const dAvgGpa = dGpas.length > 0 ? dGpas.reduce((s, g) => s + g, 0) / dGpas.length : 0;
@@ -84,7 +86,7 @@ export const getDashboardStats = query({
           hodName: d.hodName || "Pending Appointment",
           email: d.email || `${d.code.toLowerCase()}hod@rit.edu.in`,
           totalRecords: dRecordsCount,
-          totalStudents: dUniqueStudents.size,
+          totalStudents: Math.max(dStudents.length, dUniqueStudents.size),
           totalFaculty: dFaculty.length,
           avgGpa: parseFloat(dAvgGpa.toFixed(2)),
           avgCgpa: parseFloat(dAvgCgpa.toFixed(2)),
@@ -130,7 +132,7 @@ export const getDashboardStats = query({
 
       const allUsers = await ctx.db.query("users").collect();
       const deptFaculty = allUsers.filter(
-        (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin" && u.status === "Active"
+        (u) => matchDeptCode(u.department, activeDept) && u.role !== "super_admin" && u.status !== "Inactive"
       );
 
       // If user is dept_admin or staff, they can only see what they calculated for records

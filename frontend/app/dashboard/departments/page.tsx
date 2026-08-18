@@ -41,6 +41,9 @@ export default function DepartmentManagement() {
 
   const navigate = useNavigate();
 
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalStaff, setTotalStaff] = useState(0);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -49,8 +52,18 @@ export default function DepartmentManagement() {
         navigate('/dashboard');
         return;
       }
-      const data = await api.getDepartmentStats();
+      const [data, stats] = await Promise.all([
+        api.getDepartmentStats(),
+        api.getDashboardStats()
+      ]);
       setDepartments(data);
+      if (stats?.stats) {
+        setTotalStudents(stats.stats.totalStudents || 0);
+        setTotalStaff(stats.stats.totalFaculty || 0);
+      } else {
+        setTotalStudents(data.reduce((s, d) => s + d.students, 0));
+        setTotalStaff(data.reduce((s, d) => s + d.staff, 0));
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch departments.');
     } finally {
@@ -120,10 +133,6 @@ export default function DepartmentManagement() {
       </div>
     );
   }
-
-  const activeDepts = departments.filter(d => d.status === 'Active').length;
-  const totalStudents = departments.reduce((s, d) => s + d.students, 0);
-  const totalStaff = departments.reduce((s, d) => s + d.staff, 0);
 
   return (
     <div className="space-y-6">

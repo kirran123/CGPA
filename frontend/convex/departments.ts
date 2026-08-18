@@ -212,13 +212,14 @@ export const getStats = query({
       const dGpaRecs = allGpaRecs.filter((r) => matchDeptCode(r.department, d.code));
       const dCgpaRecs = allCgpaRecs.filter((r) => matchDeptCode(r.department, d.code));
       const dStudents = allStudents.filter((s) => matchDeptCode(s.department, d.code));
-      const dStaff = allUsers.filter((u) => matchDeptCode(u.department, d.code) && u.role !== "super_admin" && u.status === "Active");
+      const dStaff = allUsers.filter((u) => matchDeptCode(u.department, d.code) && u.role !== "super_admin" && u.status !== "Inactive");
 
       const studentRegs = new Set([
-        ...dStudents.map((s) => s.registerNo.trim().toUpperCase()),
-        ...dGpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
-        ...dCgpaRecs.map((r) => r.registerNo.trim().toUpperCase()),
+        ...dStudents.map((s) => (s.registerNo || "").trim().toUpperCase()),
+        ...dGpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
+        ...dCgpaRecs.map((r) => (r.registerNo || "").trim().toUpperCase()),
       ]);
+      studentRegs.delete("");
 
       const gpas = dGpaRecs.map((r) => r.gpa).filter((g) => g > 0);
       const avgGpa =
@@ -232,7 +233,7 @@ export const getStats = query({
         hodName: d.hodName || "Pending Appointment",
         email: d.email || `${d.code.toLowerCase()}hod@rit.edu.in`,
         status: d.status,
-        students: studentRegs.size,
+        students: Math.max(dStudents.length, studentRegs.size),
         staff: dStaff.length,
         avgGpa: avgGpa,
       });
