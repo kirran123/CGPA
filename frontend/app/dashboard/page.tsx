@@ -122,7 +122,9 @@ export default function AnalyticsDashboard() {
   const isSuperAdmin = user?.role === 'super_admin';
 
   const kpis = [
+  let kpis = [
     {
+      key: 'totalStudents',
       label: isSuperAdmin ? 'Total Students' : 'Department Total Students',
       value: stats.stats.totalStudents.toLocaleString(),
       icon: <Users className="h-5 w-5 text-blue-400" />,
@@ -132,6 +134,7 @@ export default function AnalyticsDashboard() {
       border: 'border-blue-500/15'
     },
     {
+      key: 'totalFaculty',
       label: isSuperAdmin ? 'Total Faculty' : 'Department Faculty',
       value: (stats.stats.totalFaculty ?? 0).toLocaleString(),
       icon: <Shield className="h-5 w-5 text-indigo-400" />,
@@ -141,6 +144,7 @@ export default function AnalyticsDashboard() {
       border: 'border-indigo-500/15'
     },
     {
+      key: 'totalCalculations',
       label: isSuperAdmin ? 'Total Calculations' : 'Department Calculations',
       value: stats.stats.totalRecords.toLocaleString(),
       icon: <FileCheck className="h-5 w-5 text-sky-400" />,
@@ -150,6 +154,7 @@ export default function AnalyticsDashboard() {
       border: 'border-sky-500/15'
     },
     {
+      key: 'avgGpa',
       label: isSuperAdmin ? 'Institution Avg GPA' : 'Department Avg GPA',
       value: stats.stats.avgGpa.toFixed(2),
       icon: <GraduationCap className="h-5 w-5 text-emerald-400" />,
@@ -159,6 +164,7 @@ export default function AnalyticsDashboard() {
       border: 'border-emerald-500/15'
     },
     {
+      key: 'avgCgpa',
       label: isSuperAdmin ? 'Institution Avg CGPA' : 'Department Avg CGPA',
       value: stats.stats.avgCgpa.toFixed(2),
       icon: <TrendingUp className="h-5 w-5 text-amber-400" />,
@@ -168,6 +174,11 @@ export default function AnalyticsDashboard() {
       border: 'border-amber-500/15'
     }
   ];
+
+  // For staff role, remove 'Department Faculty' KPI card as requested
+  if (user?.role === 'staff') {
+    kpis = kpis.filter(k => k.key !== 'totalFaculty');
+  }
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
@@ -198,7 +209,7 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Global KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${kpis.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-5'} gap-4`}>
         {kpis.map((k, idx) => (
           <div
             key={idx}

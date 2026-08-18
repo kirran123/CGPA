@@ -170,24 +170,37 @@ export const update = mutation({
   },
 });
 
-export function matchDeptCode(deptA?: string, deptB?: string): boolean {
+export function matchDeptCode(deptA?: string, deptB?: string, registerNo?: string): boolean {
+  if (!deptA && registerNo) {
+    const cleanReg = registerNo.replace(/\D/g, "");
+    if (cleanReg.length >= 9) {
+      let bCode = "";
+      if (cleanReg.length === 12) bCode = cleanReg.substring(6, 9);
+      else if (cleanReg.length === 10) bCode = cleanReg.substring(4, 7);
+      const bMap: Record<string, string> = {
+        "103": "CIVIL", "104": "CSE", "105": "EEE", "106": "ECE", "107": "CSBS",
+        "114": "MECH", "205": "IT", "243": "AD", "321": "AM", "108": "EIE"
+      };
+      if (bCode && bMap[bCode]) deptA = bMap[bCode];
+    }
+  }
   if (!deptA || !deptB) return false;
   const normA = deptA.trim().toUpperCase();
   const normB = deptB.trim().toUpperCase();
   if (normA === normB) return true;
 
   const aliasMap: Record<string, string[]> = {
-    "AI&DS": ["AD", "AIDS", "AI-DS", "AI&DS"],
-    "AD": ["AD", "AIDS", "AI-DS", "AI&DS"],
-    "AIDS": ["AD", "AIDS", "AI-DS", "AI&DS"],
-    "AIML": ["AM", "AIML", "AI-ML"],
-    "AM": ["AM", "AIML", "AI-ML"],
-    "IT": ["IT", "205", "INFORMATION TECHNOLOGY"],
-    "CSE": ["CSE", "104", "COMPUTER SCIENCE"],
-    "ECE": ["ECE", "106"],
-    "EEE": ["EEE", "105"],
-    "MECH": ["MECH", "114", "MECHANICAL"],
-    "CIVIL": ["CIVIL", "103"],
+    "AI&DS": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
+    "AD": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
+    "AIDS": ["AD", "AIDS", "AI-DS", "AI&DS", "243", "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE"],
+    "AIML": ["AM", "AIML", "AI-ML", "321"],
+    "AM": ["AM", "AIML", "AI-ML", "321"],
+    "IT": ["IT", "205", "INFORMATION TECHNOLOGY", "INFORMATION TECHNOLOGY "],
+    "CSE": ["CSE", "104", "COMPUTER SCIENCE", "COMPUTER SCIENCE & ENGINEERING", "COMPUTER SCIENCE AND ENGINEERING"],
+    "ECE": ["ECE", "106", "ELECTRONICS & COMMUNICATION", "ELECTRONICS AND COMMUNICATION ENGINEERING"],
+    "EEE": ["EEE", "105", "ELECTRICAL & ELECTRONICS", "ELECTRICAL AND ELECTRONICS ENGINEERING"],
+    "MECH": ["MECH", "114", "MECHANICAL", "MECHANICAL ENGINEERING"],
+    "CIVIL": ["CIVIL", "103", "CIVIL ENGINEERING"],
   };
 
   const aliasesA = aliasMap[normA] || [normA];
@@ -209,9 +222,9 @@ export const getStats = query({
     const statsList = [];
 
     for (const d of depts) {
-      const dGpaRecs = allGpaRecs.filter((r) => matchDeptCode(r.department, d.code));
-      const dCgpaRecs = allCgpaRecs.filter((r) => matchDeptCode(r.department, d.code));
-      const dStudents = allStudents.filter((s) => matchDeptCode(s.department, d.code));
+      const dGpaRecs = allGpaRecs.filter((r) => matchDeptCode(r.department, d.code, r.registerNo));
+      const dCgpaRecs = allCgpaRecs.filter((r) => matchDeptCode(r.department, d.code, r.registerNo));
+      const dStudents = allStudents.filter((s) => matchDeptCode(s.department, d.code, s.registerNo));
       const dStaff = allUsers.filter((u) => matchDeptCode(u.department, d.code) && u.role !== "super_admin" && u.status !== "Inactive");
 
       const studentRegs = new Set([
