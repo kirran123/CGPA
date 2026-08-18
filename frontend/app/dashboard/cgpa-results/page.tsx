@@ -61,7 +61,7 @@ export default function CgpaResultsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const canEdit = canEditRecordsFn();
 
-  const loadData = async () => {
+  const loadData = async (dept?: string, batch?: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -71,14 +71,15 @@ export default function CgpaResultsPage() {
       const depts = await api.getPublicDepartments();
       setDepartments(depts);
 
-      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : selectedDept;
-      if (initialDept && !selectedDept) setSelectedDept(initialDept);
+      const initialDept = u?.role !== 'super_admin' ? u?.department || '' : (dept || '');
+      if (initialDept && !dept) setSelectedDept(initialDept);
 
-      const activeDept = initialDept || selectedDept || undefined;
+      const activeDept = initialDept || dept || undefined;
+      const activeBatch = batch || undefined;
 
       const [fetchedRecords, fetchedStudents, fetchedBatches] = await Promise.all([
-        api.getCgpaRecords(activeDept, selectedBatch || undefined),
-        api.getStudents(activeDept, selectedBatch || undefined),
+        api.getCgpaRecords(activeDept, activeBatch),
+        api.getStudents(activeDept, activeBatch),
         api.getStudentBatches(activeDept)
       ]);
 
@@ -93,7 +94,7 @@ export default function CgpaResultsPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadData(selectedDept, selectedBatch);
   }, [selectedDept, selectedBatch]);
 
   const handleDownloadRowPdf = async (recordId: string, regNo: string) => {
@@ -201,11 +202,6 @@ export default function CgpaResultsPage() {
 
   const filteredRecords = records
     .filter((r) => {
-      if (selectedBatch && selectedBatch.trim() !== '' && r.batch) {
-        if (r.batch.trim().toLowerCase() !== selectedBatch.trim().toLowerCase()) {
-          return false;
-        }
-      }
       if (selectedStudentReg) {
         return r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase();
       }
@@ -256,7 +252,7 @@ export default function CgpaResultsPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={loadData}
+            onClick={() => loadData(selectedDept, selectedBatch)}
             className="flex items-center gap-1.5 px-3 py-2 border border-sky-500/15 hover:border-sky-500/35 bg-sky-500/5 hover:bg-sky-500/10 text-xs font-semibold text-sky-300 hover:text-white rounded-xl transition-all cursor-pointer"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
