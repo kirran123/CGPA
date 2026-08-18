@@ -201,8 +201,10 @@ export default function CgpaResultsPage() {
 
   const filteredRecords = records
     .filter((r) => {
-      if (selectedBatch && r.batch && r.batch !== selectedBatch) {
-        return false;
+      if (selectedBatch && selectedBatch.trim() !== '' && r.batch) {
+        if (r.batch.trim().toLowerCase() !== selectedBatch.trim().toLowerCase()) {
+          return false;
+        }
       }
       if (selectedStudentReg) {
         return r.registerNo.trim().toUpperCase() === selectedStudentReg.trim().toUpperCase();

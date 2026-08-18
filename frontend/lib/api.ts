@@ -491,8 +491,9 @@ export const api = {
       _id: r._id,
       createdAt: new Date(r.createdAt).toISOString(),
     }));
-    if (batch) {
-      mapped = mapped.filter((r: any) => r.batch === batch);
+    if (batch && batch.trim() !== '') {
+      const bLower = batch.trim().toLowerCase();
+      mapped = mapped.filter((r: any) => r.batch && r.batch.trim().toLowerCase() === bLower);
     }
     return mapped;
   },

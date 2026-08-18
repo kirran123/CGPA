@@ -207,24 +207,37 @@ export const calculateSingle = mutation({
 export const getRecords = query({
   args: { department: v.optional(v.string()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    const deptUpper = args.department ? args.department.toUpperCase() : undefined;
+    const deptUpper = args.department ? args.department.toUpperCase().trim() : undefined;
+
+    const depts = await ctx.db.query("departments").collect();
+    const validDepts = new Set<string>();
+    if (deptUpper) {
+      validDepts.add(deptUpper);
+      const match = depts.find(
+        (d) => d.code.toUpperCase() === deptUpper || d.name.toUpperCase() === deptUpper
+      );
+      if (match) {
+        validDepts.add(match.code.toUpperCase());
+        validDepts.add(match.name.toUpperCase());
+      }
+    }
 
     let students = await ctx.db.query("students").collect();
-    if (deptUpper) {
-      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
+    if (validDepts.size > 0) {
+      students = students.filter((s) => validDepts.has(s.department.toUpperCase()));
     }
 
     let cgpaRecords = await ctx.db.query("cgpaRecords").collect();
-    if (deptUpper) {
-      cgpaRecords = cgpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
+    if (validDepts.size > 0) {
+      cgpaRecords = cgpaRecords.filter((r) => validDepts.has(r.department.toUpperCase()));
     }
     if (args.userId) {
       cgpaRecords = cgpaRecords.filter((r) => r.calculatedBy === args.userId);
     }
 
     let gpaRecords = await ctx.db.query("gpaRecords").collect();
-    if (deptUpper) {
-      gpaRecords = gpaRecords.filter((r) => r.department.toUpperCase() === deptUpper);
+    if (validDepts.size > 0) {
+      gpaRecords = gpaRecords.filter((r) => validDepts.has(r.department.toUpperCase()));
     }
 
     // Pre-load all semesterCredits & subjects to build credits maps per (dept, regulation)

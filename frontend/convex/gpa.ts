@@ -229,11 +229,24 @@ export const getBatchRecords = query({
 export const getRecords = query({
   args: { department: v.optional(v.string()), semester: v.optional(v.number()), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
-    let deptUpper = args.department ? args.department.toUpperCase() : undefined;
+    let deptUpper = args.department ? args.department.toUpperCase().trim() : undefined;
+
+    const depts = await ctx.db.query("departments").collect();
+    const validDepts = new Set<string>();
+    if (deptUpper) {
+      validDepts.add(deptUpper);
+      const match = depts.find(
+        (d) => d.code.toUpperCase() === deptUpper || d.name.toUpperCase() === deptUpper
+      );
+      if (match) {
+        validDepts.add(match.code.toUpperCase());
+        validDepts.add(match.name.toUpperCase());
+      }
+    }
 
     let students = await ctx.db.query("students").collect();
-    if (deptUpper) {
-      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
+    if (validDepts.size > 0) {
+      students = students.filter((s) => validDepts.has(s.department.toUpperCase()));
     }
     const studentRegs = new Set(students.map((s) => s.registerNo.trim().toUpperCase()));
     const studentMap = new Map<string, string>();
@@ -242,7 +255,7 @@ export const getRecords = query({
     }
 
     let records = await ctx.db.query("gpaRecords").collect();
-    if (deptUpper) records = records.filter((r) => r.department === deptUpper);
+    if (validDepts.size > 0) records = records.filter((r) => validDepts.has(r.department.toUpperCase()));
     if (args.semester !== undefined) records = records.filter((r) => r.semester === args.semester);
     if (args.userId) records = records.filter((r) => r.calculatedBy === args.userId);
 
