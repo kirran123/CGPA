@@ -298,12 +298,6 @@ export const getRecords = query({
       }
     }
 
-    // Pre-load ALL users to avoid N+1 DB lookups inside the student loop
-    const allUsers = await ctx.db.query("users").collect();
-    const usersMap = new Map<string, any>();
-    for (const u of allUsers) {
-      usersMap.set(String(u._id), u);
-    }
 
     const out: any[] = [];
 

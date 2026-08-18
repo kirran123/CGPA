@@ -121,7 +121,6 @@ export default function AnalyticsDashboard() {
 
   const isSuperAdmin = user?.role === 'super_admin';
 
-  const kpis = [
   let kpis = [
     {
       key: 'totalStudents',
