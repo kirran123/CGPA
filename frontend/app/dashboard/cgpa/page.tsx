@@ -101,6 +101,40 @@ export default function InternalCgpaCalculator() {
     fetchSemesterCredits();
   }, [selectedDept, regulation]);
 
+  const deriveRegulationForStudent = (st: any, availableRegs: string[]) => {
+    if (!st) return null;
+    if (st.regulation) {
+      const exact = availableRegs.find(r => r.toUpperCase() === st.regulation.toUpperCase());
+      if (exact) return exact;
+      return st.regulation;
+    }
+    if (st.batch) {
+      const match = st.batch.match(/\b(20\d\d)\b/);
+      if (match) {
+        const year = parseInt(match[1]);
+        let target = 'R2021';
+        if (year >= 2026) target = 'R2026';
+        else if (year >= 2021) target = 'R2021';
+        else target = 'R2017';
+        const found = availableRegs.find(r => r.toUpperCase() === target.toUpperCase());
+        if (found) return found;
+      }
+    }
+    if (st.registerNo && st.registerNo.length >= 6) {
+      const yearDigits = st.registerNo.substring(4, 6);
+      if (/^\d\d$/.test(yearDigits)) {
+        const year = 2000 + parseInt(yearDigits);
+        let target = 'R2021';
+        if (year >= 2026) target = 'R2026';
+        else if (year >= 2021) target = 'R2021';
+        else target = 'R2017';
+        const found = availableRegs.find(r => r.toUpperCase() === target.toUpperCase());
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const handleSelectStudent = async (regNo: string, studentObj?: any) => {
     setSelectedStudentReg(regNo);
     setAutoFetchNotice(null);
@@ -114,7 +148,8 @@ export default function InternalCgpaCalculator() {
     if (st.department && (currentUser?.role === 'super_admin' || currentUser?.department === st.department)) {
       setSelectedDept(st.department);
     }
-    if (st.regulation) setRegulation(st.regulation);
+    const autoReg = deriveRegulationForStudent(st, regulations);
+    if (autoReg) setRegulation(autoReg);
 
     setFetchingGpaHistory(true);
     try {
@@ -346,7 +381,14 @@ export default function InternalCgpaCalculator() {
                 <label className="text-[9px] uppercase font-bold text-emerald-300/70 block mb-1">Filter Roster By Batch</label>
                 <select
                   value={selectedBatch}
-                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    setSelectedBatch(b);
+                    if (b) {
+                      const autoReg = deriveRegulationForStudent({ batch: b }, regulations);
+                      if (autoReg) setRegulation(autoReg);
+                    }
+                  }}
                   className="w-full bg-[#071830] border border-emerald-500/20 focus:border-emerald-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-all"
                 >
                   <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>

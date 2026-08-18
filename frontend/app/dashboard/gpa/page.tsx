@@ -126,6 +126,40 @@ export default function InternalGpaCalculator() {
     fetchStudentsAndBatches();
   }, [selectedDept, selectedBatch, currentUser]);
 
+  const deriveRegulationForStudent = (st: any, availableRegs: string[]) => {
+    if (!st) return null;
+    if (st.regulation) {
+      const exact = availableRegs.find(r => r.toUpperCase() === st.regulation.toUpperCase());
+      if (exact) return exact;
+      return st.regulation;
+    }
+    if (st.batch) {
+      const match = st.batch.match(/\b(20\d\d)\b/);
+      if (match) {
+        const year = parseInt(match[1]);
+        let target = 'R2021';
+        if (year >= 2026) target = 'R2026';
+        else if (year >= 2021) target = 'R2021';
+        else target = 'R2017';
+        const found = availableRegs.find(r => r.toUpperCase() === target.toUpperCase());
+        if (found) return found;
+      }
+    }
+    if (st.registerNo && st.registerNo.length >= 6) {
+      const yearDigits = st.registerNo.substring(4, 6);
+      if (/^\d\d$/.test(yearDigits)) {
+        const year = 2000 + parseInt(yearDigits);
+        let target = 'R2021';
+        if (year >= 2026) target = 'R2026';
+        else if (year >= 2021) target = 'R2021';
+        else target = 'R2017';
+        const found = availableRegs.find(r => r.toUpperCase() === target.toUpperCase());
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const handleSelectStudent = (regNo: string, student?: any) => {
     setSelectedStudentReg(regNo);
     if (!regNo) return;
@@ -136,7 +170,10 @@ export default function InternalGpaCalculator() {
     if (st.department && (currentUser?.role === 'super_admin' || currentUser?.department === st.department)) {
       setSelectedDept(st.department);
     }
-    if (st.regulation) setRegulation(st.regulation);
+    const autoReg = deriveRegulationForStudent(st, regulations);
+    if (autoReg) {
+      setRegulation(autoReg);
+    }
   };
 
   const downloadReport = async () => {
@@ -416,7 +453,14 @@ export default function InternalGpaCalculator() {
                 <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Filter Roster By Batch</label>
                 <select
                   value={selectedBatch}
-                  onChange={(e) => setSelectedBatch(e.target.value)}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    setSelectedBatch(b);
+                    if (b) {
+                      const autoReg = deriveRegulationForStudent({ batch: b }, regulations);
+                      if (autoReg) setRegulation(autoReg);
+                    }
+                  }}
                   className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
                 >
                   <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
@@ -459,9 +503,10 @@ export default function InternalGpaCalculator() {
                     setRegisterNo(val);
                     const match = studentRoster.find(s => s.registerNo.toUpperCase() === val.trim().toUpperCase());
                     if (match) {
-                      setStudentName(match.name);
-                      if (match.regulation) setRegulation(match.regulation);
-                      setSelectedStudentReg(match.registerNo);
+                      handleSelectStudent(match.registerNo, match);
+                    } else if (val.trim().length >= 6) {
+                      const autoReg = deriveRegulationForStudent({ registerNo: val.trim() }, regulations);
+                      if (autoReg) setRegulation(autoReg);
                     }
                   }}
                   placeholder="e.g. 953621104012"
