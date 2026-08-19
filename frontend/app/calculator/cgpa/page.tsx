@@ -33,6 +33,8 @@ export default function CgpaCalculator() {
     { id: '2', semester: 2, gpa: 0, credits: 0 }
   ]);
 
+  const [studentName, setStudentName] = useState('');
+  const [registerNo, setRegisterNo] = useState('');
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [semesterCreditsMap, setSemesterCreditsMap] = useState<Record<number, number>>({});
@@ -143,6 +145,8 @@ export default function CgpaCalculator() {
       { id: '1', semester: 1, gpa: 0, credits: semesterCreditsMap[1] || 0 },
       { id: '2', semester: 2, gpa: 0, credits: semesterCreditsMap[2] || 0 }
     ]);
+    setStudentName('');
+    setRegisterNo('');
   };
 
   const downloadReport = async () => {
@@ -150,6 +154,8 @@ export default function CgpaCalculator() {
     try {
       const activeDeptObj = departments.find(d => d.code === selectedDept);
       const payload = {
+        studentName: studentName.trim() || undefined,
+        registerNo: registerNo.trim() || undefined,
         department: activeDeptObj ? activeDeptObj.name : selectedDept,
         regulation,
         semesters: rows.map(r => ({
@@ -288,6 +294,40 @@ export default function CgpaCalculator() {
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Reset Calculator
               </button>
+            </div>
+
+            {/* Student Details (Optional for PDF Report) */}
+            <div className="glass-card rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-emerald-500/10">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Student Details (Optional)</h3>
+                <span className="text-[9px] text-emerald-300/40">Appears on PDF</span>
+              </div>
+
+              <div className="form-group space-y-1">
+                <label className="form-label text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">
+                  STUDENT NAME
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Abinesh S"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  className="w-full bg-[#071830] border border-emerald-500/18 focus:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-emerald-300/30 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div className="form-group space-y-1">
+                <label className="form-label text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">
+                  REGISTER NO.
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 953621104012"
+                  value={registerNo}
+                  onChange={(e) => setRegisterNo(e.target.value)}
+                  className="w-full bg-[#071830] border border-emerald-500/18 focus:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-emerald-300/30 focus:outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
 

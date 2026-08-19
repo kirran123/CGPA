@@ -55,6 +55,8 @@ export default function GpaCalculator() {
   const [rows, setRows] = useState<SubjectRow[]>([]);
   const [gradeSettingsList, setGradeSettingsList] = useState<{ grade: string; points: number }[]>(DEFAULT_GRADES);
 
+  const [studentName, setStudentName] = useState('');
+  const [registerNo, setRegisterNo] = useState('');
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
@@ -188,6 +190,8 @@ export default function GpaCalculator() {
 
   const resetGrades = () => {
     setRows(rows.map(r => ({ ...r, grade: '' })));
+    setStudentName('');
+    setRegisterNo('');
   };
 
   const downloadReport = async () => {
@@ -201,6 +205,8 @@ export default function GpaCalculator() {
         return;
       }
       const payload = {
+        studentName: studentName.trim() || undefined,
+        registerNo: registerNo.trim() || undefined,
         department: activeDeptObj ? activeDeptObj.name : selectedDept,
         semester: Number(selectedSem),
         regulation,
@@ -347,6 +353,40 @@ export default function GpaCalculator() {
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Reset Grades
               </button>
+            </div>
+
+            {/* Student Details (Optional for PDF Report) */}
+            <div className="glass-card rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-sky-500/10">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Student Details (Optional)</h3>
+                <span className="text-[9px] text-sky-300/40">Appears on PDF</span>
+              </div>
+
+              <div className="form-group space-y-1">
+                <label className="form-label text-[10px] font-extrabold text-sky-400 uppercase tracking-wider block">
+                  STUDENT NAME
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Abinesh S"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-sky-300/30 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div className="form-group space-y-1">
+                <label className="form-label text-[10px] font-extrabold text-sky-400 uppercase tracking-wider block">
+                  REGISTER NO.
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 953621104012"
+                  value={registerNo}
+                  onChange={(e) => setRegisterNo(e.target.value)}
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-sky-300/30 focus:outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
 

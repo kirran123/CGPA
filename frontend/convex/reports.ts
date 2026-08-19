@@ -243,7 +243,7 @@ async function buildCgpaPdf(record: any): Promise<Uint8Array> {
 
   fillRect(page, 40, 140, PW - 80, 45, C.lightBg);
   txt(page, "Student Details", 50, 148, 11, bold);
-  txt(page, `Name: ${record.studentName}   |   Reg No: ${record.registerNo}   |   Dept: ${record.department}`, 50, 162, 9, reg);
+  txt(page, `Name: ${record.studentName || "ANONYMOUS"}   |   Reg No: ${record.registerNo || "N/A"}   |   Dept: ${record.department}`, 50, 162, 9, reg);
 
   const semesters: any[] = record.semesters || [];
   const sortedSems = [...semesters].sort((a: any, b: any) => a.semester - b.semester);
@@ -601,8 +601,8 @@ export const generateGpaPdf = action({
     }
     const gpa = args.gpa ?? (totalCredits > 0 ? parseFloat((totalPoints / totalCredits).toFixed(2)) : 0);
     const bytes = await buildGpaPdf({
-      studentName: args.studentName || "ANONYMOUS",
-      registerNo:  args.registerNo  || "N/A",
+      studentName: args.studentName?.trim() || "ANONYMOUS",
+      registerNo:  args.registerNo?.trim()  || "N/A",
       semester: args.semester, department: args.department,
       regulation: args.regulation || "R2021",
       subjects, totalCredits, totalPoints, gpa,
@@ -642,8 +642,8 @@ export const generateCgpaPdf = action({
       ? parseFloat((totalPoints / totalCreds).toFixed(2))
       : (n > 0 ? parseFloat((sum / n).toFixed(2)) : 0));
     const bytes = await buildCgpaPdf({
-      studentName: args.studentName || "ANONYMOUS",
-      registerNo:  args.registerNo  || "N/A",
+      studentName: args.studentName?.trim() || "ANONYMOUS",
+      registerNo:  args.registerNo?.trim()  || "N/A",
       department: args.department,
       regulation: args.regulation || "R2021",
       semesters, cgpa,
