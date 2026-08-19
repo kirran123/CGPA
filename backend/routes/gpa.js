@@ -69,22 +69,25 @@ const calculateGPAAndCGPA = async (registerNo, semester, subjectsInput, departme
       query.regulation = { $regex: regulation, $options: 'i' };
     }
     const subject = await Subject.findOne(query);
-    if (!subject) {
-      console.warn(`Subject with code ${s.subjectCode} not found in department ${department}, skipping.`);
-      continue;
-    }
+
+    const subCode = s.subjectCode.toUpperCase();
+    const subName = s.subjectName || (subject ? subject.name : s.subjectCode);
+    const subCredits = (s.credits !== undefined && s.credits !== null && !isNaN(Number(s.credits)))
+      ? Number(s.credits)
+      : (subject ? subject.credits : 0);
+
     const normalGrade = s.grade.trim().toUpperCase();
     const gradePoint = gradePointsMap[normalGrade] !== undefined ? gradePointsMap[normalGrade] : 0;
 
-    totalCurrentCredits += subject.credits;
-    totalCurrentPoints += (subject.credits * gradePoint);
+    totalCurrentCredits += subCredits;
+    totalCurrentPoints += (subCredits * gradePoint);
 
     subjectsDetails.push({
-      subjectCode: subject.code,
-      subjectName: subject.name,
+      subjectCode: subCode,
+      subjectName: subName,
       grade: normalGrade,
       gradePoint: gradePoint,
-      credits: subject.credits
+      credits: subCredits
     });
   }
 

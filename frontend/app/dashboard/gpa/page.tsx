@@ -308,6 +308,8 @@ export default function InternalGpaCalculator() {
       regulation,
       subjects: gradedRows.map(r => ({
         subjectCode: r.subjectCode,
+        subjectName: r.subjectName,
+        credits: Number(r.credits) || 0,
         grade: r.grade
       }))
     };
