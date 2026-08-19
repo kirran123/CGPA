@@ -234,13 +234,13 @@ export default function GpaCalculator() {
       <div className="orb orb-indigo w-[500px] h-[500px] top-10 left-1/2 -translate-x-1/2 opacity-45 fixed" />
       <div className="orb orb-violet w-[300px] h-[300px] bottom-10 right-10 opacity-20 fixed" />
 
-      <div className="max-w-7xl mx-auto px-4 pt-4 pb-10 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 pt-2 pb-8 sm:px-6 lg:px-8 relative z-10">
 
         {/* Back Link */}
-        <div className="mb-3 animate-fade-in-down">
+        <div className="mb-2 animate-fade-in-down">
           <Link 
             to="/" 
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/15 hover:border-sky-500/35 px-3 py-1.5 rounded-xl transition-all duration-300 cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/15 hover:border-sky-500/35 px-3 py-1 rounded-xl transition-all duration-300 cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Return to Home</span>
@@ -248,15 +248,15 @@ export default function GpaCalculator() {
         </div>
 
         {/* Title */}
-        <div className="text-center mb-6 animate-fade-in-down">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[11px] font-semibold uppercase tracking-widest mb-2">
-            <Sparkles className="h-3.5 w-3.5" />
+        <div className="text-center mb-4 animate-fade-in-down">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[10px] font-semibold uppercase tracking-widest mb-1">
+            <Sparkles className="h-3 w-3" />
             GPA Performance Calculator
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 font-['Outfit']">
+          <h1 className="text-xl md:text-2xl font-extrabold tracking-tight mb-0.5 font-['Outfit']">
             Calculate Your <span className="gradient-text">Semester GPA</span>
           </h1>
-          <p className="text-xs text-sky-200/50 max-w-xl mx-auto">
+          <p className="text-[11px] text-sky-200/50 max-w-xl mx-auto">
             Select department, regulation, and semester. Grades auto-load from syllabus catalog.
           </p>
         </div>
@@ -264,9 +264,9 @@ export default function GpaCalculator() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
           {/* ── Controls ── */}
-          <div className="lg:col-span-4 space-y-4 animate-slide-left">
-            <div className="glass-card rounded-2xl p-4 space-y-3.5">
-              <h3 className="text-xs font-bold text-white pb-1.5 border-b border-sky-500/10">Setup</h3>
+          <div className="lg:col-span-4 space-y-3.5 animate-slide-left">
+            <div className="glass-card rounded-2xl p-4 space-y-3">
+              <h3 className="text-xs font-bold text-white pb-1 border-b border-sky-500/10">Setup</h3>
 
               <div className="form-group">
                 <label className="form-label text-[11px]">Regulation</label>
@@ -311,15 +311,15 @@ export default function GpaCalculator() {
             </div>
 
             {/* GPA Display */}
-            <div className="gpa-display text-center py-4">
+            <div className="gpa-display text-center py-3">
               <span className="text-[10px] font-bold text-sky-300/50 uppercase tracking-widest block mb-1">Your GPA</span>
-              <div className="display-number text-5xl font-black text-white mb-0.5">
+              <div className="display-number text-4xl md:text-5xl font-black text-white mb-0.5">
                 {gpa.toFixed(2)}
-                <span className="text-lg text-sky-300/30 ml-1">/ 10</span>
+                <span className="text-base text-sky-300/30 ml-1">/ 10</span>
               </div>
               {anyGradeSet && rows.length > 0 && (
-                <div className="mt-2">
-                  <div className="bg-sky-500/[0.06] rounded-xl p-1.5 text-center">
+                <div className="mt-1.5">
+                  <div className="bg-sky-500/[0.06] rounded-xl p-1 text-center">
                     <div className="text-[9px] text-sky-300/40">Total Credits</div>
                     <div className="text-xs font-bold text-white">{totalCredits}</div>
                   </div>
@@ -404,14 +404,14 @@ export default function GpaCalculator() {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 pb-1 custom-scrollbar pt-2">
+                  <div className="space-y-2 max-h-[440px] overflow-y-auto pr-4 pb-1 custom-scrollbar pt-1">
                     {/* Header Row */}
-                    <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-extrabold uppercase tracking-wider text-[#334155] px-2.5 pb-2">
+                    <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-extrabold uppercase tracking-wider text-[#334155] px-2.5 pb-2 pr-4">
                       <div className="col-span-2">CODE</div>
-                      <div className="col-span-5">SUBJECT NAME</div>
+                      <div className="col-span-4">SUBJECT NAME</div>
                       <div className="col-span-1 text-center">CREDITS</div>
                       <div className="col-span-2 text-center">GRADE</div>
-                      <div className="col-span-2 text-center">ACTIONS</div>
+                      <div className="col-span-3 text-center">ACTIONS</div>
                     </div>
 
                     {/* Subject Rows */}
@@ -435,7 +435,7 @@ export default function GpaCalculator() {
                             value={row.subjectCode}
                             title={row.subjectCode}
                             onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
-                            className={`w-full rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-center focus:outline-none transition-all truncate ${
+                            className={`w-full rounded-xl px-2 py-1.5 text-xs font-mono font-bold text-center focus:outline-none transition-all truncate ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e3a8a] cursor-default'
@@ -444,7 +444,7 @@ export default function GpaCalculator() {
                         </div>
 
                         {/* Subject Name — Fully Visible Without Overlap */}
-                        <div className="col-span-5">
+                        <div className="col-span-4">
                           <input
                             id={`public-sub-name-${row.id}`}
                             type="text"
@@ -482,7 +482,7 @@ export default function GpaCalculator() {
                           <select
                             value={row.grade}
                             onChange={e => updateGrade(row.id, e.target.value)}
-                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs text-center rounded-xl px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
+                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs text-center rounded-xl px-1 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
                           >
                             <option value="">-- Grade --</option>
                             {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
@@ -493,8 +493,8 @@ export default function GpaCalculator() {
                           </select>
                         </div>
 
-                        {/* Action Buttons: Edit & Delete */}
-                        <div className="col-span-2 flex items-center justify-center gap-1.5">
+                        {/* Action Buttons: Edit & Delete (Given 3 cols so Delete never touches scrollbar) */}
+                        <div className="col-span-3 flex items-center justify-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => toggleEditRow(row.id)}
