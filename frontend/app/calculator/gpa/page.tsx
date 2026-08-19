@@ -352,27 +352,28 @@ export default function GpaCalculator() {
 
           {/* ── Grades Table ── */}
           <div className="lg:col-span-2 animate-slide-right">
-            <div className="glass-card rounded-2xl p-5 h-full flex flex-col justify-between">
+            <div className="glass-card rounded-2xl p-5 md:p-6 h-full flex flex-col justify-between shadow-xl border border-sky-500/15">
               <div>
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-sky-500/10 flex-wrap gap-2">
                   <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2 font-['Outfit']">
                       <span>Grade Entry</span>
                       {rows.length > 0 && (
-                        <span className="text-[10px] text-sky-300/40 font-normal">
+                        <span className="text-[10px] text-sky-300/60 font-medium bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">
                           {rows.filter(r => r.grade).length} / {rows.length} graded
                         </span>
                       )}
                     </h3>
-                    <p className="text-[10px] text-amber-300/60 mt-0.5">
-                      💡 Note: You can edit subject code, name, credits or add/delete subjects temporarily for custom calculation.
+                    <p className="text-[11px] text-amber-300/70 mt-1 flex items-center gap-1">
+                      <span>💡</span>
+                      <span>Note: You can edit subject code, name, credits or add/delete rows temporarily.</span>
                     </p>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleTemporaryAddRow}
-                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm shrink-0 whitespace-nowrap"
+                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-md shrink-0 whitespace-nowrap"
                   >
                     <Plus className="h-4 w-4 text-emerald-400" />
                     <span>+ Add Subject Row</span>
@@ -388,38 +389,41 @@ export default function GpaCalculator() {
                 ) : rows.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <GraduationCap className="h-10 w-10 text-sky-500/20 mb-3 animate-float" />
-                    <p className="text-sm text-sky-300/45 font-medium">No subjects found</p>
-                    <p className="text-xs text-sky-300/25 mt-1 max-w-xs mb-3">
-                      No subjects configured for {selectedDept} — {regulation} — Semester {selectedSem}. You can click "Add Subject Row" to manually enter subjects.
+                    <p className="text-sm text-sky-300/60 font-medium">No subjects found</p>
+                    <p className="text-xs text-sky-300/35 mt-1 max-w-xs mb-4">
+                      No subjects configured for {selectedDept} — {regulation} — Semester {selectedSem}. Click below to manually add subject rows.
                     </p>
                     <button
                       type="button"
                       onClick={handleTemporaryAddRow}
-                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 rounded-xl hover:bg-emerald-500/30 transition-all cursor-pointer shadow-md"
+                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 rounded-xl hover:bg-emerald-500/30 transition-all cursor-pointer shadow-md"
                     >
                       <Plus className="h-4 w-4" />
                       <span>+ Add Subject Row</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
-                    <div className="hidden md:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-300/35 px-2 pb-1">
+                  <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-3 pb-2 custom-scrollbar">
+                    {/* Header Row — Column spans match row items */}
+                    <div className="hidden md:grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-300/40 px-2.5 pb-2 border-b border-sky-500/10">
                       <div className="col-span-2">Code</div>
-                      <div className="col-span-5">Subject Name</div>
+                      <div className="col-span-4">Subject Name</div>
                       <div className="col-span-1 text-center">Credits</div>
                       <div className="col-span-2 text-center">Grade</div>
-                      <div className="col-span-2 text-center">Actions</div>
+                      <div className="col-span-3 text-center">Actions</div>
                     </div>
+
+                    {/* Subject Rows */}
                     {rows.map((row, idx) => (
                       <div
                         key={row.id}
                         style={{animationDelay: `${idx * 30}ms`}}
                         className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-xl border transition-all animate-fade-in-up items-center ${
                           row.isEditing
-                            ? 'bg-amber-500/[0.06] border-amber-500/30 shadow-md ring-1 ring-amber-500/20'
+                            ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-md ring-1 ring-amber-500/20'
                             : row.grade
-                              ? 'bg-sky-500/[0.05] border-sky-500/12'
-                              : 'bg-[#0a052a]/40 border-sky-500/[0.06] hover:border-sky-500/15'
+                              ? 'bg-sky-500/[0.06] border-sky-500/20'
+                              : 'bg-[#050d21]/60 border-sky-500/10 hover:border-sky-500/25'
                         }`}
                       >
                         {/* Code */}
@@ -430,16 +434,16 @@ export default function GpaCalculator() {
                             value={row.subjectCode}
                             title={row.subjectCode}
                             onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
-                            className={`w-full rounded-lg px-2 py-1 text-[11px] font-mono font-bold focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-center focus:outline-none transition-all truncate ${
                               row.isEditing
                                 ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20'
-                                : 'bg-[#071830]/40 border border-sky-500/10 text-sky-400/80 cursor-default'
+                                : 'bg-[#071830]/80 border border-sky-500/20 text-sky-300 cursor-default'
                             }`}
                           />
                         </div>
 
-                        {/* Subject Name — Fully Visible */}
-                        <div className="col-span-5">
+                        {/* Subject Name — Fully Visible & Truncated with Title Tooltip */}
+                        <div className="col-span-4">
                           <input
                             id={`public-sub-name-${row.id}`}
                             type="text"
@@ -447,10 +451,10 @@ export default function GpaCalculator() {
                             value={row.subjectName}
                             title={row.subjectName}
                             onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
-                            className={`w-full rounded-lg px-2 py-1 text-[11px] sm:text-xs focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-3 py-1.5 text-xs focus:outline-none transition-all truncate ${
                               row.isEditing
                                 ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20 font-semibold'
-                                : 'bg-[#071830]/40 border border-sky-500/10 text-white cursor-default'
+                                : 'bg-[#071830]/80 border border-sky-500/20 text-white font-medium cursor-default'
                             }`}
                           />
                         </div>
@@ -464,10 +468,10 @@ export default function GpaCalculator() {
                             readOnly={!row.isEditing}
                             value={row.credits}
                             onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
-                            className={`w-full rounded-lg px-1 py-1 text-xs font-semibold text-center focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-1 py-1.5 text-xs font-bold text-center focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-[#071830] border-2 border-amber-400 text-amber-300 ring-2 ring-amber-400/20'
-                                : 'bg-[#071830]/40 border border-sky-500/10 text-sky-300/80 cursor-default'
+                                : 'bg-[#071830]/80 border border-sky-500/20 text-sky-200 cursor-default'
                             }`}
                           />
                         </div>
@@ -477,8 +481,8 @@ export default function GpaCalculator() {
                           <select
                             value={row.grade}
                             onChange={e => updateGrade(row.id, e.target.value)}
-                            className={`w-full bg-[#071830] border border-sky-500/15 focus:border-sky-500/50 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${
-                              row.grade ? getGradeColor(row.grade) : 'text-sky-300/35'
+                            className={`w-full bg-[#071830] border border-sky-500/20 focus:border-sky-400 rounded-xl px-2 py-1.5 text-xs focus:outline-none text-center font-bold transition-all ${
+                              row.grade ? getGradeColor(row.grade) : 'text-sky-300/40'
                             }`}
                           >
                             <option value="">-- Grade --</option>
@@ -490,12 +494,12 @@ export default function GpaCalculator() {
                           </select>
                         </div>
 
-                        {/* Action: Edit & Delete (Edit toggles edit mode) */}
-                        <div className="col-span-2 flex items-center justify-center gap-1.5">
+                        {/* Action Buttons: Edit & Delete */}
+                        <div className="col-span-3 flex items-center justify-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => toggleEditRow(row.id)}
-                            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold ${
+                            className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-semibold shrink-0 ${
                               row.isEditing
                                 ? 'bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm'
                                 : 'bg-sky-500/10 text-sky-300 hover:text-white hover:bg-sky-500/25 border border-sky-500/20'
@@ -503,16 +507,16 @@ export default function GpaCalculator() {
                             title={row.isEditing ? "Finish editing subject" : "Edit subject details temporarily"}
                           >
                             {row.isEditing ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
-                            <span className="hidden sm:inline">{row.isEditing ? 'Done' : 'Edit'}</span>
+                            <span>{row.isEditing ? 'Done' : 'Edit'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleTemporaryDeleteRow(row.id)}
-                            className="p-1.5 text-red-400/70 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-semibold"
+                            className="px-2.5 py-1.5 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px] font-semibold shrink-0"
                             title="Remove subject row temporarily from calculation"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Delete</span>
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
