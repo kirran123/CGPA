@@ -234,7 +234,7 @@ export default function GpaCalculator() {
       <div className="orb orb-indigo w-[500px] h-[500px] top-10 left-1/2 -translate-x-1/2 opacity-45 fixed" />
       <div className="orb orb-violet w-[300px] h-[300px] bottom-10 right-10 opacity-20 fixed" />
 
-      <div className="max-w-5xl mx-auto px-4 pt-8 pb-16 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-[1360px] mx-auto px-4 pt-8 pb-16 sm:px-6 lg:px-8 relative z-10">
 
         {/* Back Link */}
         <div className="mb-6 animate-fade-in-down">
@@ -261,10 +261,10 @@ export default function GpaCalculator() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* ── Controls ── */}
-          <div className="space-y-5 animate-slide-left">
+          <div className="lg:col-span-4 space-y-5 animate-slide-left">
             <div className="glass-card rounded-2xl p-5 space-y-4">
               <h3 className="text-sm font-bold text-white pb-2 border-b border-sky-500/10">Setup</h3>
 
@@ -351,31 +351,31 @@ export default function GpaCalculator() {
           </div>
 
           {/* ── Grades Table ── */}
-          <div className="lg:col-span-2 animate-slide-right">
-            <div className="bg-[#f4f9ff] rounded-3xl p-5 md:p-6 h-full flex flex-col justify-between shadow-2xl border border-[#cbe3fb]">
+          <div className="lg:col-span-8 animate-slide-right">
+            <div className="bg-[#f4f9ff] rounded-3xl p-6 md:p-7 h-full flex flex-col justify-between shadow-2xl border border-[#cbe3fb]">
               <div>
                 {/* Header Title & Subtitle */}
-                <div className="mb-4 pb-1">
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <h3 className="text-base md:text-lg font-extrabold text-[#1e293b] font-['Outfit']">
+                <div className="mb-5 pb-1">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <h3 className="text-lg md:text-xl font-extrabold text-[#1e293b] font-['Outfit']">
                       Semester Grades
                     </h3>
                     {rows.length > 0 && (
-                      <span className="text-xs font-bold text-sky-800 bg-[#dbeafe] border border-[#bfdbfe] px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-sky-800 bg-[#dbeafe] border border-[#bfdbfe] px-3 py-0.5 rounded-full">
                         {rows.filter(r => r.grade).length} / {rows.length} graded
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-amber-700/90 font-medium leading-relaxed">
+                  <p className="text-xs md:text-sm text-amber-700/90 font-medium leading-relaxed">
                     💡 Note: You can temporarily edit code/name/credits or delete/add subjects below for custom calculation. (Will NOT affect database records)
                   </p>
-                  <div className="mt-3">
+                  <div className="mt-3.5">
                     <button
                       type="button"
                       onClick={handleTemporaryAddRow}
-                      className="flex items-center gap-1.5 text-xs font-bold text-[#137333] hover:text-[#0d5224] bg-[#e6f4ea] hover:bg-[#ceead6] border border-[#a8dab5] px-4 py-2 rounded-full transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                      className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#137333] hover:text-[#0d5224] bg-[#e6f4ea] hover:bg-[#ceead6] border border-[#a8dab5] px-4.5 py-2.5 rounded-full transition-all cursor-pointer shadow-xs whitespace-nowrap"
                     >
-                      <Plus className="h-4 w-4 text-[#137333]" />
+                      <Plus className="h-4.5 w-4.5 text-[#137333]" />
                       <span>+ Add Subject Row</span>
                     </button>
                   </div>
@@ -397,21 +397,21 @@ export default function GpaCalculator() {
                     <button
                       type="button"
                       onClick={handleTemporaryAddRow}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#137333] bg-[#e6f4ea] border border-[#a8dab5] rounded-full hover:bg-[#ceead6] transition-all cursor-pointer shadow-md"
+                      className="flex items-center gap-1.5 px-4.5 py-2.5 text-xs md:text-sm font-bold text-[#137333] bg-[#e6f4ea] border border-[#a8dab5] rounded-full hover:bg-[#ceead6] transition-all cursor-pointer shadow-md"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-4.5 w-4.5" />
                       <span>+ Add Subject Row</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-3 pb-2 custom-scrollbar">
+                  <div className="space-y-3 max-h-[540px] overflow-y-auto pr-3 pb-2 custom-scrollbar">
                     {/* Header Row */}
-                    <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-extrabold uppercase tracking-wider text-[#334155] px-3 pb-2">
+                    <div className="hidden md:grid grid-cols-12 gap-3 text-xs md:text-sm font-extrabold uppercase tracking-wider text-[#334155] px-3 pb-2">
                       <div className="col-span-2">CODE</div>
-                      <div className="col-span-4">SUBJECT NAME</div>
+                      <div className="col-span-5">SUBJECT NAME</div>
                       <div className="col-span-1 text-center">CREDITS</div>
                       <div className="col-span-2 text-center">GRADE</div>
-                      <div className="col-span-3 text-center">ACTIONS</div>
+                      <div className="col-span-2 text-center">ACTIONS</div>
                     </div>
 
                     {/* Subject Rows */}
@@ -419,12 +419,12 @@ export default function GpaCalculator() {
                       <div
                         key={row.id}
                         style={{animationDelay: `${idx * 30}ms`}}
-                        className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2.5 rounded-2xl border transition-all animate-fade-in-up items-center ${
+                        className={`grid grid-cols-1 md:grid-cols-12 gap-3 p-3 rounded-2xl border transition-all animate-fade-in-up items-center ${
                           row.isEditing
-                            ? 'bg-amber-100/80 border-amber-400 shadow-md ring-2 ring-amber-300/40'
+                            ? 'bg-amber-100/90 border-amber-400 shadow-md ring-2 ring-amber-300/40'
                             : row.grade
-                              ? 'bg-[#e0f2fe]/80 border-[#93c5fd]'
-                              : 'bg-[#eaf4ff]/70 hover:bg-[#eaf4ff] border border-[#bbe1fa] shadow-2xs'
+                              ? 'bg-[#e0f2fe]/90 border-[#93c5fd]'
+                              : 'bg-[#eaf4ff]/80 hover:bg-[#eaf4ff] border border-[#bbe1fa] shadow-2xs'
                         }`}
                       >
                         {/* Code */}
@@ -435,7 +435,7 @@ export default function GpaCalculator() {
                             value={row.subjectCode}
                             title={row.subjectCode}
                             onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
-                            className={`w-full rounded-xl px-3 py-2 text-xs font-mono font-bold text-center focus:outline-none transition-all truncate ${
+                            className={`w-full rounded-xl px-3 py-2 text-xs md:text-sm font-mono font-bold text-center focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e3a8a] cursor-default'
@@ -443,8 +443,8 @@ export default function GpaCalculator() {
                           />
                         </div>
 
-                        {/* Subject Name */}
-                        <div className="col-span-4">
+                        {/* Subject Name — Fully Visible Without Overlap */}
+                        <div className="col-span-5">
                           <input
                             id={`public-sub-name-${row.id}`}
                             type="text"
@@ -452,10 +452,10 @@ export default function GpaCalculator() {
                             value={row.subjectName}
                             title={row.subjectName}
                             onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
-                            className={`w-full rounded-xl px-3 py-2 text-xs focus:outline-none transition-all truncate ${
+                            className={`w-full rounded-xl px-3 py-2 text-xs md:text-sm focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 font-semibold ring-2 ring-amber-400/20'
-                                : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e293b] font-medium cursor-default'
+                                : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e293b] font-semibold cursor-default'
                             }`}
                           />
                         </div>
@@ -469,7 +469,7 @@ export default function GpaCalculator() {
                             readOnly={!row.isEditing}
                             value={row.credits}
                             onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
-                            className={`w-full rounded-xl px-2 py-2 text-xs font-bold text-center focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-2 py-2 text-xs md:text-sm font-bold text-center focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e293b] cursor-default'
@@ -482,7 +482,7 @@ export default function GpaCalculator() {
                           <select
                             value={row.grade}
                             onChange={e => updateGrade(row.id, e.target.value)}
-                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs text-center rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
+                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs md:text-sm text-center rounded-xl px-2 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
                           >
                             <option value="">-- Grade --</option>
                             {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
@@ -494,27 +494,27 @@ export default function GpaCalculator() {
                         </div>
 
                         {/* Action Buttons: Edit & Delete */}
-                        <div className="col-span-3 flex items-center justify-center gap-2">
+                        <div className="col-span-2 flex items-center justify-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => toggleEditRow(row.id)}
-                            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold shrink-0 shadow-2xs ${
+                            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs md:text-sm font-bold shrink-0 shadow-2xs ${
                               row.isEditing
                                 ? 'bg-amber-200 text-amber-900 border border-amber-400 shadow-sm'
                                 : 'bg-[#d0e5ff] hover:bg-[#b5d7ff] text-[#1e3a8a] border border-[#9ecaff]'
                             }`}
                             title={row.isEditing ? "Finish editing subject" : "Edit subject details temporarily"}
                           >
-                            {row.isEditing ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
+                            {row.isEditing ? <Check className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
                             <span>{row.isEditing ? 'Done' : 'Edit'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleTemporaryDeleteRow(row.id)}
-                            className="px-3 py-2 bg-[#ffe2e2] hover:bg-[#ffd0d0] text-[#991b1b] border border-[#fca5a5] rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
+                            className="px-3 py-2 bg-[#ffe2e2] hover:bg-[#ffd0d0] text-[#991b1b] border border-[#fca5a5] rounded-xl text-xs md:text-sm font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
                             title="Remove subject row temporarily from calculation"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                             <span>Delete</span>
                           </button>
                         </div>
