@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
-  Key,
   CheckCircle2,
   AlertCircle,
   Building,
@@ -16,8 +15,6 @@ import {
   Sparkles,
   Database,
   ArrowRight,
-  Eye,
-  EyeOff,
   Zap,
   CalendarClock,
   XCircle,
@@ -46,7 +43,6 @@ export default function DashboardErpSync() {
   const [loadingInitial, setLoadingInitial] = useState(true);
 
   const [token, setToken] = useState('');
-  const [showToken, setShowToken] = useState(false);
 
   const [syncDepts, setSyncDepts] = useState(true);
   const [syncRegs, setSyncRegs] = useState(true);
@@ -89,16 +85,7 @@ export default function DashboardErpSync() {
     setLogs(prev => [...prev, { text, type }]);
   };
 
-  const handleSaveToken = () => {
-    localStorage.setItem('rit_erp_token', token.trim());
-    addLog('ERP authentication token saved to local storage.', 'success');
-  };
 
-  const handleResetToken = () => {
-    setToken(DEFAULT_TOKEN);
-    localStorage.setItem('rit_erp_token', DEFAULT_TOKEN);
-    addLog('Reset to default ERP authentication token.', 'info');
-  };
 
   const handleTriggerSync = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,32 +198,7 @@ export default function DashboardErpSync() {
         {/* Left: Config */}
         <div className="lg:col-span-5 space-y-6">
 
-          {/* Token Card */}
-          <div className="bg-[#071830]/80 border border-sky-500/20 rounded-2xl p-5 backdrop-blur-xl shadow-lg space-y-4">
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 font-['Outfit']">
-              <Key className="h-4 w-4 text-sky-400" /> ERP Integration Credentials
-            </h2>
-            <div className="section-divider !my-1" />
-            <div className="form-group relative">
-              <label className="form-label text-[10px] text-sky-300/60 uppercase font-bold tracking-wider">Bearer Authorization Token</label>
-              <div className="relative flex items-center">
-                <input
-                  type={showToken ? 'text' : 'password'}
-                  value={token}
-                  onChange={e => setToken(e.target.value)}
-                  placeholder="Enter Bearer Token..."
-                  className="w-full bg-[#050d21] border border-sky-500/25 focus:border-sky-400/50 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-sky-200 focus:outline-none transition-all placeholder:text-sky-300/20 shadow-inner font-mono truncate"
-                />
-                <button type="button" onClick={() => setShowToken(!showToken)} className="absolute right-3.5 text-sky-300/40 hover:text-white transition-colors">
-                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-2.5">
-              <button type="button" onClick={handleSaveToken} className="flex-1 px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-300 text-xs font-bold rounded-xl transition-all cursor-pointer">Save Token Local</button>
-              <button type="button" onClick={handleResetToken} className="px-3.5 py-2 bg-sky-950/40 hover:bg-sky-900/40 border border-sky-500/10 text-sky-400/70 text-xs font-semibold rounded-xl transition-all cursor-pointer">Reset Default</button>
-            </div>
-          </div>
+
 
           {/* Resources Card */}
           <div className="bg-[#071830]/80 border border-sky-500/20 rounded-2xl p-5 backdrop-blur-xl shadow-lg space-y-4">
