@@ -8,14 +8,25 @@ export const get = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let students = await ctx.db.query("students").collect();
-    if (args.department) {
+    let students: any[];
+    if (args.department && args.batch) {
       const deptUpper = args.department.toUpperCase();
-      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
+      students = await ctx.db
+        .query("students")
+        .withIndex("by_dept_batch", (q) =>
+          q.eq("department", deptUpper).eq("batch", args.batch!)
+        )
+        .collect();
+    } else if (args.department) {
+      const deptUpper = args.department.toUpperCase();
+      students = await ctx.db
+        .query("students")
+        .withIndex("by_department", (q) => q.eq("department", deptUpper))
+        .collect();
+    } else {
+      students = await ctx.db.query("students").collect();
     }
-    if (args.batch) {
-      students = students.filter((s) => s.batch === args.batch);
-    }
+
     if (args.search && args.search.trim()) {
       const q = args.search.trim().toLowerCase();
       students = students.filter(
@@ -32,10 +43,15 @@ export const get = query({
 export const getBatches = query({
   args: { department: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    let students = await ctx.db.query("students").collect();
+    let students: any[];
     if (args.department) {
       const deptUpper = args.department.toUpperCase();
-      students = students.filter((s) => s.department.toUpperCase() === deptUpper);
+      students = await ctx.db
+        .query("students")
+        .withIndex("by_department", (q) => q.eq("department", deptUpper))
+        .collect();
+    } else {
+      students = await ctx.db.query("students").collect();
     }
     const batchMap = new Map<string, number>();
     for (const s of students) {
@@ -67,7 +83,25 @@ async function initializeStudentResults(
     .withIndex("by_student", (q: any) => q.eq("registerNo", regUpper))
     .collect();
 
-  // 2. Fetch semester credits from DB (priority: semesterCredits -> subjects)
+  // If student has no GPA records, skip heavy subject & semester credit queries
+  if (existingGpaRecords.length === 0) {
+    const existingCgpa = await ctx.db
+      .query("cgpaRecords")
+      .withIndex("by_registerNo", (q: any) => q.eq("registerNo", regUpper))
+      .filter((q: any) => q.eq(q.field("department"), deptUpper))
+      .first();
+
+    if (existingCgpa) {
+      await ctx.db.patch(existingCgpa._id, {
+        studentName: studentName.trim(),
+        regulation: regUpperVal,
+        semesters: [],
+        totalCredits: 0,
+        cgpa: 0,
+      });
+    }
+    return;
+  }
   const configuredCredits = await ctx.db
     .query("semesterCredits")
     .withIndex("by_dept_reg", (q: any) =>
