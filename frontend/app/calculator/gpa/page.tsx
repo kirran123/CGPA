@@ -234,57 +234,57 @@ export default function GpaCalculator() {
       <div className="orb orb-indigo w-[500px] h-[500px] top-10 left-1/2 -translate-x-1/2 opacity-45 fixed" />
       <div className="orb orb-violet w-[300px] h-[300px] bottom-10 right-10 opacity-20 fixed" />
 
-      <div className="max-w-[1360px] mx-auto px-4 pt-8 pb-16 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 pt-4 pb-10 sm:px-6 lg:px-8 relative z-10">
 
         {/* Back Link */}
-        <div className="mb-6 animate-fade-in-down">
+        <div className="mb-3 animate-fade-in-down">
           <Link 
             to="/" 
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/15 hover:border-sky-500/35 px-3.5 py-2 rounded-xl transition-all duration-300 cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white bg-sky-500/5 hover:bg-sky-500/10 border border-sky-500/15 hover:border-sky-500/35 px-3 py-1.5 rounded-xl transition-all duration-300 cursor-pointer"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
             <span>Return to Home</span>
           </Link>
         </div>
 
         {/* Title */}
-        <div className="text-center mb-10 animate-fade-in-down">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-semibold uppercase tracking-widest mb-5">
+        <div className="text-center mb-6 animate-fade-in-down">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[11px] font-semibold uppercase tracking-widest mb-2">
             <Sparkles className="h-3.5 w-3.5" />
             GPA Performance Calculator
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight mb-3 font-['Outfit']">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1 font-['Outfit']">
             Calculate Your <span className="gradient-text">Semester GPA</span>
           </h1>
-          <p className="text-sm text-sky-200/50 max-w-xl mx-auto leading-relaxed">
-            Select your department, regulation, and semester. Grades auto-load from the syllabus catalog.
+          <p className="text-xs text-sky-200/50 max-w-xl mx-auto">
+            Select department, regulation, and semester. Grades auto-load from syllabus catalog.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
           {/* ── Controls ── */}
-          <div className="lg:col-span-4 space-y-5 animate-slide-left">
-            <div className="glass-card rounded-2xl p-5 space-y-4">
-              <h3 className="text-sm font-bold text-white pb-2 border-b border-sky-500/10">Setup</h3>
+          <div className="lg:col-span-4 space-y-4 animate-slide-left">
+            <div className="glass-card rounded-2xl p-4 space-y-3.5">
+              <h3 className="text-xs font-bold text-white pb-1.5 border-b border-sky-500/10">Setup</h3>
 
               <div className="form-group">
-                <label className="form-label">Regulation</label>
+                <label className="form-label text-[11px]">Regulation</label>
                 <select
                   value={regulation}
                   onChange={e => setRegulation(e.target.value)}
-                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none transition-all"
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
                 >
                   {regulations.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Semester</label>
+                <label className="form-label text-[11px]">Semester</label>
                 <select
                   value={selectedSem}
                   onChange={e => setSelectedSem(Number(e.target.value))}
-                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none transition-all"
+                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
                 >
                   {[...Array(8)].map((_, i) => (
                     <option key={i+1} value={i+1}>Semester {i+1}</option>
@@ -293,14 +293,14 @@ export default function GpaCalculator() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Department</label>
+                <label className="form-label text-[11px]">Department</label>
                 {loadingDepts ? (
-                  <div className="h-9 skeleton rounded-xl" />
+                  <div className="h-8 skeleton rounded-xl" />
                 ) : (
                   <select
                     value={selectedDept}
                     onChange={e => setSelectedDept(e.target.value)}
-                    className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none transition-all"
+                    className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
                   >
                     {departments.map(d => (
                       <option key={d._id} value={d.code}>{d.name}</option>
@@ -311,17 +311,17 @@ export default function GpaCalculator() {
             </div>
 
             {/* GPA Display */}
-            <div className="gpa-display text-center">
-              <span className="text-[10px] font-bold text-sky-300/50 uppercase tracking-widest block mb-2">Your GPA</span>
-              <div className="display-number text-6xl font-black text-white mb-1">
+            <div className="gpa-display text-center py-4">
+              <span className="text-[10px] font-bold text-sky-300/50 uppercase tracking-widest block mb-1">Your GPA</span>
+              <div className="display-number text-5xl font-black text-white mb-0.5">
                 {gpa.toFixed(2)}
-                <span className="text-xl text-sky-300/30 ml-1.5">/ 10</span>
+                <span className="text-lg text-sky-300/30 ml-1">/ 10</span>
               </div>
               {anyGradeSet && rows.length > 0 && (
-                <div className="mt-3">
-                  <div className="bg-sky-500/[0.06] rounded-xl p-2 text-center">
-                    <div className="text-[9px] text-sky-300/40 mb-0.5">Total Credits</div>
-                    <div className="text-sm font-bold text-white">{totalCredits}</div>
+                <div className="mt-2">
+                  <div className="bg-sky-500/[0.06] rounded-xl p-1.5 text-center">
+                    <div className="text-[9px] text-sky-300/40">Total Credits</div>
+                    <div className="text-xs font-bold text-white">{totalCredits}</div>
                   </div>
                 </div>
               )}
@@ -332,18 +332,18 @@ export default function GpaCalculator() {
               <button
                 onClick={downloadReport}
                 disabled={downloadingPdf || rows.length === 0 || !anyGradeSet}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none text-sm cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none text-xs cursor-pointer"
               >
                 {downloadingPdf ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /><span>Generating...</span></>
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Generating...</span></>
                 ) : (
-                  <><Download className="h-4 w-4" /><span>Download PDF Report</span></>
+                  <><Download className="h-3.5 w-3.5" /><span>Download PDF Report</span></>
                 )}
               </button>
               <button
                 onClick={resetGrades}
                 disabled={rows.length === 0}
-                className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-sky-300 hover:text-white transition-all rounded-xl border border-sky-500/30 hover:border-sky-500/50 bg-sky-500/5 hover:bg-sky-500/12 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-sky-300 hover:text-white transition-all rounded-xl border border-sky-500/30 hover:border-sky-500/50 bg-sky-500/5 hover:bg-sky-500/12 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Reset Grades
               </button>
@@ -352,61 +352,61 @@ export default function GpaCalculator() {
 
           {/* ── Grades Table ── */}
           <div className="lg:col-span-8 animate-slide-right">
-            <div className="bg-[#f4f9ff] rounded-3xl p-6 md:p-7 h-full flex flex-col justify-between shadow-2xl border border-[#cbe3fb]">
+            <div className="bg-[#f4f9ff] rounded-3xl p-5 md:p-6 h-full flex flex-col justify-between shadow-2xl border border-[#cbe3fb]">
               <div>
                 {/* Header Title & Subtitle */}
-                <div className="mb-5 pb-1">
-                  <div className="flex items-center gap-2.5 mb-1.5">
-                    <h3 className="text-lg md:text-xl font-extrabold text-[#1e293b] font-['Outfit']">
+                <div className="mb-3 pb-2 border-b border-[#cbe3fb]/60">
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <h3 className="text-base md:text-lg font-extrabold text-[#1e293b] font-['Outfit']">
                       Semester Grades
                     </h3>
                     {rows.length > 0 && (
-                      <span className="text-xs font-bold text-sky-800 bg-[#dbeafe] border border-[#bfdbfe] px-3 py-0.5 rounded-full">
+                      <span className="text-xs font-bold text-sky-800 bg-[#dbeafe] border border-[#bfdbfe] px-2.5 py-0.5 rounded-full">
                         {rows.filter(r => r.grade).length} / {rows.length} graded
                       </span>
                     )}
                   </div>
-                  <p className="text-xs md:text-sm text-amber-700/90 font-medium leading-relaxed">
+                  <p className="text-[11px] md:text-xs text-amber-700/90 font-medium leading-relaxed">
                     💡 Note: You can temporarily edit code/name/credits or delete/add subjects below for custom calculation. (Will NOT affect database records)
                   </p>
-                  <div className="mt-3.5">
+                  <div className="mt-2.5">
                     <button
                       type="button"
                       onClick={handleTemporaryAddRow}
-                      className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#137333] hover:text-[#0d5224] bg-[#e6f4ea] hover:bg-[#ceead6] border border-[#a8dab5] px-4.5 py-2.5 rounded-full transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                      className="flex items-center gap-1.5 text-xs font-bold text-[#137333] hover:text-[#0d5224] bg-[#e6f4ea] hover:bg-[#ceead6] border border-[#a8dab5] px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-xs whitespace-nowrap"
                     >
-                      <Plus className="h-4.5 w-4.5 text-[#137333]" />
+                      <Plus className="h-3.5 w-3.5 text-[#137333]" />
                       <span>+ Add Subject Row</span>
                     </button>
                   </div>
                 </div>
 
                 {loadingSubjects ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5 pt-2">
                     {[...Array(5)].map((_, i) => (
-                      <div key={i} className="skeleton h-14 rounded-2xl bg-sky-200/40" style={{opacity: 1 - i * 0.15}} />
+                      <div key={i} className="skeleton h-12 rounded-xl bg-sky-200/40" style={{opacity: 1 - i * 0.15}} />
                     ))}
                   </div>
                 ) : rows.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <GraduationCap className="h-10 w-10 text-sky-400/40 mb-3 animate-float" />
-                    <p className="text-sm text-slate-700 font-semibold">No subjects found</p>
-                    <p className="text-xs text-slate-500 mt-1 max-w-xs mb-4">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <GraduationCap className="h-9 w-9 text-sky-400/40 mb-2.5 animate-float" />
+                    <p className="text-xs md:text-sm text-slate-700 font-semibold">No subjects found</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs mb-3">
                       No subjects configured for {selectedDept} — {regulation} — Semester {selectedSem}. Click below to manually add subject rows.
                     </p>
                     <button
                       type="button"
                       onClick={handleTemporaryAddRow}
-                      className="flex items-center gap-1.5 px-4.5 py-2.5 text-xs md:text-sm font-bold text-[#137333] bg-[#e6f4ea] border border-[#a8dab5] rounded-full hover:bg-[#ceead6] transition-all cursor-pointer shadow-md"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#137333] bg-[#e6f4ea] border border-[#a8dab5] rounded-full hover:bg-[#ceead6] transition-all cursor-pointer shadow-md"
                     >
-                      <Plus className="h-4.5 w-4.5" />
+                      <Plus className="h-3.5 w-3.5" />
                       <span>+ Add Subject Row</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[540px] overflow-y-auto pr-3 pb-2 custom-scrollbar">
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 pb-1 custom-scrollbar pt-2">
                     {/* Header Row */}
-                    <div className="hidden md:grid grid-cols-12 gap-3 text-xs md:text-sm font-extrabold uppercase tracking-wider text-[#334155] px-3 pb-2">
+                    <div className="hidden md:grid grid-cols-12 gap-2 text-xs font-extrabold uppercase tracking-wider text-[#334155] px-2.5 pb-2">
                       <div className="col-span-2">CODE</div>
                       <div className="col-span-5">SUBJECT NAME</div>
                       <div className="col-span-1 text-center">CREDITS</div>
@@ -418,10 +418,10 @@ export default function GpaCalculator() {
                     {rows.map((row, idx) => (
                       <div
                         key={row.id}
-                        style={{animationDelay: `${idx * 30}ms`}}
-                        className={`grid grid-cols-1 md:grid-cols-12 gap-3 p-3 rounded-2xl border transition-all animate-fade-in-up items-center ${
+                        style={{animationDelay: `${idx * 25}ms`}}
+                        className={`grid grid-cols-1 md:grid-cols-12 gap-2 p-2 rounded-xl border transition-all animate-fade-in-up items-center ${
                           row.isEditing
-                            ? 'bg-amber-100/90 border-amber-400 shadow-md ring-2 ring-amber-300/40'
+                            ? 'bg-amber-100/90 border-amber-400 shadow-md ring-1 ring-amber-300/40'
                             : row.grade
                               ? 'bg-[#e0f2fe]/90 border-[#93c5fd]'
                               : 'bg-[#eaf4ff]/80 hover:bg-[#eaf4ff] border border-[#bbe1fa] shadow-2xs'
@@ -435,7 +435,7 @@ export default function GpaCalculator() {
                             value={row.subjectCode}
                             title={row.subjectCode}
                             onChange={(e) => updateRowField(row.id, 'subjectCode', e.target.value)}
-                            className={`w-full rounded-xl px-3 py-2 text-xs md:text-sm font-mono font-bold text-center focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-center focus:outline-none transition-all truncate ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e3a8a] cursor-default'
@@ -452,7 +452,7 @@ export default function GpaCalculator() {
                             value={row.subjectName}
                             title={row.subjectName}
                             onChange={(e) => updateRowField(row.id, 'subjectName', e.target.value)}
-                            className={`w-full rounded-xl px-3 py-2 text-xs md:text-sm focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-2.5 py-1.5 text-xs focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 font-semibold ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e293b] font-semibold cursor-default'
@@ -469,7 +469,7 @@ export default function GpaCalculator() {
                             readOnly={!row.isEditing}
                             value={row.credits}
                             onChange={(e) => updateRowField(row.id, 'credits', parseFloat(e.target.value) || 0)}
-                            className={`w-full rounded-xl px-2 py-2 text-xs md:text-sm font-bold text-center focus:outline-none transition-all ${
+                            className={`w-full rounded-xl px-1 py-1.5 text-xs font-bold text-center focus:outline-none transition-all ${
                               row.isEditing
                                 ? 'bg-white border-2 border-amber-500 text-amber-900 ring-2 ring-amber-400/20'
                                 : 'bg-[#d5e8ff] border border-[#9ecaff] text-[#1e293b] cursor-default'
@@ -482,7 +482,7 @@ export default function GpaCalculator() {
                           <select
                             value={row.grade}
                             onChange={e => updateGrade(row.id, e.target.value)}
-                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs md:text-sm text-center rounded-xl px-2 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
+                            className="w-full bg-white border border-[#9ecaff] text-[#1e3a8a] font-bold text-xs text-center rounded-xl px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-2xs transition-all cursor-pointer"
                           >
                             <option value="">-- Grade --</option>
                             {[...gradeSettingsList].sort((a, b) => b.points - a.points).map(g => (
@@ -498,23 +498,23 @@ export default function GpaCalculator() {
                           <button
                             type="button"
                             onClick={() => toggleEditRow(row.id)}
-                            className={`px-3 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs md:text-sm font-bold shrink-0 shadow-2xs ${
+                            className={`px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold shrink-0 shadow-2xs ${
                               row.isEditing
                                 ? 'bg-amber-200 text-amber-900 border border-amber-400 shadow-sm'
                                 : 'bg-[#d0e5ff] hover:bg-[#b5d7ff] text-[#1e3a8a] border border-[#9ecaff]'
                             }`}
                             title={row.isEditing ? "Finish editing subject" : "Edit subject details temporarily"}
                           >
-                            {row.isEditing ? <Check className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                            {row.isEditing ? <Check className="h-3.5 w-3.5" /> : <Edit2 className="h-3.5 w-3.5" />}
                             <span>{row.isEditing ? 'Done' : 'Edit'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleTemporaryDeleteRow(row.id)}
-                            className="px-3 py-2 bg-[#ffe2e2] hover:bg-[#ffd0d0] text-[#991b1b] border border-[#fca5a5] rounded-xl text-xs md:text-sm font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
+                            className="px-2.5 py-1.5 bg-[#ffe2e2] hover:bg-[#ffd0d0] text-[#991b1b] border border-[#fca5a5] rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0"
                             title="Remove subject row temporarily from calculation"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             <span>Delete</span>
                           </button>
                         </div>
