@@ -188,36 +188,67 @@ async function buildMultiStudentGpaPdf(studentList: any[]): Promise<Uint8Array> 
     txt(page, `Register No: ${record.registerNo}`, 300, 162, 10, reg);
     txt(page, `Department: ${record.department}  |  Regulation: ${record.regulation || "R2021"}`, 50, 176, 9, reg);
 
-    // Table header for Semester GPAs
     const tableTop = 210;
-    fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
-    txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
-    txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
-    txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
-    txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
 
-    // Data rows
-    let y = tableTop + ROW_H;
-    let totalCredits = 0;
-    const semesters: any[] = record.semesters && record.semesters.length > 0
-      ? record.semesters
-      : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+    if (record.subjects && record.subjects.length > 0) {
+      fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
+      THEADERS.forEach((h, i) => {
+        txt(page, h, TCOLS[i] + 3, tableTop + 7, 9, bold, C.white, TWIDTHS[i]);
+      });
 
-    semesters.forEach((s: any, idx: number) => {
-      const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
-      fillRect(page, 40, y, PW - 80, ROW_H, bg);
-      totalCredits += Number(s.credits) || 0;
-      txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
-      txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
-      txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
-      txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
-      y += ROW_H;
-    });
+      let y = tableTop + ROW_H;
+      let totalCredits = 0;
+      const gradedSubjects = record.subjects.filter((s: any) => s.grade && String(s.grade).trim() !== '');
+      gradedSubjects.forEach((s: any, idx: number) => {
+        const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
+        fillRect(page, 40, y, PW - 80, ROW_H, bg);
+        totalCredits += Number(s.credits) || 0;
+        txt(page, String(idx + 1), TCOLS[0] + 3, y + 7, 9, reg, C.dark, TWIDTHS[0]);
+        txt(page, s.subjectCode || "N/A", TCOLS[1] + 3, y + 7, 9, reg, C.dark, TWIDTHS[1]);
+        txt(page, s.subjectName || "N/A", TCOLS[2] + 3, y + 7, 9, reg, C.dark, TWIDTHS[2]);
+        txt(page, String(s.credits || 0), TCOLS[3] + 3, y + 7, 9, reg, C.dark, TWIDTHS[3]);
+        txt(page, String(s.grade), TCOLS[4] + 3, y + 7, 9, bold, C.dark, TWIDTHS[4]);
+        y += ROW_H;
+      });
 
-    // Totals bar
-    if (totalCredits > 0) {
-      fillRect(page, 40, y, PW - 80, 22, C.purple);
-      txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+      if (totalCredits > 0) {
+        fillRect(page, 40, y, PW - 80, 22, C.purple);
+        txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+        y += 22;
+      }
+      y += 18;
+      const cx = PW / 2;
+      fillRect(page, cx - 80, y, 160, 58, C.navy);
+      txt(page, "Semester GPA", cx - 80, y + 9, 11, reg, C.white, 160, "center");
+      txt(page, (Number(record.gpa) || 0).toFixed(2), cx - 80, y + 26, 28, bold, C.periwinkle, 160, "center");
+    } else {
+      fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
+      txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
+      txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
+      txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
+      txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
+
+      let y = tableTop + ROW_H;
+      let totalCredits = 0;
+      const semesters: any[] = record.semesters && record.semesters.length > 0
+        ? record.semesters
+        : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+
+      semesters.forEach((s: any, idx: number) => {
+        const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
+        fillRect(page, 40, y, PW - 80, ROW_H, bg);
+        totalCredits += Number(s.credits) || 0;
+        txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
+        txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
+        txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
+        txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
+        y += ROW_H;
+      });
+
+      if (totalCredits > 0) {
+        fillRect(page, 40, y, PW - 80, 22, C.purple);
+        txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+      }
     }
 
     drawFooter(page, reg);
@@ -476,40 +507,75 @@ async function buildBatchGpaPdf(records: any[], meta: any): Promise<Uint8Array> 
     txt(page, `Semester: ${record.semester}  |  Regulation: ${record.regulation || "R2021"}`, 50, 136, 9, reg);
 
     const tableTop = 170;
-    fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
-    txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
-    txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
-    txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
-    txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
 
-    let y = tableTop + ROW_H;
-    let totalCredits = 0;
-    const semesters: any[] = record.semesters && record.semesters.length > 0
-      ? record.semesters
-      : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+    if (record.subjects && record.subjects.length > 0) {
+      fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
+      THEADERS.forEach((h, i) => {
+        txt(page, h, TCOLS[i] + 3, tableTop + 7, 9, bold, C.white, TWIDTHS[i]);
+      });
 
-    semesters.forEach((s: any, idx: number) => {
-      const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
-      fillRect(page, 40, y, PW - 80, ROW_H, bg);
-      totalCredits += Number(s.credits) || 0;
-      txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
-      txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
-      txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
-      txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
-      y += ROW_H;
-    });
+      let y = tableTop + ROW_H;
+      let totalCredits = 0;
+      const gradedSubjects = record.subjects.filter((s: any) => s.grade && String(s.grade).trim() !== '');
+      gradedSubjects.forEach((s: any, idx: number) => {
+        const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
+        fillRect(page, 40, y, PW - 80, ROW_H, bg);
+        totalCredits += Number(s.credits) || 0;
+        txt(page, String(idx + 1), TCOLS[0] + 3, y + 7, 9, reg, C.dark, TWIDTHS[0]);
+        txt(page, s.subjectCode || "N/A", TCOLS[1] + 3, y + 7, 9, reg, C.dark, TWIDTHS[1]);
+        txt(page, s.subjectName || "N/A", TCOLS[2] + 3, y + 7, 9, reg, C.dark, TWIDTHS[2]);
+        txt(page, String(s.credits || 0), TCOLS[3] + 3, y + 7, 9, reg, C.dark, TWIDTHS[3]);
+        txt(page, String(s.grade), TCOLS[4] + 3, y + 7, 9, bold, C.dark, TWIDTHS[4]);
+        y += ROW_H;
+      });
 
-    if (totalCredits > 0) {
-      fillRect(page, 40, y, PW - 80, 22, C.purple);
-      txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
-      y += 22;
+      if (totalCredits > 0) {
+        fillRect(page, 40, y, PW - 80, 22, C.purple);
+        txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+        y += 22;
+      }
+      y += 16;
+
+      const cx = PW / 2;
+      fillRect(page, cx - 80, y, 160, 58, C.navy);
+      txt(page, "Semester GPA", cx - 80, y + 10, 10, reg, C.white, 160, "center");
+      txt(page, (Number(record.gpa) || 0).toFixed(2), cx - 80, y + 26, 26, bold, C.periwinkle, 160, "center");
+    } else {
+      fillRect(page, 40, tableTop, PW - 80, ROW_H, C.navy);
+      txt(page, "#", 55, tableTop + 7, 9, bold, C.white, 30);
+      txt(page, "Semester", 110, tableTop + 7, 9, bold, C.white, 150);
+      txt(page, "Credits Earned", 280, tableTop + 7, 9, bold, C.white, 120);
+      txt(page, "Semester GPA", 430, tableTop + 7, 9, bold, C.white, 110);
+
+      let y = tableTop + ROW_H;
+      let totalCredits = 0;
+      const semesters: any[] = record.semesters && record.semesters.length > 0
+        ? record.semesters
+        : [{ semester: record.semester || 1, gpa: record.gpa || 0, credits: record.totalCredits || 0 }];
+
+      semesters.forEach((s: any, idx: number) => {
+        const bg = idx % 2 === 0 ? C.lightBg : C.altBg;
+        fillRect(page, 40, y, PW - 80, ROW_H, bg);
+        totalCredits += Number(s.credits) || 0;
+        txt(page, String(idx + 1), 55, y + 7, 9, reg, C.dark, 30);
+        txt(page, `Semester ${s.semester}`, 110, y + 7, 9, reg, C.dark, 150);
+        txt(page, s.credits ? String(s.credits) : "N/A", 280, y + 7, 9, reg, C.dark, 120);
+        txt(page, (Number(s.gpa) || 0).toFixed(2), 430, y + 7, 9, bold, C.dark, 110);
+        y += ROW_H;
+      });
+
+      if (totalCredits > 0) {
+        fillRect(page, 40, y, PW - 80, 22, C.purple);
+        txt(page, `Total Credits: ${totalCredits}`, 50, y + 6, 10, bold, C.navy);
+        y += 22;
+      }
+      y += 16;
+
+      const cx = PW / 2;
+      fillRect(page, cx - 80, y, 160, 58, C.navy);
+      txt(page, "Semester GPA", cx - 80, y + 10, 10, reg, C.white, 160, "center");
+      txt(page, (Number(record.gpa) || 0).toFixed(2), cx - 80, y + 26, 26, bold, C.periwinkle, 160, "center");
     }
-    y += 16;
-
-    const cx = PW / 2;
-    fillRect(page, cx - 80, y, 160, 58, C.navy);
-    txt(page, "Semester GPA", cx - 80, y + 10, 10, reg, C.white, 160, "center");
-    txt(page, (Number(record.gpa) || 0).toFixed(2), cx - 80, y + 26, 26, bold, C.periwinkle, 160, "center");
 
     const fy = PH - 50;
     page.drawLine({ start: { x: 40, y: fy }, end: { x: PW - 40, y: fy }, thickness: 0.5, color: C.lineGray });
@@ -620,9 +686,27 @@ export const generateStoredGpaPdf = action({
     const r = await ctx.runQuery(api.gpa.getById, { id: args.recordId });
     if (!r) throw new Error("GPA record not found");
     const cgpaRec = await ctx.runQuery(api.cgpa.getByRegNo, { registerNo: r.registerNo, department: r.department });
-    const semesters = cgpaRec?.semesters && cgpaRec.semesters.length > 0
-      ? cgpaRec.semesters
-      : [{ semester: r.semester, gpa: r.gpa, credits: r.totalCredits || 0 }];
+    
+    let subjects = r.subjects || [];
+    if (subjects.length === 0) {
+      try {
+        const dbSubjects = await ctx.runQuery(api.subjects.get, {
+          department: r.department,
+          semester: r.semester,
+          regulation: r.regulation || "R2021",
+        });
+        subjects = dbSubjects.map((s: any) => ({
+          subjectCode: s.code,
+          subjectName: s.name,
+          credits: s.credits,
+          grade: "N/A",
+          gradePoint: 0,
+        }));
+      } catch {
+        subjects = [];
+      }
+    }
+
     const bytes = await buildGpaPdf({
       studentName: r.studentName,
       registerNo: r.registerNo,
@@ -630,7 +714,8 @@ export const generateStoredGpaPdf = action({
       regulation: r.regulation || "R2021",
       semester: r.semester,
       gpa: r.gpa,
-      semesters,
+      subjects: subjects,
+      totalCredits: r.totalCredits,
       cgpa: cgpaRec?.cgpa || r.gpa,
     });
     return Buffer.from(bytes).toString("base64");
