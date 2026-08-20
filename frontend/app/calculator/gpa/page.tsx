@@ -406,8 +406,8 @@ export default function GpaCalculator() {
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] md:text-xs text-amber-700/90 font-medium leading-relaxed">
-                    💡 Note: You can temporarily edit code/name/credits or delete/add subjects below for custom calculation. (Will NOT affect database records)
+                  <p className="text-xs md:text-sm text-amber-900 bg-amber-50/80 border border-amber-200/80 p-2.5 rounded-xl font-semibold leading-relaxed mt-1 mb-2">
+                    💡 <strong>Note:</strong> Enter subject grades. Only the entered subjects' grade credit points will be used for calculation. Skip the subjects if you don't have that in your curriculum.
                   </p>
                   <div className="mt-2.5">
                     <button

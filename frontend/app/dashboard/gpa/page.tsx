@@ -522,8 +522,8 @@ export default function InternalGpaCalculator() {
                       </span>
                     )}
                   </h2>
-                  <p className="text-[10px] text-amber-300/60 mt-0.5">
-                    💡 Note: You can temporarily edit code/name/credits or delete/add subjects below for custom calculation. (Will NOT affect database records)
+                  <p className="text-xs md:text-sm text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl font-semibold leading-relaxed mt-2 mb-1">
+                    💡 <strong>Note:</strong> Enter subject grades. Only the entered subjects' grade credit points will be used for calculation. Skip the subjects if you don't have that in your curriculum.
                   </p>
                 </div>
                 <button
