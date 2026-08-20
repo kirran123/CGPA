@@ -108,25 +108,20 @@ export default function InternalGpaCalculator() {
     init();
   }, []);
 
-  // Fetch Student Roster & Batches restricted by active department
+  // Fetch Student Roster restricted by active department
   useEffect(() => {
-    const fetchStudentsAndBatches = async () => {
+    const fetchStudents = async () => {
       try {
         const userDept = currentUser?.role !== 'super_admin' ? currentUser?.department || '' : '';
         const activeDept = userDept || selectedDept;
-
-        const [sts, bts] = await Promise.all([
-          api.getStudents(activeDept || undefined, selectedBatch || undefined),
-          api.getStudentBatches(activeDept || undefined)
-        ]);
+        const sts = await api.getStudents(activeDept || undefined);
         setStudentRoster(sts);
-        setBatches(bts);
       } catch (e) {
         console.error('Error fetching students roster:', e);
       }
     };
-    fetchStudentsAndBatches();
-  }, [selectedDept, selectedBatch, currentUser]);
+    fetchStudents();
+  }, [selectedDept, currentUser]);
 
   const handleSelectStudent = (regNo: string, student?: any) => {
     setSelectedStudentReg(regNo);
@@ -419,21 +414,6 @@ export default function InternalGpaCalculator() {
               <div className="flex items-center gap-1.5 mb-1">
                 <Info className="h-3 w-3 text-sky-400/60" />
                 <span className="text-[10px] text-sky-300/60">Select registered student or type details below</span>
-              </div>
-
-              {/* Batch Selector Filter */}
-              <div className="form-group">
-                <label className="form-label text-[10px] font-bold text-sky-300 uppercase">Filter Roster By Batch</label>
-                <select
-                  value={selectedBatch}
-                  onChange={(e) => setSelectedBatch(e.target.value)}
-                  className="w-full bg-[#071830] border border-sky-500/18 focus:border-sky-500/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                >
-                  <option value="">All Batches ({batches.reduce((sum, b) => sum + b.count, 0) || studentRoster.length} students)</option>
-                  {batches.map((b) => (
-                    <option key={b.batch} value={b.batch}>{b.batch} ({b.count} students)</option>
-                  ))}
-                </select>
               </div>
 
               {/* Searchable Student Combobox */}
